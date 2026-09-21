@@ -55,4 +55,5 @@ export interface RescueResult {
   priority: "critical" | "high" | "normal";
   actions: RescueAction[];
   nextQuestion: string;
+  constraints: string[];
 }
