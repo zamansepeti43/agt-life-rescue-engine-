@@ -2,6 +2,8 @@ import { BellRing, Bot, LifeBuoy, CheckSquare2, Crosshair, History, MemoryStick,
 import { useLocation } from 'wouter';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuBadge, SidebarMenuButton, SidebarMenuItem, SidebarRail, useSidebar } from '@/components/ui/sidebar';
 import { useAssistantState } from '@/hooks/useAssistantState';
+import { listConversationHistory } from '@/lib/conversation-history';
+import { useEffect, useState } from 'react';
 
 const IZCI_ITEMS = [
   { label: 'Takipler', icon: Crosshair },
@@ -13,9 +15,19 @@ export function AtlasSidebar() {
   const [location, navigate] = useLocation();
   const { setOpenMobile } = useSidebar();
   const state = useAssistantState();
+  const [recentChats, setRecentChats] = useState(() => listConversationHistory());
+  useEffect(() => {
+    const refresh = () => setRecentChats(listConversationHistory());
+    window.addEventListener('atlas-conversation-history-change', refresh);
+    window.addEventListener('storage', refresh);
+    return () => {
+      window.removeEventListener('atlas-conversation-history-change', refresh);
+      window.removeEventListener('storage', refresh);
+    };
+  }, []);
   const unread = state.events.filter((event) => !event.read).length;
   const goTo = (path: string) => { navigate(path); setOpenMobile(false); };
-  const newConversation = () => { goTo('/'); window.dispatchEvent(new Event('atlas-new-conversation')); };
+  const newConversation = () => { goTo('/'); window.dispatchEvent(new Event('atlas-new-conversation')); window.dispatchEvent(new Event('atlas-conversation-history-change')); };
 
   return (
     <Sidebar collapsible="offcanvas">
@@ -28,7 +40,8 @@ export function AtlasSidebar() {
           <SidebarMenuItem><SidebarMenuButton isActive={location === '/atlas-os'} onClick={() => goTo('/atlas-os')} tooltip="Atlas Life OS"><Bot /><span>Atlas Life OS</span></SidebarMenuButton></SidebarMenuItem>
           <SidebarMenuItem><SidebarMenuButton isActive={location === '/life-rescue'} onClick={() => goTo('/life-rescue')} tooltip="Hayat Kurtarma Motoru"><LifeBuoy /><span>Hayat Kurtarma</span></SidebarMenuButton></SidebarMenuItem>
           <SidebarMenuItem><SidebarMenuButton onClick={newConversation} tooltip="Yeni sohbet"><Plus /><span>Yeni Sohbet</span></SidebarMenuButton></SidebarMenuItem>
-          <SidebarMenuItem><SidebarMenuButton disabled tooltip="Geçmiş"><History /><span>Geçmiş</span></SidebarMenuButton></SidebarMenuItem>
+          <SidebarMenuItem><SidebarMenuButton isActive={location === '/atlas'} onClick={() => goTo('/atlas')} tooltip="Geçmiş"><History /><span>Geçmiş</span></SidebarMenuButton></SidebarMenuItem>
+          {recentChats.slice(0, 5).map((chat) => <SidebarMenuItem key={chat.id}><SidebarMenuButton onClick={() => { goTo('/atlas'); window.setTimeout(() => window.dispatchEvent(new CustomEvent('atlas-load-conversation', { detail: { id: chat.id } })), 0); }} tooltip={chat.title}><History className="h-3.5 w-3.5" /><span className="truncate">{chat.title}</span></SidebarMenuButton></SidebarMenuItem>)}
           <SidebarMenuItem><SidebarMenuButton disabled tooltip="Hafıza"><MemoryStick /><span>Hafıza</span></SidebarMenuButton></SidebarMenuItem>
         </SidebarMenu></SidebarGroupContent></SidebarGroup>
         <SidebarGroup><SidebarGroupLabel>Koruma & İzleme</SidebarGroupLabel><SidebarGroupContent><SidebarMenu>
