@@ -1,4 +1,5 @@
 import { sendBrowserNotification } from './notifications';
+import { cancelNativeNotification } from './native-notifications';
 import { schedulePushNotification } from './push-notifications';
 import type {
   AssistantState,
@@ -106,18 +107,19 @@ export function addTask(input: Pick<Task, 'title'> & Partial<Pick<Task, 'dueAt' 
   const createdAt = now();
   const task: Task = { id: uid(), title: input.title, status: 'active', createdAt, updatedAt: createdAt, ...(input.dueAt && { dueAt: input.dueAt }), ...(input.recurrence && { recurrence: input.recurrence }), ...(input.goalId && { goalId: input.goalId }) };
   update((state) => ({ ...state, tasks: [task, ...state.tasks] }));
-  if (task.dueAt) void schedulePushNotification({ id: task.id, kind: 'task', scheduledAt: task.dueAt, title: 'İZCİ · Görev zamanı', body: `${task.title} için ayırdığın zaman geldi.`, url: `/izci?task=${task.id}` });
+  if (task.dueAt) void schedulePushNotification({ id: task.id, kind: 'task', scheduledAt: task.dueAt, recurrence: task.recurrence, title: 'İZCİ · Görev zamanı', body: `${task.title} için ayırdığın zaman geldi.`, url: `/izci?task=${task.id}` });
   return task;
 }
 
 export function setTaskCompleted(id: string, completed: boolean): void {
   update((state) => ({ ...state, tasks: state.tasks.map((task) => task.id === id ? { ...task, status: completed ? 'completed' : 'active', updatedAt: now() } : task) }));
+  if (completed) cancelNativeNotification(id);
 }
 
 export function addReminder(input: Pick<Reminder, 'message' | 'scheduledAt'> & Partial<Pick<Reminder, 'recurrence'>>): Reminder {
   const reminder: Reminder = { id: uid(), message: input.message, scheduledAt: input.scheduledAt, status: 'pending', createdAt: now(), ...(input.recurrence && { recurrence: input.recurrence }) };
   update((state) => ({ ...state, reminders: [reminder, ...state.reminders] }));
-  void schedulePushNotification({ id: reminder.id, kind: 'reminder', scheduledAt: reminder.scheduledAt, title: 'İZCİ · Hatırlatma', body: reminder.message, url: `/izci?reminder=${reminder.id}` });
+  void schedulePushNotification({ id: reminder.id, kind: 'reminder', scheduledAt: reminder.scheduledAt, recurrence: reminder.recurrence, title: 'İZCİ · Hatırlatma', body: reminder.message, url: `/izci?reminder=${reminder.id}` });
   return reminder;
 }
 
