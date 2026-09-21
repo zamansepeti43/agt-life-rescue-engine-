@@ -9,6 +9,7 @@ type Result = {
   priority: "critical" | "high" | "normal";
   actions: { title: string; reason: string; priority: number }[];
   nextQuestion: string;
+  constraints: string[];
 };
 
 const categories = [
@@ -42,6 +43,8 @@ export default function LifeRescue() {
   const [category, setCategory] = useState("");
   const [goal, setGoal] = useState("");
   const [urgency, setUrgency] = useState(5);
+  const [budget, setBudget] = useState("");
+  const [availableHours, setAvailableHours] = useState("");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState("");
@@ -59,6 +62,8 @@ export default function LifeRescue() {
           category: category || undefined,
           goal: goal || undefined,
           urgency,
+          budget: budget === "" ? undefined : Number(budget),
+          availableHours: availableHours === "" ? undefined : Number(availableHours),
         }),
       });
       const data = await response.json();
@@ -108,6 +113,17 @@ export default function LifeRescue() {
             </label>
           </div>
 
+          <div className="mt-3 grid gap-3 md:grid-cols-2">
+            <label className="rounded-xl border px-3 py-2">
+              <span className="block text-xs text-muted-foreground">Bütçe (TL, isteğe bağlı)</span>
+              <input value={budget} onChange={(e) => setBudget(e.target.value)} type="number" min="0" placeholder="Örn: 1500" className="mt-1 w-full bg-transparent outline-none" />
+            </label>
+            <label className="rounded-xl border px-3 py-2">
+              <span className="block text-xs text-muted-foreground">Bugün ayırabileceğin zaman (saat)</span>
+              <input value={availableHours} onChange={(e) => setAvailableHours(e.target.value)} type="number" min="0" step="0.5" placeholder="Örn: 2" className="mt-1 w-full bg-transparent outline-none" />
+            </label>
+          </div>
+
           <button
             type="button"
             onClick={() => void analyze()}
@@ -131,6 +147,11 @@ export default function LifeRescue() {
               </div>
               <h2 className="mt-4 text-xl font-bold">Teşhis</h2>
               <p className="mt-2 text-muted-foreground">{result.diagnosis}</p>
+              {result.constraints.length > 0 && (
+                <div className="mt-4 flex flex-wrap gap-2">
+                  {result.constraints.map((constraint) => <span key={constraint} className="rounded-full bg-muted px-3 py-1 text-xs">{constraint}</span>)}
+                </div>
+              )}
             </div>
 
             <div className="grid gap-3 md:grid-cols-3">
