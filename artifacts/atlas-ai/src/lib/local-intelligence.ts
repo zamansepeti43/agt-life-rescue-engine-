@@ -46,7 +46,7 @@ export function classifyLocalCommand(text: string): LocalCommand {
 export function formatScamResult(text: string): string {
   const result: ScamAnalysis = analyzeScamText(text);
   const signalText = result.signals.length ? result.signals.map((s) => `• ${s}`).join('\n') : '• Belirgin şüpheli sinyal bulunmadı.';
-  return `🛡️ Dolandırıcılık Kalkanı\n\nRisk: ${result.riskLevel}\nSkor: ${result.score}/100\n\n${signalText}\n\n${result.recommendation}\n\nNot: Bu yerel kural motoru kesin güvenlik garantisi vermez.`;
+  return `🛡️ Dolandırıcılık Kalkanı\n\nRisk: ${result.level}\nSkor: ${result.score}/100\n\n${signalText}\n\n${result.recommendation}\n\nNot: Bu yerel kural motoru kesin güvenlik garantisi vermez.`;
 }
 
 export function formatUrlResult(text: string): string {
