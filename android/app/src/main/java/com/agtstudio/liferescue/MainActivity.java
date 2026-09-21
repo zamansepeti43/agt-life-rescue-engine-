@@ -48,7 +48,8 @@ public class MainActivity extends Activity {
                     data.getString("title"),
                     data.getString("body"),
                     java.time.Instant.parse(data.getString("scheduledAt")).toEpochMilli(),
-                    data.optString("url", "/izci")
+                    data.optString("url", "/izci"),
+                    data.optString("recurrence", "")
                 );
             } catch (Exception ignored) {}
         }
