@@ -72,8 +72,8 @@ export function analyzeOffline(problem: string): OfflineResult {
     category: selected.rule.category,
     goal: selected.rule.goal,
     priority,
-    diagnosis: "İnternet veya harici AI olmadan temel problem sınıflandırması yapıldı.",
+    diagnosis: "Önce tabloyu sadeleştirelim. Şu an anlattığın problem içinde en önemli iş, her şeyi aynı anda çözmeye çalışmak yerine sonucu en çok değiştirecek noktayı bulmak. Ben bunu birkaç kritik soruyla daraltacağım; verdiğin cevaplara göre sonraki adımı yeniden şekillendireceğim.",
     actions: common[selected.rule.category] ?? common.decision,
-    nextQuestion: selected.rule.category === "money" ? "Açık kalan tutar ne kadar?" : "Sonucu en çok değiştirecek kısıt nedir?",
+    nextQuestion: selected.rule.category === "money" ? "Önce net rakamı bulalım: şu an karşılaman gereken toplam tutar ne kadar ve elinde kullanılabilir ne kadar para var?" : "Bunu doğru yönlendirebilmem için sonucu en çok değiştiren kısıt ne: para, zaman, son tarih, başka bir kişinin kararı veya başka bir şey mi?",
   };
 }
