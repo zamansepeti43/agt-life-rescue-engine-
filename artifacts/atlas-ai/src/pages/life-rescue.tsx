@@ -7,7 +7,7 @@ type Result = {
   category: string;
   goal: string;
   diagnosis: string;
-  priority: "critical" | "high" | "normal";
+  priority: "critical" | "high" | "normal";\n  phase: "understand" | "stabilize" | "prioritize" | "act";\n  decisionBasis: string[];
   actions: { title: string; reason: string; priority: number }[];
   nextQuestion: string;
   constraints: string[];
@@ -112,10 +112,10 @@ export default function LifeRescue() {
         {result&&<section className="mt-6 space-y-4">
           <div className="rounded-2xl border bg-card p-5">
             {offline&&<div className="mb-4 flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-3 py-2 text-sm text-muted-foreground"><WifiOff className="h-4 w-4 text-primary"/>Çevrimdışı mod: temel karar motoru cihaz üzerinde çalıştı.</div>}
-            <div className="flex flex-wrap items-center gap-2"><span className="rounded-full border px-3 py-1 text-xs font-medium">{result.category}</span><span className="rounded-full border px-3 py-1 text-xs font-medium">{result.goal}</span><span className="rounded-full border px-3 py-1 text-xs font-medium">{result.priority}</span></div>
+            <div className="flex flex-wrap items-center gap-2"><span className="rounded-full border px-3 py-1 text-xs font-medium">{result.category}</span><span className="rounded-full border px-3 py-1 text-xs font-medium">{result.goal}</span><span className="rounded-full border px-3 py-1 text-xs font-medium">Aşama: {result.phase}</span><span className="rounded-full border px-3 py-1 text-xs font-medium">{result.priority}</span></div>
             <h2 className="mt-4 text-xl font-bold">Durumu şöyle okuyorum</h2>
             <p className="mt-2 leading-7 text-muted-foreground">{result.diagnosis}</p>
-            {result.constraints?.length>0&&<div className="mt-4 flex flex-wrap gap-2">{result.constraints.map(c=><span key={c} className="rounded-full bg-muted px-3 py-1 text-xs">{c}</span>)}</div>}
+            {result.decisionBasis?.length>0&&<div className="mt-4"><p className="text-xs font-semibold text-muted-foreground">Bu değerlendirmeyi etkileyenler</p><div className="mt-2 flex flex-wrap gap-2">{result.decisionBasis.map(c=><span key={c} className="rounded-full bg-muted px-3 py-1 text-xs">{c}</span>)}</div></div>}{result.constraints?.length>0&&<div className="mt-3 flex flex-wrap gap-2">{result.constraints.map(c=><span key={c} className="rounded-full bg-muted px-3 py-1 text-xs">{c}</span>)}</div>}
           </div>
           <div className="grid gap-3 md:grid-cols-3">{result.actions.map(a=><article key={a.priority} className="rounded-2xl border bg-card p-5"><div className="mb-3 flex items-center gap-2 text-primary"><CheckCircle2 className="h-5 w-5"/><span className="text-xs font-bold">ADIM {a.priority}</span></div><h3 className="font-semibold">{a.title}</h3><p className="mt-2 text-sm leading-6 text-muted-foreground">{a.reason}</p></article>)}</div>
           <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5">
