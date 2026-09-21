@@ -22,6 +22,13 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   </head>
+  <script>
+    // Android WebView loads the bundled entry as /assets/index.html. Normalize
+    // the visible SPA path before React/Wouter starts so the root route matches.
+    if (window.AndroidLocalNotifications && window.location.pathname.endsWith('/index.html')) {
+      window.history.replaceState(null, '', window.location.pathname.slice(0, -'index.html'.length));
+    }
+  </script>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
