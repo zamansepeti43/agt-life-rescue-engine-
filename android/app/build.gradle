@@ -1,1 +1,21 @@
-plugins { id "com.android.application" }\n\nandroid {\n    namespace "com.agtstudio.liferescue"\n    compileSdk 35\n    defaultConfig {\n        applicationId "com.agtstudio.liferescue"\n        minSdk 26\n        targetSdk 35\n        versionCode 1\n        versionName "1.0.0"\n    }\n    buildTypes { release { minifyEnabled false; proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro" } }\n    sourceSets { main { assets.srcDirs = ["src/main/assets"] } }\n    tasks.register("copyWebApp", Copy) {\n        from("${rootDir}/../artifacts/atlas-ai/dist")\n        into("${projectDir}/src/main/assets")\n    }\n    preBuild.dependsOn("copyWebApp")\n}\ndependencies { }
+plugins { id "com.android.application" }
+
+android {
+    namespace "com.agtstudio.liferescue"
+    compileSdk 35
+    defaultConfig {
+        applicationId "com.agtstudio.liferescue"
+        minSdk 26
+        targetSdk 35
+        versionCode 1
+        versionName "1.0.0"
+    }
+    buildTypes { release { minifyEnabled false; proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro" } }
+    sourceSets { main { assets.srcDirs = ["src/main/assets"] } }
+    tasks.register("copyWebApp", Copy) {
+        from("${rootDir}/../artifacts/atlas-ai/dist")
+        into("${projectDir}/src/main/assets")
+    }
+    preBuild.dependsOn("copyWebApp")
+}
+dependencies { }
