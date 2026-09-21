@@ -77,7 +77,7 @@ export function useConversation() {
       if (!item) return;
       conversationIdRef.current = item.id;
       skipNextPersistenceRef.current = true;
-      stateRef.current = item.state;
+      stateRef.current = { ...INITIAL_STATE, ...item.state };
       setState({ ...INITIAL_STATE, ...item.state });
     };
     window.addEventListener('atlas-load-conversation', load);
