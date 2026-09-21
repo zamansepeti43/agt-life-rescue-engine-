@@ -44,22 +44,51 @@ export default function LifeRescue() {
     if(base.length<3 || loading) return;
     const combined=context?.trim() ? base+"\n\nKonuşmada verilen bilgiler:\n"+context.trim() : base;
     setLoading(true);
+    const localResult = analyzeOffline(combined) as OfflineResult as Result;
+
+    // Android APK is deliberately offline-first. There is no API server inside
+    // the APK, so never wait on a relative /api request that can hang in WebView.
+    const isAndroidApp =
+      typeof window !== "undefined" && "AndroidLocalNotifications" in window;
+
+    if (isAndroidApp) {
+      setResult(localResult);
+      setOffline(true);
+      setMessages(prev => [...prev, { role: "engine", text: localResult.diagnosis }]);
+      setLoading(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => controller.abort(), 3500);
+
     try {
-      const response=await fetch("/api/life-rescue/analyze",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
-        problem:combined,category:category||undefined,goal:goal||undefined,urgency,
-        budget:budget===""?undefined:Number(budget),
-        availableHours:availableHours===""?undefined:Number(availableHours)
-      })});
-      const data=await response.json();
+      const response = await fetch("/api/life-rescue/analyze",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+          problem:combined,
+          category:category||undefined,
+          goal:goal||undefined,
+          urgency,
+          budget:budget===""?undefined:Number(budget),
+          availableHours:availableHours===""?undefined:Number(availableHours)
+        }),
+        signal: controller.signal
+      });
+      const data = await response.json();
       if(!response.ok||!data.success) throw new Error(data.error||"Analiz başarısız.");
-      setResult(data.result); setOffline(false);
+      setResult(data.result);
+      setOffline(false);
       setMessages(prev => [...prev, { role: "engine", text: data.result.diagnosis }]);
     } catch {
-      const localResult = analyzeOffline(combined) as OfflineResult as Result;
       setResult(localResult);
       setMessages(prev => [...prev, { role: "engine", text: localResult.diagnosis }]);
       setOffline(true);
-    } finally { setLoading(false); }
+    } finally {
+      window.clearTimeout(timeout);
+      setLoading(false);
+    }
   }
 
   function start() {
