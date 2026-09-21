@@ -1,3 +1,4 @@
+import { sendBrowserNotification } from './notifications';
 import type {
   AssistantState,
   BudgetEntry,
@@ -186,10 +187,18 @@ export function runIzciCheck(referenceDate = new Date()): void {
   update((state) => {
     let next = state;
     for (const task of state.tasks) {
-      if (task.status === 'active' && task.dueAt && new Date(task.dueAt).getTime() <= timestamp) next = appendEvent(next, { type: 'TASK_DUE', severity: 'warning', title: 'Görev zamanı', message: task.title, entityId: task.id, dedupeKey: `task:${task.id}:${task.dueAt}` });
+      if (task.status === 'active' && task.dueAt && new Date(task.dueAt).getTime() <= timestamp) {
+        const dedupeKey = `task:${task.id}:${task.dueAt}`;
+        if (!state.events.some((event) => event.dedupeKey === dedupeKey)) sendBrowserNotification('İZCİ · Görev zamanı', task.title);
+        next = appendEvent(next, { type: 'TASK_DUE', severity: 'warning', title: 'Görev zamanı', message: task.title, entityId: task.id, dedupeKey });
+      }
     }
     for (const reminder of state.reminders) {
-      if (reminder.status === 'pending' && new Date(reminder.scheduledAt).getTime() <= timestamp) next = appendEvent(next, { type: 'REMINDER_DUE', severity: 'critical', title: 'Hatırlatıcı', message: reminder.message, entityId: reminder.id, dedupeKey: `reminder:${reminder.id}:${reminder.scheduledAt}` });
+      if (reminder.status === 'pending' && new Date(reminder.scheduledAt).getTime() <= timestamp) {
+        const dedupeKey = `reminder:${reminder.id}:${reminder.scheduledAt}`;
+        if (!state.events.some((event) => event.dedupeKey === dedupeKey)) sendBrowserNotification('İZCİ · Hatırlatıcı', reminder.message);
+        next = appendEvent(next, { type: 'REMINDER_DUE', severity: 'critical', title: 'Hatırlatıcı', message: reminder.message, entityId: reminder.id, dedupeKey });
+      }
     }
     for (const subscription of state.subscriptions) {
       const remaining = new Date(subscription.renewalAt).getTime() - timestamp;
