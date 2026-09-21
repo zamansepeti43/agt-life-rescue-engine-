@@ -69,7 +69,6 @@ export async function schedulePushNotification(input: {
         id: input.id,
         kind: input.kind,
         recurrence: input.recurrence,
-        kind: input.kind,
         scheduledAt: input.scheduledAt,
         payload: {
           title: input.title,
