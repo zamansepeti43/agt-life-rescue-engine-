@@ -15,7 +15,8 @@ const queryClient = new QueryClient();
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={Home} />
+      <Route path="/" component={LifeRescue} />
+      <Route path="/atlas" component={Home} />
       <Route path="/atlas-os" component={AtlasOS} />
       <Route path="/izci" component={Izci} />
       <Route path="/life-rescue" component={LifeRescue} />
