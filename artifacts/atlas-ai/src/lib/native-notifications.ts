@@ -3,6 +3,7 @@ export type NativeNotificationInput = {
   title: string;
   body: string;
   scheduledAt: string;
+  recurrence?: "daily" | "weekly" | "monthly";
   url?: string;
 };
 
