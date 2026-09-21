@@ -1,7 +1,9 @@
-import { AlertTriangle, BellRing, Check, CheckSquare2, Clock3, Crosshair, Target, WalletCards } from 'lucide-react';
+import { AlertTriangle, BellRing, Check, CheckSquare2, Clock3, Crosshair, Target, WalletCards, Plus, X } from 'lucide-react';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useAssistantState } from '@/hooks/useAssistantState';
-import { markEventRead, setTaskCompleted } from '@/lib/assistant-store';
+import { addReminder, addTask, markEventRead, setTaskCompleted } from '@/lib/assistant-store';
+import { notificationPermission, requestNotificationPermission } from '@/lib/notifications';
+import { useState } from 'react';
 
 function formatDate(value?: string): string {
   if (!value) return 'Tarih yok';
@@ -14,6 +16,25 @@ function Empty({ children }: { children: string }) {
 
 export default function Izci() {
   const state = useAssistantState();
+  const [showCreate, setShowCreate] = useState(false);
+  const [taskTitle, setTaskTitle] = useState('');
+  const [dueAt, setDueAt] = useState('');
+  const [reminderMessage, setReminderMessage] = useState('');
+  const [reminderAt, setReminderAt] = useState('');
+  const [notificationState, setNotificationState] = useState(notificationPermission());
+
+  function createTask() {
+    const title = taskTitle.trim();
+    if (!title) return;
+    addTask({ title, ...(dueAt ? { dueAt: new Date(dueAt).toISOString() } : {}) });
+    if (reminderMessage.trim() && reminderAt) addReminder({ message: reminderMessage.trim(), scheduledAt: new Date(reminderAt).toISOString() });
+    setTaskTitle(''); setDueAt(''); setReminderMessage(''); setReminderAt(''); setShowCreate(false);
+  }
+
+  async function enableNotifications() {
+    const permission = await requestNotificationPermission();
+    setNotificationState(permission);
+  }
   const unread = state.events.filter((event) => !event.read);
   const activeTasks = state.tasks.filter((task) => task.status === 'active');
   const activeGoals = state.goals.filter((goal) => goal.status === 'active');
@@ -25,7 +46,7 @@ export default function Izci() {
       <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-border bg-background/90 px-4 backdrop-blur md:px-8">
         <SidebarTrigger aria-label="Menüyü aç" />
         <div className="min-w-0"><h1 className="font-serif text-xl font-bold">İZCİ</h1><p className="truncate text-xs text-muted-foreground">Atlas takip ve gözlem katmanı</p></div>
-        <div className="ml-auto flex items-center gap-2 text-xs text-muted-foreground"><span className="h-2 w-2 rounded-full bg-emerald-500" />Yerel izleme aktif</div>
+        <div className="ml-auto flex items-center gap-2"><button type="button" onClick={enableNotifications} className="hidden rounded-lg border border-border px-3 py-2 text-xs font-medium hover:border-primary/40 sm:block">{notificationState === 'granted' ? 'Bildirimler açık' : 'Bildirimleri aç'}</button><span className="flex items-center gap-2 text-xs text-muted-foreground"><span className="h-2 w-2 rounded-full bg-emerald-500" />Yerel izleme aktif</span></div>
       </header>
 
       <div className="mx-auto w-full max-w-6xl space-y-8 px-4 py-6 md:px-8 md:py-8">
@@ -57,11 +78,9 @@ export default function Izci() {
           </div>
 
           <div aria-labelledby="tasks-heading">
-            <h2 id="tasks-heading" className="mb-3 flex items-center gap-2 text-base font-semibold"><CheckSquare2 className="h-4 w-4 text-primary" />Görevler ve Hatırlatıcılar</h2>
-            <div className="divide-y divide-border border-y border-border">
-              {state.tasks.length === 0 ? <Empty>Henüz görev yok.</Empty> : state.tasks.map((task) => <div key={task.id} className="flex items-center gap-3 py-3"><button type="button" onClick={() => setTaskCompleted(task.id, task.status !== 'completed')} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border hover:border-primary" aria-label={task.status === 'completed' ? 'Görevi yeniden aç' : 'Görevi tamamla'}>{task.status === 'completed' && <Check className="h-4 w-4 text-emerald-400" />}</button><div className="min-w-0"><p className={task.status === 'completed' ? 'truncate text-muted-foreground line-through' : 'truncate font-medium'}>{task.title}</p><p className="text-xs text-muted-foreground">{formatDate(task.dueAt)}</p></div></div>)}
-              {upcoming.map((reminder) => <div key={reminder.id} className="flex items-center gap-3 py-3"><div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border"><BellRing className="h-4 w-4 text-amber-400" /></div><div className="min-w-0"><p className="truncate font-medium">{reminder.message}</p><p className="text-xs text-muted-foreground">Hatırlatıcı · {formatDate(reminder.scheduledAt)}</p></div></div>)}
-            </div>
+            <div className="mb-3 flex items-center justify-between gap-3"><h2 id="tasks-heading" className="flex items-center gap-2 text-base font-semibold"><CheckSquare2 className="h-4 w-4 text-primary" />Görevler ve Hatırlatıcılar</h2><button type="button" onClick={() => setShowCreate((value) => !value)} className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs font-medium hover:border-primary/40"><Plus className="h-3.5 w-3.5" />Görev oluştur</button></div>
+            {showCreate && <div className="mb-4 rounded-xl border border-primary/20 bg-primary/5 p-4"><div className="mb-3 flex items-center justify-between"><p className="font-semibold">Yeni görev</p><button type="button" onClick={() => setShowCreate(false)} aria-label="Kapat"><X className="h-4 w-4" /></button></div><div className="grid gap-3 md:grid-cols-2"><input value={taskTitle} onChange={(e) => setTaskTitle(e.target.value)} placeholder="Görev adı" className="rounded-xl border bg-background px-3 py-3 outline-none focus:ring-2 focus:ring-primary/30" /><input value={dueAt} onChange={(e) => setDueAt(e.target.value)} type="datetime-local" className="rounded-xl border bg-background px-3 py-3" /><input value={reminderMessage} onChange={(e) => setReminderMessage(e.target.value)} placeholder="Hatırlatıcı mesajı (isteğe bağlı)" className="rounded-xl border bg-background px-3 py-3 outline-none focus:ring-2 focus:ring-primary/30" /><input value={reminderAt} onChange={(e) => setReminderAt(e.target.value)} type="datetime-local" className="rounded-xl border bg-background px-3 py-3" /></div><div className="mt-3 flex items-center justify-between gap-3"><p className="text-xs text-muted-foreground">Zamanı geldiğinde İZCİ uygulama açıkken bildirim gönderebilir.</p><button type="button" onClick={createTask} disabled={!taskTitle.trim()} className="rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50">Kaydet</button></div></div>}
+            <div className="divide-y divide-border border-y border-border">{state.tasks.length === 0 ? <Empty>Henüz görev yok.</Empty> : state.tasks.map((task) => <div key={task.id} className="flex items-center gap-3 py-3"><button type="button" onClick={() => setTaskCompleted(task.id, task.status !== 'completed')} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border hover:border-primary" aria-label={task.status === 'completed' ? 'Görevi yeniden aç' : 'Görevi tamamla'}>{task.status === 'completed' && <Check className="h-4 w-4 text-emerald-400" />}</button><div className="min-w-0"><p className={task.status === 'completed' ? 'truncate text-muted-foreground line-through' : 'truncate font-medium'}>{task.title}</p><p className="text-xs text-muted-foreground">{formatDate(task.dueAt)}</p></div></div>)}{upcoming.map((reminder) => <div key={reminder.id} className="flex items-center gap-3 py-3"><div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border"><BellRing className="h-4 w-4 text-amber-400" /></div><div className="min-w-0"><p className="truncate font-medium">{reminder.message}</p><p className="text-xs text-muted-foreground">Hatırlatıcı · {formatDate(reminder.scheduledAt)}</p></div></div>)}</div>
           </div>
 
           <div aria-labelledby="subscriptions-heading">
