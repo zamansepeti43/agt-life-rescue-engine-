@@ -1,41 +1,80 @@
 # AGT Life Rescue Engine
 
-**Hayat Kurtarma Motoru** — günlük hayattaki karmaşık problemleri takip etmek yerine çözüm adımlarına dönüştüren ürün.
+**Hayat Kurtarma Motoru** — günlük hayattaki karmaşık problemleri takip etmek yerine çözüm adımlarına dönüştüren, Türkçe ve offline-first çalışan kişisel problem çözme ürünü.
 
 ## Koruma kuralı
 
 Bu depo, `zamansepeti43/atlas-decision-engine` projesinden izole edilmiş bir geliştirme kopyasıdır. **Atlas'ın orijinal deposuna bu projeden commit gönderilmez.**
 
-## İlk sürüm
+## V1 özellikleri
 
-- Problem metni alma
-- Problem kategorisini otomatik belirleme
-- Hedefi otomatik belirleme
-- Aciliyet analizi
-- Teşhis
-- Öncelikli eylem adımları
-- Sonraki kritik soruyu üretme
-- Türkçe web arayüzü
-- API: `POST /api/life-rescue/analyze`
-- Arayüz: `/life-rescue`
+- Problem → teşhis → öncelik → eylem akışı
+- Doğal Türkçe konuşma arayüzü
+- Para, fatura, zaman, karar, aile ve iş senaryoları
+- Kategori ve hedef otomatik belirleme
+- Aciliyet, bütçe, zaman ve metindeki parasal tutarları kısıt olarak çıkarma
+- Kararın hangi bilgilere dayandığını gösterme
+- Aşama takibi: anlama → stabilize etme → önceliklendirme → eylem
+- Somut **Kurtarma Planı**
+- Planı İZCİ görevlerine aktarma
+- API erişilemezse cihaz üzerinde çalışan offline karar motoru
+- İZCİ görevleri, hatırlatıcılar, hedefler, abonelikler ve fiyat takipleri
+- Tek seferlik / günlük / haftalık / aylık Android bildirimleri
+- Cihaz yeniden başlatıldığında bildirimlerin geri yüklenmesi
+- Android APK içine web uygulamasının gömülmesi
+- Native Android bildirimleri sayesinde APK için Vercel Cron veya sürekli internet gerekmemesi
 
-## Ürün yaklaşımı
+## Android APK
 
-Life Rescue Engine bir planner (planlayıcı) veya tracker (takip aracı) olmaktan ziyade **problem → teşhis → öncelik → eylem** akışını hedefler.
+Android katmanı:
 
-İlk ürün ailesi:
+**Web UI → AndroidLocalNotifications → AlarmManager → NotificationReceiver**
+
+şeklinde çalışır.
+
+APK üretiminde GitHub Actions workflow'u `.github/workflows/android-apk.yml` üzerinden otomatik olarak debug APK oluşturur ve artifact olarak yükler.
+
+Yerel derleme:
+
+```bash
+pnpm install --frozen-lockfile
+pnpm --dir artifacts/atlas-ai build
+gradle -p android assembleDebug --no-daemon
+```
+
+APK çıktısı:
+
+`android/app/build/outputs/apk/debug/app-debug.apk`
+
+## API
+
+Life Rescue analizi:
+
+`POST /api/life-rescue/analyze`
+
+Web sürümünde API kullanılır. API erişilemediğinde temel analiz otomatik olarak offline motora düşer.
+
+## Ürün ailesi
 
 - Life Rescue Engine — Hayat Kurtarma Motoru
 - Money Rescue Engine — Para Kurtarma Motoru
 - Family Rescue Engine — Aile Kurtarma Motoru
 - Small Business Rescue Engine — Küçük İşletme Kurtarma Motoru
 
-## Sonraki geliştirmeler
+## Tasarım ilkesi
 
-1. Kullanıcı hafızası ve kişisel kısıtlar
-2. Tekrarlayan sorunlar için kurtarma senaryoları
-3. Maliyet azaltma ve zaman kazanma hesaplayıcıları
-4. Yapılacaklar listesine dönüşen eylem planı
-5. AI destekli serbest metin analizi
-6. Offline (çevrimdışı) temel motor
-7. Windows/Android paketleme
+Life Rescue bir planner (planlayıcı), tracker (takip aracı) veya sıradan chatbot değildir.
+
+Ana hedef:
+
+**Problem → Teşhis → Öncelik → Eylem → Takip**
+
+Kullanıcıya sadece öneri vermek yerine, problemi çözmeye götüren uygulanabilir bir sonraki adımı üretmek.
+
+## Korunan proje
+
+Orijinal Atlas:
+
+`zamansepeti43/atlas-decision-engine`
+
+Bu repo ondan bağımsız geliştirilir; Atlas'ın orijinal kod tabanına dokunulmaz.
