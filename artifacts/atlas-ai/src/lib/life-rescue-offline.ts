@@ -4,6 +4,18 @@ export interface OfflineAction {
   priority: number;
 }
 
+export interface OfflinePlanStep {
+  label: "Şimdi" | "Bugün" | "Sonraki adım" | "Hedef";
+  title: string;
+  detail: string;
+  estimatedMinutes?: number;
+}
+
+export interface OfflinePlan {
+  objective: string;
+  steps: OfflinePlanStep[];
+}
+
 export interface OfflineResult {
   problem: string;
   category: string;
@@ -11,6 +23,7 @@ export interface OfflineResult {
   priority: "critical" | "high" | "normal";
   phase: "understand" | "stabilize" | "prioritize" | "act";
   decisionBasis: string[];
+  plan: OfflinePlan;
   diagnosis: string;
   actions: OfflineAction[];
   nextQuestion: string;
@@ -39,6 +52,51 @@ function phaseFrom(text: string): OfflineResult["phase"] {
   if (/öncelik|hangisi önce|ilk olarak|şimdi/.test(t)) return "prioritize";
   if (/elimde|kaldı|bütçe|param var|ödeyebilirim|vaktim var/.test(t)) return "stabilize";
   return "understand";
+}
+
+function buildPlan(category: string, actions: OfflineAction[], phase: OfflineResult["phase"]): OfflinePlan {
+  const first = actions[0];
+  const second = actions[1];
+  const third = actions[2];
+  const objective =
+    category === "money" ? "Nakit baskısını azaltıp en kritik ödemeyi güvenceye almak." :
+    category === "bills" ? "Ödemeleri son tarih ve sonuçlarına göre sadeleştirmek." :
+    category === "time" ? "Kısıtlı zamanı en önemli sonuca yönlendirmek." :
+    category === "decision" ? "Belirsizliği azaltıp uygulanabilir bir karar vermek." :
+    "Sorunun ana baskısını azaltıp kontrolü geri kazanmak.";
+  return {
+    objective,
+    steps: [
+      {
+        label: "Şimdi",
+        title: phase === "act" ? "Sonucu doğrula" : (first?.title ?? "İlk adımı seç"),
+        detail: phase === "act"
+          ? "Yaptığın işlemin sorunu gerçekten azaltıp azaltmadığını kontrol et."
+          : (first?.reason ?? "Sonucu en çok değiştirecek ilk adıma odaklan."),
+        estimatedMinutes: 20,
+      },
+      {
+        label: "Bugün",
+        title: second?.title ?? "Kısıtları netleştir",
+        detail: second?.reason ?? "Bugün uygulanabilecek seçenekleri ayır.",
+        estimatedMinutes: 30,
+      },
+      {
+        label: "Sonraki adım",
+        title: third?.title ?? "Planı yeniden değerlendir",
+        detail: third?.reason ?? "İlk adımdan sonra yeni duruma göre yönünü güncelle.",
+      },
+      {
+        label: "Hedef",
+        title: "Kontrolü geri al",
+        detail: category === "money"
+          ? "Zorunlu ödemeler ayrılmış ve nakit açığı için net bir yol oluşmuş olsun."
+          : category === "time"
+            ? "Kritik iş tamamlanmış ve kalan işler sıraya girmiş olsun."
+            : "Sorunun ana baskısı azaltılmış ve sonraki karar netleşmiş olsun.",
+      },
+    ],
+  };
 }
 
 export function analyzeOffline(problem: string): OfflineResult {
@@ -78,6 +136,7 @@ export function analyzeOffline(problem: string): OfflineResult {
       { title: "Son tarihleri sırala", reason: "Gecikme riskini azalt.", priority: 3 },
     ],
   };
+  const actions = common[selected.rule.category] ?? common.decision;
   return {
     problem,
     category: selected.rule.category,
@@ -85,8 +144,9 @@ export function analyzeOffline(problem: string): OfflineResult {
     priority,
     phase,
     decisionBasis: ["Sorunun hedefi ve mevcut kısıtlar"],
+    plan: buildPlan(selected.rule.category, actions, phase),
     diagnosis: "Önce tabloyu sadeleştirelim. Şu an anlattığın problem içinde sonucu en çok değiştirecek noktayı bulacağım; verdiğin yeni bilgilere göre planı yeniden şekillendireceğim.",
-    actions: common[selected.rule.category] ?? common.decision,
+    actions,
     nextQuestion: selected.rule.category === "money"
       ? "Şu an elinde kullanılabilir ne kadar para var ve en yakın zorunlu ödeme yaklaşık ne kadar?"
       : "Bunu doğru yönlendirebilmem için sonucu en çok değiştiren kısıt ne: para, zaman, son tarih veya başka bir şey mi?",
