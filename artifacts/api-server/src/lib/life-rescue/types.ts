@@ -1,35 +1,14 @@
 export type RescueCategory =
-  | "money"
-  | "home"
-  | "family"
-  | "work"
-  | "vehicle"
-  | "time"
-  | "bills"
-  | "travel"
-  | "moving"
-  | "decision"
-  | "other";
+  | "money" | "home" | "family" | "work" | "vehicle" | "time"
+  | "bills" | "travel" | "moving" | "decision" | "other";
 
 export type RescueGoal =
-  | "find_money"
-  | "reduce_cost"
-  | "save_time"
-  | "prioritize"
-  | "make_decision"
-  | "cancel"
-  | "organize"
-  | "solve";
+  | "find_money" | "reduce_cost" | "save_time" | "prioritize"
+  | "make_decision" | "cancel" | "organize" | "solve";
 
 export type RescueActionType =
-  | "reduce"
-  | "delay"
-  | "cancel"
-  | "rearrange"
-  | "earn"
-  | "do_now"
-  | "ask_help"
-  | "compare";
+  | "reduce" | "delay" | "cancel" | "rearrange" | "earn"
+  | "do_now" | "ask_help" | "compare";
 
 export interface RescueInput {
   problem: string;
@@ -53,6 +32,8 @@ export interface RescueResult {
   goal: RescueGoal;
   diagnosis: string;
   priority: "critical" | "high" | "normal";
+  phase: "understand" | "stabilize" | "prioritize" | "act";
+  decisionBasis: string[];
   actions: RescueAction[];
   nextQuestion: string;
   constraints: string[];
