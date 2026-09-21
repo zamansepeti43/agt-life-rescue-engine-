@@ -124,7 +124,7 @@ export async function searchNearbyGoogle(location: UserLocation, radiusMeters = 
     const latitude = place.location?.latitude;
     const longitude = place.location?.longitude;
     if (!place.id || !place.displayName?.text || !Number.isFinite(latitude) || !Number.isFinite(longitude)) return [];
-    return [{ id: `google-${place.id}`, name: place.displayName.text, latitude: latitude!, longitude: longitude!, address: place.formattedAddress, distanceMeters: haversineDistanceMeters(location, { latitude: latitude!, longitude: longitude: longitude! }), source: "google" }];
+    return [{ id: `google-${place.id}`, name: place.displayName.text, latitude: latitude!, longitude: longitude!, address: place.formattedAddress, distanceMeters: haversineDistanceMeters(location, { latitude: latitude!, longitude: longitude! }), source: "google" }];
   }).sort((a, b) => a.distanceMeters - b.distanceMeters);
   return { markets, provider: "google", radiusMeters: radius, searchedAt: new Date().toISOString() };
 }
