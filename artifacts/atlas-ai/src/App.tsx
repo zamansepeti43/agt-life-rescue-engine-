@@ -5,6 +5,7 @@ import NotFound from '@/pages/not-found';
 import Home from '@/pages/home';
 import Izci from '@/pages/izci';
 import AtlasOS from '@/pages/atlas-os';
+import LifeRescue from '@/pages/life-rescue';
 import { AtlasSidebar } from '@/components/AtlasSidebar';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { Route, Switch, Router as WouterRouter } from 'wouter';
@@ -17,6 +18,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/atlas-os" component={AtlasOS} />
       <Route path="/izci" component={Izci} />
+      <Route path="/life-rescue" component={LifeRescue} />
       <Route component={NotFound} />
     </Switch>
   );
