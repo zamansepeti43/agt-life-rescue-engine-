@@ -5,6 +5,7 @@ import type {
   RescueGoal,
   RescueInput,
   RescueResult,
+  RescuePlan,
 } from "./types.js";
 
 const categoryHints: Record<RescueCategory, string[]> = {
@@ -134,6 +135,67 @@ function buildDecisionBasis(input: RescueInput, constraints: string[]): string[]
   return [...new Set(basis)];
 }
 
+function buildRescuePlan(
+  category: RescueCategory,
+  goal: RescueGoal,
+  actions: RescueAction[],
+  input: RescueInput,
+  phase: RescueResult["phase"],
+): RescuePlan {
+  const first = actions[0];
+  const second = actions[1];
+  const third = actions[2];
+
+  const objective =
+    category === "money"
+      ? "Nakit baskısını azaltıp en kritik ödemeyi güvenceye almak."
+      : category === "bills"
+        ? "Ödemeleri son tarih ve sonuçlarına göre sadeleştirmek."
+        : category === "time"
+          ? "Kısıtlı zamanı en önemli sonuca yönlendirmek."
+          : category === "decision"
+            ? "Belirsizliği azaltıp uygulanabilir bir karar vermek."
+            : goal === "save_time"
+              ? "En önemli sonucu daha az zaman ve eforla almak."
+              : "Sorunu küçük, uygulanabilir adımlara bölüp kontrolü geri kazanmak.";
+
+  const nowTitle =
+    phase === "act" ? "Sonucu doğrula" :
+    phase === "prioritize" ? (first?.title ?? "İlk adımı seç") :
+    first?.title ?? "Sorunu netleştir";
+
+  const nowDetail =
+    phase === "act"
+      ? "Yaptığın işlemin sonucu gerçekten sorunu azaltmış mı kontrol et; gerekiyorsa bir sonraki adımı güncelle."
+      : first?.reason ?? "Önce sonucu en çok değiştirecek noktayı netleştir.";
+
+  const todayTitle = second?.title ?? "Kısıtları netleştir";
+  const todayDetail =
+    second?.reason ??
+    "Bugün uygulanabilecek seçenekleri ayır ve gereksiz işleri dışarıda bırak.";
+
+  const nextTitle = third?.title ?? "Sonucu yeniden değerlendir";
+  const nextDetail =
+    third?.reason ??
+    "İlk adımdan sonra yeni duruma göre planı güncelle.";
+
+  const targetDetail =
+    category === "money"
+      ? "Zorunlu ödemeler karşılanmış, ertelenebilir yükler ayrılmış ve nakit açığı için net bir yol oluşmuş olsun."
+      : category === "time"
+        ? "Kritik iş tamamlanmış ve kalan işler kontrol edilebilir bir sıraya girmiş olsun."
+        : "Sorunun ana baskısı azaltılmış ve sonraki karar netleşmiş olsun.";
+
+  const steps = [
+    { label: "Şimdi" as const, title: nowTitle, detail: nowDetail, estimatedMinutes: input.availableHours !== undefined && input.availableHours <= 1 ? 15 : 20 },
+    { label: "Bugün" as const, title: todayTitle, detail: todayDetail, estimatedMinutes: 30 },
+    { label: "Sonraki adım" as const, title: nextTitle, detail: nextDetail },
+    { label: "Hedef" as const, title: "Kontrolü geri al", detail: targetDetail },
+  ];
+
+  return { objective, steps };
+}
+
 function actionsFor(
   category: RescueCategory,
   goal: RescueGoal,
@@ -208,6 +270,9 @@ export function analyzeRescue(input: RescueInput): RescueResult {
       goal: input.goal ?? scenario.goals[0] ?? "solve",
       diagnosis: scenario.diagnosis,
       priority,
+      phase,
+      decisionBasis: buildDecisionBasis(input, buildConstraints(input)),
+      plan: buildRescuePlan(scenario.category, input.goal ?? scenario.goals[0] ?? "solve", scenario.actions, input, phase),
       actions: scenario.actions,
       nextQuestion: scenario.questions[0] ?? "Bu sorunda sonucu en çok değiştirecek kısıt nedir?",
       constraints: buildConstraints(input),
@@ -238,6 +303,9 @@ export function analyzeRescue(input: RescueInput): RescueResult {
     goal,
     diagnosis,
     priority,
+    phase,
+    decisionBasis: buildDecisionBasis(input, constraints),
+    plan: buildRescuePlan(category, goal, actionsFor(category, goal, input), input, phase),
     actions: actionsFor(category, goal, input),
     nextQuestion,
     constraints,
