@@ -115,6 +115,25 @@ function buildConstraints(input: RescueInput): string[] {
   return [...new Set(constraints)];
 }
 
+function phaseFrom(text: string): RescueResult["phase"] {
+  const normalized = normalize(text);
+  if (/yaptım|hallettim|çözdüm|tamamlandı|ödedim|iptal ettim/.test(normalized)) return "act";
+  if (/şimdi|öncelik|hangisi önce|ilk olarak/.test(normalized)) return "prioritize";
+  if (/elimde|kaldı|bütçe|param var|ödeyebilirim|vaktim var/.test(normalized)) return "stabilize";
+  return "understand";
+}
+
+function buildDecisionBasis(input: RescueInput, constraints: string[]): string[] {
+  const basis: string[] = [];
+  if (constraints.some((item) => item.startsWith("Metinde geçen tutarlar"))) basis.push("Konuşmada geçen parasal tutarlar");
+  if (constraints.some((item) => item.startsWith("Son tarih"))) basis.push("Yakın son tarih");
+  if (input.budget !== undefined) basis.push("Belirtilen bütçe");
+  if (input.availableHours !== undefined) basis.push("Belirtilen zaman kapasitesi");
+  if (input.urgency !== undefined && input.urgency >= 6) basis.push("Yüksek aciliyet");
+  if (basis.length === 0) basis.push("Sorunun hedefi ve mevcut kısıtlar");
+  return [...new Set(basis)];
+}
+
 function actionsFor(
   category: RescueCategory,
   goal: RescueGoal,
@@ -180,7 +199,7 @@ function actionsFor(
 export function analyzeRescue(input: RescueInput): RescueResult {
   const category = input.category ?? detectByHints(input.problem, categoryHints, "other");
   const goal = input.goal ?? detectByHints(input.problem, goalHints, "solve");
-  const priority = priorityFrom(input);
+  const priority = priorityFrom(input);\n  const phase = phaseFrom(input.problem);
   const scenario = matchScenario(input);
   if (scenario) {
     return {
