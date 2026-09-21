@@ -9,6 +9,8 @@ export interface OfflineResult {
   category: string;
   goal: string;
   priority: "critical" | "high" | "normal";
+  phase: "understand" | "stabilize" | "prioritize" | "act";
+  decisionBasis: string[];
   diagnosis: string;
   actions: OfflineAction[];
   nextQuestion: string;
@@ -31,10 +33,19 @@ function pick(text: string) {
   }, { score: 0, rule: rules[0] });
 }
 
+function phaseFrom(text: string): OfflineResult["phase"] {
+  const t = text.toLocaleLowerCase("tr-TR");
+  if (/yaptım|hallettim|çözdüm|ödedim|iptal ettim/.test(t)) return "act";
+  if (/öncelik|hangisi önce|ilk olarak|şimdi/.test(t)) return "prioritize";
+  if (/elimde|kaldı|bütçe|param var|ödeyebilirim|vaktim var/.test(t)) return "stabilize";
+  return "understand";
+}
+
 export function analyzeOffline(problem: string): OfflineResult {
   const selected = pick(problem);
   const urgent = /(acil|hemen|bugün|yarın|son gün)/i.test(problem);
   const priority = urgent ? "high" : "normal";
+  const phase = phaseFrom(problem);
   const common: Record<string, OfflineAction[]> = {
     money: [
       { title: "Açığı netleştir", reason: "Eksik kalan tutarı tek rakama indir.", priority: 1 },
@@ -72,8 +83,12 @@ export function analyzeOffline(problem: string): OfflineResult {
     category: selected.rule.category,
     goal: selected.rule.goal,
     priority,
-    diagnosis: "Önce tabloyu sadeleştirelim. Şu an anlattığın problem içinde en önemli iş, her şeyi aynı anda çözmeye çalışmak yerine sonucu en çok değiştirecek noktayı bulmak. Ben bunu birkaç kritik soruyla daraltacağım; verdiğin cevaplara göre sonraki adımı yeniden şekillendireceğim.",
+    phase,
+    decisionBasis: ["Sorunun hedefi ve mevcut kısıtlar"],
+    diagnosis: "Önce tabloyu sadeleştirelim. Şu an anlattığın problem içinde sonucu en çok değiştirecek noktayı bulacağım; verdiğin yeni bilgilere göre planı yeniden şekillendireceğim.",
     actions: common[selected.rule.category] ?? common.decision,
-    nextQuestion: selected.rule.category === "money" ? "Önce net rakamı bulalım: şu an karşılaman gereken toplam tutar ne kadar ve elinde kullanılabilir ne kadar para var?" : "Bunu doğru yönlendirebilmem için sonucu en çok değiştiren kısıt ne: para, zaman, son tarih, başka bir kişinin kararı veya başka bir şey mi?",
+    nextQuestion: selected.rule.category === "money"
+      ? "Şu an elinde kullanılabilir ne kadar para var ve en yakın zorunlu ödeme yaklaşık ne kadar?"
+      : "Bunu doğru yönlendirebilmem için sonucu en çok değiştiren kısıt ne: para, zaman, son tarih veya başka bir şey mi?",
   };
 }
