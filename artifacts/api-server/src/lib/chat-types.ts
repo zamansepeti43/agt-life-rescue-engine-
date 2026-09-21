@@ -1,0 +1,21 @@
+export const ATLAS_INTENTS = ["conversation","decision","learning","writing","research","planning","problem-solving"] as const;
+export type AtlasIntent = (typeof ATLAS_INTENTS)[number];
+export const ATLAS_DOMAINS = ["teknoloji","otomobil","otomobil-parca","emlak","seyahat","finans","kariyer","egitim","genel"] as const;
+export type AtlasDomain = (typeof ATLAS_DOMAINS)[number];
+export type AtlasOperation = "respond" | "web_research" | "product_search" | "price_comparison";
+export interface ChatHistoryEntry { role: "user" | "assistant"; content: string; }
+export interface RequestContext { domain: AtlasDomain; category?: string; budgetTRY?: number; preferences: string[]; useCase?: string; excludedBrands: string[]; preferredBrands?: string[]; newExclusions?: BrandExclusion[]; removedExclusions?: string[]; brand?: string; model?: string; part?: string; location?: string; propertyIntent?: "satilik" | "kiralik"; destination?: string; risk?: "dusuk" | "orta" | "yuksek"; timeline?: string; }
+export interface RequestPlan { intent: AtlasIntent; operation: AtlasOperation; requiresResearch: boolean; query?: string; backfillQuery?: string; context: RequestContext; }
+export interface FollowUpNeed { question: string; blocking: boolean; }
+export interface WebSource { title: string; url: string; snippet: string; publishedDate?: string; domain: string; retrievedAt: string; }
+export interface ProductResult { title: string; brand?: string; model?: string; url: string; priceTRY: number; currency: "TRY"; seller?: string; source: { title: string; url: string; domain: string }; features: string[]; availability?: "in_stock" | "out_of_stock"; retrievedAt: string; priceVerification?: "merchant_page" | "search_snapshot"; priceVerifiedAt?: string; }
+export interface ScoreComponents { budgetFit: number; preferenceFit: number; useCaseFit: number; featureFit: number; valueScore: number; }
+export interface RankedProduct extends ProductResult { score: number; scoreComponents: ScoreComponents; confidence: number; matchedTerms: string[]; }
+export interface DecisionResult { recommendedProductUrl?: string; recommendation?: RankedProduct; alternatives: RankedProduct[]; reasons: string[]; tradeoffs: string[]; confidence: number; summary: string; rankedProducts: RankedProduct[]; }
+export interface ComparisonResult { criteria: Array<keyof ScoreComponents>; products: RankedProduct[]; }
+export interface MemoryCandidate { key: "budgetTRY" | "preference" | "useCase" | "exclusion" | "preferredBrand" | "decisionCriterion"; value: string | number; reason: string; learning?: string; confidence?: number; scope?: "user"; source?: "explicit_feedback"; }
+export interface BrandExclusion { brand: string; confidence: number; phrase: string; }
+export interface ResearchStatus { requested: boolean; status: "not_requested" | "completed" | "unavailable" | "failed"; error?: string; provider?: "searxng" | "tavily" | "merchant-network"; httpStatus?: number; retrievedAt?: string; }
+export interface NearbyPriceInsight { marketName: string; distanceMeters: number; productName: string; priceTRY: number; url: string; exactMatch: boolean; verification: "merchant_page" | "search_snapshot" | "official_store_feed"; stockStatus?: "in_stock" | "out_of_stock" | "unknown"; stockQuantity?: number; storeId?: string; retrievedAt: string; }
+export interface AtlasChatResponse { success: true; message: string; reply: string; intent: AtlasIntent; domain: AtlasDomain; operation: AtlasOperation; sources: WebSource[]; products: RankedProduct[]; comparison?: ComparisonResult; decision?: DecisionResult; confidence: number; memoryCandidates: MemoryCandidate[]; memoryUpdated?: boolean; followUpQuestion?: string; research: ResearchStatus; history: ChatHistoryEntry[]; nearbyPriceInsights?: NearbyPriceInsight[]; }
+export interface AtlasChatErrorResponse { success: false; error: string; message: string; intent?: AtlasIntent; domain?: AtlasDomain; sources: WebSource[]; products: RankedProduct[]; confidence: number; memoryCandidates: MemoryCandidate[]; research: ResearchStatus; }
