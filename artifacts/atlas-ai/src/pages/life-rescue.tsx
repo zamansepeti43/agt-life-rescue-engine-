@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { AlertTriangle, ArrowRight, CheckCircle2, Loader2, Sparkles } from "lucide-react";
+import { AlertTriangle, ArrowRight, CheckCircle2, Loader2, Sparkles, WifiOff } from "lucide-react";
+import { analyzeOffline, type OfflineResult } from "@/lib/life-rescue-offline";
 
 type Result = {
   problem: string;
@@ -48,6 +49,7 @@ export default function LifeRescue() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState("");
+  const [offline, setOffline] = useState(false);
 
   async function analyze() {
     if (problem.trim().length < 3 || loading) return;
@@ -69,8 +71,12 @@ export default function LifeRescue() {
       const data = await response.json();
       if (!response.ok || !data.success) throw new Error(data.error || "Analiz başarısız.");
       setResult(data.result);
+      setOffline(false);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Beklenmeyen bir hata oluştu.");
+      // The core product remains usable without internet/API access.
+      setResult(analyzeOffline(problem) as OfflineResult as Result);
+      setOffline(true);
+      setError("");
     } finally {
       setLoading(false);
     }
@@ -140,6 +146,7 @@ export default function LifeRescue() {
         {result && (
           <section className="mt-6 space-y-4">
             <div className="rounded-2xl border bg-card p-5">
+              {offline && <div className="mb-4 flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-3 py-2 text-sm text-muted-foreground"><WifiOff className="h-4 w-4 text-primary" /> Çevrimdışı mod: temel karar motoru cihaz üzerinde çalıştı.</div>}
               <div className="flex flex-wrap items-center gap-2">
                 <span className="rounded-full border px-3 py-1 text-xs font-medium">{result.category}</span>
                 <span className="rounded-full border px-3 py-1 text-xs font-medium">{result.goal}</span>
