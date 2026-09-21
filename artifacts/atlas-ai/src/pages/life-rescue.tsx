@@ -42,27 +42,26 @@ export default function LifeRescue() {
   async function analyze(context?: string) {
     const base=problem.trim();
     if(base.length<3 || loading) return;
-    const combined=context?.trim() ? base+"\n\nKonuşmada verilen bilgiler:\n"+context.trim() : base;
-    setLoading(true);
+
+    const combined=context?.trim()
+      ? base+"\\n\\nKonuşmada verilen bilgiler:\\n"+context.trim()
+      : base;
+
+    // Life Rescue is offline-first by design. Render the deterministic result
+    // immediately so the APK never depends on a backend/API response.
     const localResult = analyzeOffline(combined) as OfflineResult as Result;
+    setResult(localResult);
+    setOffline(true);
+    setMessages(prev => [...prev, { role: "engine", text: localResult.diagnosis }]);
+    setLoading(false);
 
-    // Android APK is deliberately offline-first. There is no API server inside
-    // the APK, so never wait on a relative /api request that can hang in WebView.
-    const isAndroidApp =
-      typeof window !== "undefined" && "AndroidLocalNotifications" in window;
-
-    if (isAndroidApp) {
-      setResult(localResult);
-      setOffline(true);
-      setMessages(prev => [...prev, { role: "engine", text: localResult.diagnosis }]);
-      setLoading(false);
-      return;
-    }
-
-    const controller = new AbortController();
-    const timeout = window.setTimeout(() => controller.abort(), 3500);
+    // On the web version, try the API only as an optional enrichment after
+    // the local answer is already visible. A failed request never blocks UX.
+    if (typeof window !== "undefined" && "AndroidLocalNotifications" in window) return;
 
     try {
+      const controller = new AbortController();
+      const timeout = window.setTimeout(() => controller.abort(), 3500);
       const response = await fetch("/api/life-rescue/analyze",{
         method:"POST",
         headers:{"Content-Type":"application/json"},
@@ -76,18 +75,14 @@ export default function LifeRescue() {
         }),
         signal: controller.signal
       });
+      window.clearTimeout(timeout);
       const data = await response.json();
-      if(!response.ok||!data.success) throw new Error(data.error||"Analiz başarısız.");
+      if(!response.ok||!data.success) return;
       setResult(data.result);
       setOffline(false);
       setMessages(prev => [...prev, { role: "engine", text: data.result.diagnosis }]);
     } catch {
-      setResult(localResult);
-      setMessages(prev => [...prev, { role: "engine", text: localResult.diagnosis }]);
-      setOffline(true);
-    } finally {
-      window.clearTimeout(timeout);
-      setLoading(false);
+      // The local result is already rendered; stay in offline mode.
     }
   }
 
