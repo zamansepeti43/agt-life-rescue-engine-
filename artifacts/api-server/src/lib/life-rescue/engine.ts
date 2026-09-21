@@ -1,3 +1,4 @@
+import { matchScenario } from "./scenarios.js";
 import type {
   RescueAction,
   RescueCategory,
@@ -146,6 +147,18 @@ export function analyzeRescue(input: RescueInput): RescueResult {
   const category = input.category ?? detectByHints(input.problem, categoryHints, "other");
   const goal = input.goal ?? detectByHints(input.problem, goalHints, "solve");
   const priority = priorityFrom(input);
+  const scenario = matchScenario(input);
+  if (scenario) {
+    return {
+      problem: input.problem.trim(),
+      category: scenario.category,
+      goal: input.goal ?? scenario.goals[0] ?? "solve",
+      diagnosis: scenario.diagnosis,
+      priority,
+      actions: scenario.actions,
+      nextQuestion: scenario.questions[0] ?? "Bu sorunda sonucu en çok değiştirecek kısıt nedir?",
+    };
+  }
 
   const constraints: string[] = [];
   if (input.budget !== undefined) constraints.push(`Bütçe: ${input.budget.toLocaleString("tr-TR")} TL`);
