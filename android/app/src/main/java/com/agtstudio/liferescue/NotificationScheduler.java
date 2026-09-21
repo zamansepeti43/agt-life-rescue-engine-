@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 import org.json.JSONObject;
+import java.util.Calendar;
 
 public final class NotificationScheduler {
     private static final String PREFS = "life_rescue_notifications";
@@ -16,15 +17,22 @@ public final class NotificationScheduler {
     }
 
     static void schedule(Context context, String id, String title, String body, long at, String url, String recurrence) {
-        if (at <= System.currentTimeMillis()) return;
+        if (id == null || id.isEmpty()) return;
+        String safeRecurrence = recurrence == null ? "" : recurrence;
+        long target = nextFutureTime(at, safeRecurrence);
+        if (target <= 0) {
+            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().remove(id).apply();
+            return;
+        }
+
         try {
             JSONObject record = new JSONObject();
             record.put("id", id);
-            record.put("title", title);
-            record.put("body", body);
-            record.put("at", at);
-            record.put("url", url);
-            record.put("recurrence", recurrence == null ? "" : recurrence);
+            record.put("title", title == null ? "İZCİ" : title);
+            record.put("body", body == null ? "" : body);
+            record.put("at", target);
+            record.put("url", url == null ? "/izci" : url);
+            record.put("recurrence", safeRecurrence);
             context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(id, record.toString()).apply();
         } catch (Exception ignored) {}
 
@@ -33,7 +41,7 @@ public final class NotificationScheduler {
         intent.putExtra("title", title);
         intent.putExtra("body", body);
         intent.putExtra("url", url);
-        intent.putExtra("recurrence", recurrence == null ? "" : recurrence);
+        intent.putExtra("recurrence", safeRecurrence);
 
         PendingIntent pending = PendingIntent.getBroadcast(
             context, stableId(id), intent,
@@ -42,10 +50,12 @@ public final class NotificationScheduler {
         AlarmManager alarms = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         if (alarms == null) return;
 
-        if (Build.VERSION.SDK_INT >= 23) {
-            alarms.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending);
+        if (Build.VERSION.SDK_INT >= 31 && alarms.canScheduleExactAlarms()) {
+            alarms.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, target, pending);
+        } else if (Build.VERSION.SDK_INT >= 23) {
+            alarms.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, target, pending);
         } else {
-            alarms.set(AlarmManager.RTC_WAKEUP, at, pending);
+            alarms.set(AlarmManager.RTC_WAKEUP, target, pending);
         }
     }
 
@@ -61,14 +71,15 @@ public final class NotificationScheduler {
     }
 
     static void restoreAll(Context context) {
-        for (String key : context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getAll().keySet()) {
+        android.content.SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+        for (String key : prefs.getAll().keySet()) {
             try {
-                JSONObject record = new JSONObject(context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(key, "{}"));
+                JSONObject record = new JSONObject(prefs.getString(key, "{}"));
                 schedule(
                     context,
                     record.getString("id"),
-                    record.getString("title"),
-                    record.getString("body"),
+                    record.optString("title", "İZCİ"),
+                    record.optString("body", ""),
                     record.getLong("at"),
                     record.optString("url", "/izci"),
                     record.optString("recurrence", "")
@@ -77,5 +88,22 @@ public final class NotificationScheduler {
         }
     }
 
-    private static int stableId(String value) { return value.hashCode() & 0x7fffffff; }
+    private static long nextFutureTime(long at, String recurrence) {
+        if (at > System.currentTimeMillis()) return at;
+        if (recurrence == null || recurrence.isEmpty()) return -1;
+
+        Calendar next = Calendar.getInstance();
+        next.setTimeInMillis(at);
+        Calendar now = Calendar.getInstance();
+
+        while (next.getTimeInMillis() <= now.getTimeInMillis()) {
+            if ("daily".equals(recurrence)) next.add(Calendar.DAY_OF_YEAR, 1);
+            else if ("weekly".equals(recurrence)) next.add(Calendar.WEEK_OF_YEAR, 1);
+            else if ("monthly".equals(recurrence)) next.add(Calendar.MONTH, 1);
+            else return -1;
+        }
+        return next.getTimeInMillis();
+    }
+
+    private static int stableId(String value) { return value == null ? 0 : value.hashCode() & 0x7fffffff; }
 }
