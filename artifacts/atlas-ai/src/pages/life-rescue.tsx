@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { AlertTriangle, ArrowRight, CheckCircle2, Loader2, Sparkles, WifiOff, RotateCcw, MessageCircle } from "lucide-react";
 import { analyzeOffline, type OfflineResult } from "@/lib/life-rescue-offline";
+import { addTask } from "@/lib/assistant-store";
 
 type Result = {
   problem: string;
@@ -122,7 +123,7 @@ export default function LifeRescue() {
             {result.decisionBasis?.length>0&&<div className="mt-4"><p className="text-xs font-semibold text-muted-foreground">Bu değerlendirmeyi etkileyenler</p><div className="mt-2 flex flex-wrap gap-2">{result.decisionBasis.map(c=><span key={c} className="rounded-full bg-muted px-3 py-1 text-xs">{c}</span>)}</div></div>}{result.constraints?.length>0&&<div className="mt-3 flex flex-wrap gap-2">{result.constraints.map(c=><span key={c} className="rounded-full bg-muted px-3 py-1 text-xs">{c}</span>)}</div>}
           </div>
           <div className="rounded-2xl border bg-card p-5 md:p-6">
-            <div className="flex items-center gap-2 text-primary"><CheckCircle2 className="h-5 w-5"/><span className="text-sm font-bold">KURTARMA PLANI</span></div>
+            <div className="flex items-center gap-2 text-primary"><CheckCircle2 className="h-5 w-5"/><span className="text-sm font-bold">KURTARMA PLANI</span><button type="button" onClick={() => { result.plan.steps.filter((step) => step.label !== "Hedef").forEach((step, index) => addTask({ title: `${step.label}: ${step.title}`, ...(step.label === "Şimdi" ? { dueAt: new Date(Date.now() + Math.max(15, step.estimatedMinutes ?? 20) * 60000).toISOString() } : index === 1 ? { dueAt: new Date(Date.now() + 24 * 60 * 60000).toISOString() } : {}) })); }} className="ml-auto rounded-lg border border-primary/30 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10">İZCİ'ye aktar</button></div>
             <h3 className="mt-2 text-lg font-bold">{result.plan.objective}</h3>
             <div className="mt-5 grid gap-3 md:grid-cols-2">
               {result.plan.steps.map((step)=><article key={step.label} className="rounded-xl border bg-background p-4">
