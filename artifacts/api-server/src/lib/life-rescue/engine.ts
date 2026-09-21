@@ -261,7 +261,8 @@ function actionsFor(
 export function analyzeRescue(input: RescueInput): RescueResult {
   const category = input.category ?? detectByHints(input.problem, categoryHints, "other");
   const goal = input.goal ?? detectByHints(input.problem, goalHints, "solve");
-  const priority = priorityFrom(input);\n  const phase = phaseFrom(input.problem);
+  const priority = priorityFrom(input);
+  const phase = phaseFrom(input.problem);
   const scenario = matchScenario(input);
   if (scenario) {
     return {
