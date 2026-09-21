@@ -4,7 +4,7 @@ import { useAssistantState } from '@/hooks/useAssistantState';
 import { addReminder, addTask, markEventRead, setTaskCompleted } from '@/lib/assistant-store';
 import { notificationPermission, requestNotificationPermission } from '@/lib/notifications';
 import { subscribeToPush } from '@/lib/push-notifications';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 function formatDate(value?: string): string {
   if (!value) return 'Tarih yok';
@@ -32,6 +32,10 @@ export default function Izci() {
     setTaskTitle(''); setDueAt(''); setReminderMessage(''); setReminderAt(''); setShowCreate(false);
   }
 
+  useEffect(() => {
+    if (notificationState === 'granted') void subscribeToPush();
+  }, [notificationState]);
+
   async function enableNotifications() {
     const permission = await requestNotificationPermission();
     setNotificationState(permission);
@@ -48,7 +52,7 @@ export default function Izci() {
       <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-border bg-background/90 px-4 backdrop-blur md:px-8">
         <SidebarTrigger aria-label="Menüyü aç" />
         <div className="min-w-0"><h1 className="font-serif text-xl font-bold">İZCİ</h1><p className="truncate text-xs text-muted-foreground">Atlas takip ve gözlem katmanı</p></div>
-        <div className="ml-auto flex items-center gap-2"><button type="button" onClick={enableNotifications} className="hidden rounded-lg border border-border px-3 py-2 text-xs font-medium hover:border-primary/40 sm:block">{notificationState === 'granted' ? 'Bildirimler açık' : 'Bildirimleri aç'}</button><span className="flex items-center gap-2 text-xs text-muted-foreground"><span className="h-2 w-2 rounded-full bg-emerald-500" />Yerel izleme aktif</span></div>
+        <div className="ml-auto flex items-center gap-2"><button type="button" onClick={enableNotifications} className="rounded-lg border border-border px-3 py-2 text-xs font-medium hover:border-primary/40">{notificationState === 'granted' ? 'Bildirimler açık' : 'Bildirimleri aç'}</button><span className="flex items-center gap-2 text-xs text-muted-foreground"><span className="h-2 w-2 rounded-full bg-emerald-500" />Yerel izleme aktif</span></div>
       </header>
 
       <div className="mx-auto w-full max-w-6xl space-y-8 px-4 py-6 md:px-8 md:py-8">
