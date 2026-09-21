@@ -37,3 +37,16 @@ test("decision problems produce comparison actions", () => {
   assert.equal(result.goal, "make_decision");
   assert.equal(result.actions[0]?.type, "compare");
 });
+
+
+test("budget and time constraints are reflected in the rescue plan", () => {
+  const result = analyzeRescue({
+    problem: "Bu ay ödemeler için param yetmiyor.",
+    budget: 0,
+    availableHours: 1,
+  });
+  assert.equal(result.priority, "high");
+  assert.equal(result.constraints.includes("Bütçe: 0 TL"), true);
+  assert.equal(result.constraints.includes("Zaman: 1 saat"), true);
+  assert.equal(result.actions[0]?.priority, 1);
+});
