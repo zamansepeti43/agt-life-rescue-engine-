@@ -14,6 +14,15 @@ export async function requestNotificationPermission(): Promise<NotificationPermi
   return Notification.requestPermission();
 }
 
+export async function enableReliableNotifications(): Promise<NotificationPermission | 'unsupported'> {
+  if (!SUPPORTS_NOTIFICATIONS) return 'unsupported';
+  const permission = await requestNotificationPermission();
+  if (permission === 'granted' && 'serviceWorker' in navigator) {
+    try { await navigator.serviceWorker.ready; } catch {}
+  }
+  return permission;
+}
+
 export function sendBrowserNotification(title: string, body: string): boolean {
   if (!SUPPORTS_NOTIFICATIONS || Notification.permission !== 'granted') return false;
   try {
