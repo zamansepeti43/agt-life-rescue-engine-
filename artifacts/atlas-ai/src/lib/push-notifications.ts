@@ -53,6 +53,7 @@ export async function schedulePushNotification(input: {
   id: string;
   kind: "task" | "reminder" | "life-rescue";
   scheduledAt: string;
+  recurrence?: "daily" | "weekly" | "monthly";
   title: string;
   body: string;
   url?: string;
@@ -66,6 +67,8 @@ export async function schedulePushNotification(input: {
       body: JSON.stringify({
         deviceId: device(),
         id: input.id,
+        kind: input.kind,
+        recurrence: input.recurrence,
         kind: input.kind,
         scheduledAt: input.scheduledAt,
         payload: {
