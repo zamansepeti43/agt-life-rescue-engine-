@@ -18,6 +18,7 @@ import { clearConversation, loadConversation, saveConversation } from '@/lib/con
 import { handleAssistantAction } from '@/lib/assistant-actions';
 import { runIzciCheck } from '@/lib/assistant-store';
 import { addDecisionHistory } from '@/lib/decision-history';
+import { upsertConversation, type ConversationHistoryItem, getConversation } from '@/lib/conversation-history';
 
 interface ConversationState {
   messages: ConversationMessage[];
@@ -55,12 +56,32 @@ export function useConversation() {
   const memoryRef = useRef(memory);
   const sendingRef = useRef(false);
   const skipNextPersistenceRef = useRef(false);
+  const conversationIdRef = useRef<string | undefined>(undefined);
 
   useEffect(() => {
     stateRef.current = state;
     if (skipNextPersistenceRef.current) { skipNextPersistenceRef.current = false; return; }
-    saveConversation({ messages: state.messages, context: state.context, isAnsweringClarification: state.isAnsweringClarification });
+    const persisted = { messages: state.messages, context: state.context, isAnsweringClarification: state.isAnsweringClarification };
+    saveConversation(persisted);
+    if (state.messages.some((message) => message.role === 'user')) {
+      conversationIdRef.current = upsertConversation(persisted, conversationIdRef.current);
+    }
   }, [state]);
+
+  useEffect(() => {
+    const load = (event: Event) => {
+      const custom = event as CustomEvent<{ id?: string }>;
+      if (!custom.detail?.id) return;
+      const item = getConversation(custom.detail.id);
+      if (!item) return;
+      conversationIdRef.current = item.id;
+      skipNextPersistenceRef.current = true;
+      stateRef.current = item.state;
+      setState({ ...INITIAL_STATE, ...item.state });
+    };
+    window.addEventListener('atlas-load-conversation', load);
+    return () => window.removeEventListener('atlas-load-conversation', load);
+  }, []);
 
   useEffect(() => { memoryRef.current = memory; }, [memory]);
   useEffect(() => { runIzciCheck(); }, []);
@@ -125,6 +146,7 @@ export function useConversation() {
     stateRef.current = INITIAL_STATE;
     skipNextPersistenceRef.current = true;
     clearConversation();
+    conversationIdRef.current = undefined;
     setState(INITIAL_STATE);
   }, []);
 
