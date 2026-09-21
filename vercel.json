@@ -64,11 +64,5 @@
       "src": "/(.*)",
       "dest": "/artifacts/atlas-ai/index.html"
     }
-  ],
-  "crons": [
-    {
-      "path": "/api/notifications/push/dispatch",
-      "schedule": "* * * * *"
-    }
   ]
 }
