@@ -32,13 +32,38 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Ensure Android SDK 35 is installed
+      - name: Prepare Android SDK
+        shell: bash
         run: |
+          set -euo pipefail
+          echo "ANDROID_HOME=${ANDROID_HOME:-}"
+          echo "ANDROID_SDK_ROOT=${ANDROID_SDK_ROOT:-}"
+          if [ -z "${ANDROID_HOME:-}" ] && [ -n "${ANDROID_SDK_ROOT:-}" ]; then
+            export ANDROID_HOME="$ANDROID_SDK_ROOT"
+          fi
+          if [ -z "${ANDROID_HOME:-}" ]; then
+            export ANDROID_HOME="$HOME/.android/sdk"
+          fi
+          echo "ANDROID_HOME=$ANDROID_HOME" >> "$GITHUB_ENV"
+          echo "ANDROID_SDK_ROOT=$ANDROID_HOME" >> "$GITHUB_ENV"
+          if [ -x "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" ]; then
+            echo "$ANDROID_HOME/cmdline-tools/latest/bin" >> "$GITHUB_PATH"
+          elif [ -x "$ANDROID_HOME/cmdline-tools/bin/sdkmanager" ]; then
+            echo "$ANDROID_HOME/cmdline-tools/bin" >> "$GITHUB_PATH"
+          elif command -v sdkmanager >/dev/null 2>&1; then
+            echo "sdkmanager already available"
+          else
+            echo "ERROR: Android sdkmanager is not available on the GitHub runner."
+            exit 1
+          fi
+
+      - name: Install Android SDK 35 components
+        shell: bash
+        run: |
+          set -euo pipefail
+          sdkmanager --version
           yes | sdkmanager --licenses >/dev/null || true
-          sdkmanager "platforms;android-35" "build-tools;35.0.0"
+          sdkmanager "platform-tools" "platforms;android-35" "build-tools;35.0.0"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
