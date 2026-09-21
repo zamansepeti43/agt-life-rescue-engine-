@@ -18,7 +18,7 @@ import { clearConversation, loadConversation, saveConversation } from '@/lib/con
 import { handleAssistantAction } from '@/lib/assistant-actions';
 import { runIzciCheck } from '@/lib/assistant-store';
 import { addDecisionHistory } from '@/lib/decision-history';
-import { upsertConversation, type ConversationHistoryItem, getConversation } from '@/lib/conversation-history';
+import { upsertConversation, getConversation } from '@/lib/conversation-history';
 
 interface ConversationState {
   messages: ConversationMessage[];
