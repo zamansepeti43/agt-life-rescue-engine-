@@ -96,7 +96,7 @@ function actionsFor(category: RescueCategory, goal: RescueGoal): RescueAction[] 
   } else {
     actions.push(
       { type: "do_now", title: "Sorunun ilk somut adımını belirle", reason: "Sorunu küçük ve uygulanabilir bir göreve dönüştürür.", priority: 1 },
-      { type: "prioritize" as never, title: "En acil sonucu önce ele al", reason: "Öncelik sırasını netleştirir.", priority: 2 },
+      { type: "rearrange", title: "En acil sonucu önce ele al", reason: "Öncelik sırasını netleştirir.", priority: 2 },
       { type: "ask_help", title: "Dışarıdan destek gerekip gerekmediğini kontrol et", reason: "Tek başına çözülmesi gerekmeyen işleri ayırır.", priority: 3 },
     );
   }
