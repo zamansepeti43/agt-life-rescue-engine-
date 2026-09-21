@@ -70,6 +70,28 @@ function detectByHints<T extends string>(
   return best;
 }
 
+function extractMoney(text: string): number[] {
+  const values: number[] = [];
+  const matches = text.toLocaleLowerCase("tr-TR").matchAll(/(\d{1,3}(?:[. ]\d{3})*(?:,\d{1,2})?|\d+(?:,\d{1,2})?)\s*(?:tl|₺|lira)/gi);
+  for (const match of matches) {
+    const raw = match[1].replace(/\s/g, "").replace(/\./g, "").replace(",", ".");
+    const value = Number(raw);
+    if (Number.isFinite(value)) values.push(value);
+  }
+  return values;
+}
+
+function extractTimeConstraint(text: string): string | undefined {
+  const normalized = normalize(text);
+  if (/bugün/.test(normalized)) return "Son tarih: bugün";
+  if (/yarın/.test(normalized)) return "Son tarih: yarın";
+  const days = normalized.match(/(\d+)\s*gün/);
+  if (days) return `Zaman kısıtı: ${days[1]} gün`;
+  const hours = normalized.match(/(\d+(?:[.,]\d+)?)\s*saat/);
+  if (hours) return `Zaman kısıtı: ${hours[1].replace(",", ".")} saat`;
+  return undefined;
+}
+
 function priorityFrom(input: RescueInput): RescueResult["priority"] {
   if ((input.urgency ?? 0) >= 9) return "critical";
   if ((input.urgency ?? 0) >= 6) return "high";
@@ -79,6 +101,18 @@ function priorityFrom(input: RescueInput): RescueResult["priority"] {
   if (input.budget !== undefined && input.budget <= 0 && /para|borç|fatura|ödeme/.test(text)) return "high";
 
   return "normal";
+}
+
+function buildConstraints(input: RescueInput): string[] {
+  const constraints: string[] = [];
+  if (input.budget !== undefined) constraints.push(`Bütçe: ${input.budget.toLocaleString("tr-TR")} TL`);
+  if (input.availableHours !== undefined) constraints.push(`Zaman: ${input.availableHours} saat`);
+  const amounts = extractMoney(input.problem);
+  if (amounts.length >= 2) constraints.push(`Metinde geçen tutarlar: ${amounts.slice(0, 3).map((value) => `${value.toLocaleString("tr-TR")} TL`).join(" / ")}`);
+  const timeConstraint = extractTimeConstraint(input.problem);
+  if (timeConstraint) constraints.push(timeConstraint);
+  constraints.push(`Aciliyet: ${input.urgency ?? 5}/10`);
+  return [...new Set(constraints)];
 }
 
 function actionsFor(
@@ -157,26 +191,19 @@ export function analyzeRescue(input: RescueInput): RescueResult {
       priority,
       actions: scenario.actions,
       nextQuestion: scenario.questions[0] ?? "Bu sorunda sonucu en çok değiştirecek kısıt nedir?",
-      constraints: [
-        input.budget !== undefined ? `Bütçe: ${input.budget.toLocaleString("tr-TR")} TL` : undefined,
-        input.availableHours !== undefined ? `Zaman: ${input.availableHours} saat` : undefined,
-        `Aciliyet: ${input.urgency ?? 5}/10`,
-      ].filter((value): value is string => Boolean(value)),
+      constraints: buildConstraints(input),
     };
   }
 
-  const constraints: string[] = [];
-  if (input.budget !== undefined) constraints.push(`Bütçe: ${input.budget.toLocaleString("tr-TR")} TL`);
-  if (input.availableHours !== undefined) constraints.push(`Zaman: ${input.availableHours} saat`);
-  constraints.push(`Aciliyet: ${input.urgency ?? 5}/10`);
+  const constraints = buildConstraints(input);
 
   const diagnosis =
     category === "money"
       ? input.budget !== undefined && input.budget <= 0
         ? "Nakit açığı var. Önce yeni harcamayı durdur, ertelenebilir yükleri ayır ve hızlı gelir seçeneklerini değerlendir."
-        : "Nakit akışı ve zorunlu giderler ayrıştırılmalı."
+        : "Nakit akışını, zorunlu giderleri ve son tarihleri birbirinden ayırmadan sağlıklı bir çözüm çıkarmak zor. Önce tabloyu sadeleştirip hangi yükün gerçekten acil olduğunu bulacağız."
       : category === "time"
-        ? "Zaman baskısı, sonraki adım ve devredilebilir işler ayrıştırılmalı."
+        ? "Zaman baskısı var. Önce sonucu en çok etkileyen işi seçip geri kalanları sıraya koyacağız."
         : "Sorun; aciliyet, hedef, bütçe ve uygulanabilir sonraki adım olarak parçalanmalı.";
 
   const nextQuestion =
