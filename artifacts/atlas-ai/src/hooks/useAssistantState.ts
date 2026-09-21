@@ -6,6 +6,8 @@ export function useAssistantState() {
 
   useEffect(() => {
     runIzciCheck();
+    const timer = window.setInterval(() => runIzciCheck(), 30_000);
+    return () => window.clearInterval(timer);
   }, []);
 
   return state;
