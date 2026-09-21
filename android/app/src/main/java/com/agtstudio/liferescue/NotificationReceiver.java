@@ -8,12 +8,16 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 import java.util.Calendar;
+import org.json.JSONObject;
 
 public class NotificationReceiver extends BroadcastReceiver {
     private static final String CHANNEL_ID = "life_rescue_reminders";
+    private static final String PREFS = "life_rescue_notifications";
 
     @Override public void onReceive(Context context, Intent intent) {
         String id = intent.getStringExtra("id");
+        if (id == null || id.isEmpty()) return;
+
         String title = intent.getStringExtra("title");
         String body = intent.getStringExtra("body");
         String url = intent.getStringExtra("url");
@@ -31,9 +35,7 @@ public class NotificationReceiver extends BroadcastReceiver {
         Intent open = new Intent(context, MainActivity.class);
         open.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
         PendingIntent pending = PendingIntent.getActivity(
-            context,
-            stableId(id),
-            open,
+            context, stableId(id), open,
             PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
         );
 
@@ -50,25 +52,34 @@ public class NotificationReceiver extends BroadcastReceiver {
 
         manager.notify(stableId(id), builder.build());
 
-        if (recurrence != null && !recurrence.isEmpty() && id != null) {
+        if (recurrence != null && !recurrence.isEmpty()) {
+            long previousAt = System.currentTimeMillis();
+            try {
+                String raw = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(id, "{}");
+                JSONObject record = new JSONObject(raw);
+                previousAt = record.optLong("at", previousAt);
+            } catch (Exception ignored) {}
+
             Calendar next = Calendar.getInstance();
+            next.setTimeInMillis(previousAt);
             if ("daily".equals(recurrence)) next.add(Calendar.DAY_OF_YEAR, 1);
             else if ("weekly".equals(recurrence)) next.add(Calendar.WEEK_OF_YEAR, 1);
             else if ("monthly".equals(recurrence)) next.add(Calendar.MONTH, 1);
-            else recurrence = "";
-
-            if (!recurrence.isEmpty()) {
-                NotificationScheduler.schedule(
-                    context, id, title, body, next.getTimeInMillis(), url == null ? "/izci" : url, recurrence
-                );
+            else {
+                context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().remove(id).apply();
+                return;
             }
-        } else if (id != null) {
-            context.getSharedPreferences("life_rescue_notifications", Context.MODE_PRIVATE)
+
+            NotificationScheduler.schedule(
+                context, id, title, body, next.getTimeInMillis(), url == null ? "/izci" : url, recurrence
+            );
+        } else {
+            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
                 .edit().remove(id).apply();
         }
     }
 
     private static int stableId(String value) {
-        return value == null ? 0 : (value.hashCode() & 0x7fffffff);
+        return value.hashCode() & 0x7fffffff;
     }
 }
