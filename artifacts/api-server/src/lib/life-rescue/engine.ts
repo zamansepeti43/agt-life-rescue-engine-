@@ -157,6 +157,11 @@ export function analyzeRescue(input: RescueInput): RescueResult {
       priority,
       actions: scenario.actions,
       nextQuestion: scenario.questions[0] ?? "Bu sorunda sonucu en çok değiştirecek kısıt nedir?",
+      constraints: [
+        input.budget !== undefined ? `Bütçe: ${input.budget.toLocaleString("tr-TR")} TL` : undefined,
+        input.availableHours !== undefined ? `Zaman: ${input.availableHours} saat` : undefined,
+        `Aciliyet: ${input.urgency ?? 5}/10`,
+      ].filter((value): value is string => Boolean(value)),
     };
   }
 
