@@ -8,7 +8,9 @@ type Result = {
   category: string;
   goal: string;
   diagnosis: string;
-  priority: "critical" | "high" | "normal";\n  phase: "understand" | "stabilize" | "prioritize" | "act";\n  decisionBasis: string[];
+  priority: "critical" | "high" | "normal";
+  phase: "understand" | "stabilize" | "prioritize" | "act";
+  decisionBasis: string[];
   plan: {
     objective: string;
     steps: { label: "Şimdi" | "Bugün" | "Sonraki adım" | "Hedef"; title: string; detail: string; estimatedMinutes?: number }[];
@@ -40,7 +42,10 @@ export default function LifeRescue() {
   async function analyze(context?: string) {
     const base=problem.trim();
     if(base.length<3 || loading) return;
-    const combined=context?.trim() ? base+"\n\nKonuşmada verilen bilgiler:\n"+context.trim() : base;
+    const combined=context?.trim() ? base+"
+
+Konuşmada verilen bilgiler:
+"+context.trim() : base;
     setLoading(true);
     try {
       const response=await fetch("/api/life-rescue/analyze",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({
@@ -71,7 +76,8 @@ export default function LifeRescue() {
   function continueConversation() {
     if(!answer.trim() || !result) return;
     const text=answer.trim();
-    const nextContext=conversationContext ? conversationContext+"\nKullanıcı: "+text : text;
+    const nextContext=conversationContext ? conversationContext+"
+Kullanıcı: "+text : text;
     setMessages(prev=>[...prev,{role:"user",text}]);
     setConversationContext(nextContext);
     setAnswer("");
