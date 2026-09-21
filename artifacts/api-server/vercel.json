@@ -1,0 +1,29 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "artifacts/api-server/api/index.ts",
+      "use": "@vercel/node@5.9.7"
+    },
+    {
+      "src": "artifacts/atlas-ai/package.json",
+      "use": "@vercel/static"
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/artifacts/api-server/api/index"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/assets/(.*)",
+      "dest": "/artifacts/atlas-ai/dist/assets/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/artifacts/atlas-ai/dist/index.html"
+    }
+  ]
+}
