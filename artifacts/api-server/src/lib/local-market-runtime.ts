@@ -66,7 +66,7 @@ export async function findNearbyMarkets(location: UserLocation, radiusMeters = 1
     const response = await fetch("https://overpass-api.de/api/interpreter", { method: "POST", headers: { "Content-Type": "text/plain" }, body: query });
     if (!response.ok) throw new Error("Yakındaki marketler alınamadı.");
     const data = await response.json() as { elements?: Array<{ id: number; lat?: number; lon?: number; center?: { lat: number; lon: number }; tags?: Record<string, string> }> };
-    markets = (data.elements ?? []).map((item) => { const latitude = item.lat ?? item.center?.lat; const longitude = item.lon ?? item.center?.lon; const name = item.tags?.name ?? "Market"; return latitude == null || longitude == null || !isSupportedMarket(name) ? null : { id: String(item.id), name, latitude, longitude, distanceMeters: distanceMeters(location, { latitude, longitude }), address: [item.tags?.["addr:street"], item.tags?.["addr:housenumber"], item.tags?.["addr:city"]].filter(Boolean).join(" ") || undefined, source: "osm" as const }; }).filter((x): x is NearbyMarket => Boolean(x));
+    markets = (data.elements ?? []).map((item) => { const latitude = item.lat ?? item.center?.lat; const longitude = item.lon ?? item.center?.lon; const name = item.tags?.name ?? "Market"; return latitude == null || longitude == null || !isSupportedMarket(name) ? null : { id: String(item.id), name, latitude, longitude, distanceMeters: distanceMeters(location, { latitude, longitude }), address: [item.tags?.["addr:street"], item.tags?.["addr:housenumber"], item.tags?.["addr:city"]].filter(Boolean).join(" ") || undefined, source: "osm" as const }; }).flatMap((x): NearbyMarket[] => x ? [x] : []);
   }
   return markets.sort((a, b) => a.distanceMeters - b.distanceMeters);
 }
@@ -78,7 +78,13 @@ function snapshotToNearbyPrice(snapshot: StoreProductSnapshot, market: NearbyMar
     productName: snapshot.productName,
     priceTRY: snapshot.priceTRY,
     url: snapshot.productUrl,
-    source: fallbackSource ?? { url: snapshot.productUrl, title: snapshot.productName, domain: marketDomains(market.name)[0] ?? "" },
+    source: fallbackSource ?? {
+      url: snapshot.productUrl,
+      title: snapshot.productName,
+      snippet: `Resmî mağaza ürünü: ${snapshot.productName}`,
+      domain: marketDomains(market.name)[0] ?? "",
+      retrievedAt: snapshot.checkedAt,
+    },
     retrievedAt: snapshot.checkedAt,
     exactMatch: snapshot.exactMatch,
     verification: snapshot.source === "official_store_feed" ? "official_store_feed" : "merchant_page",
