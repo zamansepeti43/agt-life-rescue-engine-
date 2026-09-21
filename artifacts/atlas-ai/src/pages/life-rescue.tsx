@@ -8,6 +8,10 @@ type Result = {
   goal: string;
   diagnosis: string;
   priority: "critical" | "high" | "normal";\n  phase: "understand" | "stabilize" | "prioritize" | "act";\n  decisionBasis: string[];
+  plan: {
+    objective: string;
+    steps: { label: "Şimdi" | "Bugün" | "Sonraki adım" | "Hedef"; title: string; detail: string; estimatedMinutes?: number }[];
+  };
   actions: { title: string; reason: string; priority: number }[];
   nextQuestion: string;
   constraints: string[];
@@ -116,6 +120,20 @@ export default function LifeRescue() {
             <h2 className="mt-4 text-xl font-bold">Durumu şöyle okuyorum</h2>
             <p className="mt-2 leading-7 text-muted-foreground">{result.diagnosis}</p>
             {result.decisionBasis?.length>0&&<div className="mt-4"><p className="text-xs font-semibold text-muted-foreground">Bu değerlendirmeyi etkileyenler</p><div className="mt-2 flex flex-wrap gap-2">{result.decisionBasis.map(c=><span key={c} className="rounded-full bg-muted px-3 py-1 text-xs">{c}</span>)}</div></div>}{result.constraints?.length>0&&<div className="mt-3 flex flex-wrap gap-2">{result.constraints.map(c=><span key={c} className="rounded-full bg-muted px-3 py-1 text-xs">{c}</span>)}</div>}
+          </div>
+          <div className="rounded-2xl border bg-card p-5 md:p-6">
+            <div className="flex items-center gap-2 text-primary"><CheckCircle2 className="h-5 w-5"/><span className="text-sm font-bold">KURTARMA PLANI</span></div>
+            <h3 className="mt-2 text-lg font-bold">{result.plan.objective}</h3>
+            <div className="mt-5 grid gap-3 md:grid-cols-2">
+              {result.plan.steps.map((step)=><article key={step.label} className="rounded-xl border bg-background p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-xs font-bold uppercase tracking-wide text-primary">{step.label}</span>
+                  {step.estimatedMinutes !== undefined && <span className="text-xs text-muted-foreground">~{step.estimatedMinutes} dk</span>}
+                </div>
+                <h4 className="mt-2 font-semibold">{step.title}</h4>
+                <p className="mt-1 text-sm leading-6 text-muted-foreground">{step.detail}</p>
+              </article>)}
+            </div>
           </div>
           <div className="grid gap-3 md:grid-cols-3">{result.actions.map(a=><article key={a.priority} className="rounded-2xl border bg-card p-5"><div className="mb-3 flex items-center gap-2 text-primary"><CheckCircle2 className="h-5 w-5"/><span className="text-xs font-bold">ADIM {a.priority}</span></div><h3 className="font-semibold">{a.title}</h3><p className="mt-2 text-sm leading-6 text-muted-foreground">{a.reason}</p></article>)}</div>
           <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5">
