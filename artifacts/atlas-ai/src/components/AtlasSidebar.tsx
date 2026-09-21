@@ -1,4 +1,4 @@
-import { BellRing, Bot, CheckSquare2, Crosshair, History, MemoryStick, Plus, Settings, Target, ShieldCheck } from 'lucide-react';
+import { BellRing, Bot, LifeBuoy, CheckSquare2, Crosshair, History, MemoryStick, Plus, Settings, Target, ShieldCheck } from 'lucide-react';
 import { useLocation } from 'wouter';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuBadge, SidebarMenuButton, SidebarMenuItem, SidebarRail, useSidebar } from '@/components/ui/sidebar';
 import { useAssistantState } from '@/hooks/useAssistantState';
@@ -26,6 +26,7 @@ export function AtlasSidebar() {
         <SidebarGroup><SidebarGroupLabel>Çalışma alanı</SidebarGroupLabel><SidebarGroupContent><SidebarMenu>
           <SidebarMenuItem><SidebarMenuButton isActive={location === '/'} onClick={() => goTo('/')} tooltip="Atlas"><Bot /><span>Atlas</span></SidebarMenuButton></SidebarMenuItem>
           <SidebarMenuItem><SidebarMenuButton isActive={location === '/atlas-os'} onClick={() => goTo('/atlas-os')} tooltip="Atlas Life OS"><Bot /><span>Atlas Life OS</span></SidebarMenuButton></SidebarMenuItem>
+          <SidebarMenuItem><SidebarMenuButton isActive={location === '/life-rescue'} onClick={() => goTo('/life-rescue')} tooltip="Hayat Kurtarma Motoru"><LifeBuoy /><span>Hayat Kurtarma</span></SidebarMenuButton></SidebarMenuItem>
           <SidebarMenuItem><SidebarMenuButton onClick={newConversation} tooltip="Yeni sohbet"><Plus /><span>Yeni Sohbet</span></SidebarMenuButton></SidebarMenuItem>
           <SidebarMenuItem><SidebarMenuButton disabled tooltip="Geçmiş"><History /><span>Geçmiş</span></SidebarMenuButton></SidebarMenuItem>
           <SidebarMenuItem><SidebarMenuButton disabled tooltip="Hafıza"><MemoryStick /><span>Hafıza</span></SidebarMenuButton></SidebarMenuItem>
