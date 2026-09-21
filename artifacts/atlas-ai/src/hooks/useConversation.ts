@@ -65,6 +65,7 @@ export function useConversation() {
     saveConversation(persisted);
     if (state.messages.some((message) => message.role === 'user')) {
       conversationIdRef.current = upsertConversation(persisted, conversationIdRef.current);
+      window.dispatchEvent(new Event('atlas-conversation-history-change'));
     }
   }, [state]);
 
