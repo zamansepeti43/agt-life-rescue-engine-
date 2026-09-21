@@ -1,0 +1,68 @@
+{
+  "version": 2,
+  "git": {
+    "deploymentEnabled": false
+  },
+  "builds": [
+    {
+      "src": "artifacts/api-server/api/index.ts",
+      "use": "@vercel/node@5.9.7"
+    },
+    {
+      "src": "artifacts/atlas-ai/package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api(?:/(.*))?",
+      "dest": "/artifacts/api-server/api/index.ts"
+    },
+    {
+      "src": "/assets/(.*)",
+      "dest": "/artifacts/atlas-ai/assets/$1"
+    },
+    {
+      "src": "/favicon.svg",
+      "dest": "/artifacts/atlas-ai/favicon.svg"
+    },
+    {
+      "src": "/favicon.ico",
+      "dest": "/artifacts/atlas-ai/favicon.ico"
+    },
+    {
+      "src": "/favicon-32x32.png",
+      "dest": "/artifacts/atlas-ai/favicon-32x32.png"
+    },
+    {
+      "src": "/apple-touch-icon.png",
+      "dest": "/artifacts/atlas-ai/apple-touch-icon.png"
+    },
+    {
+      "src": "/icon-192.png",
+      "dest": "/artifacts/atlas-ai/icon-192.png"
+    },
+    {
+      "src": "/icon-512.png",
+      "dest": "/artifacts/atlas-ai/icon-512.png"
+    },
+    {
+      "src": "/manifest.webmanifest",
+      "dest": "/artifacts/atlas-ai/manifest.webmanifest"
+    },
+    {
+      "src": "/robots.txt",
+      "dest": "/artifacts/atlas-ai/robots.txt"
+    },
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/artifacts/atlas-ai/index.html"
+    }
+  ]
+}
