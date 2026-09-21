@@ -66,7 +66,7 @@ export async function findNearbyMarkets(location: UserLocation, radiusMeters = 1
     const response = await fetch("https://overpass-api.de/api/interpreter", { method: "POST", headers: { "Content-Type": "text/plain" }, body: query });
     if (!response.ok) throw new Error("Yakındaki marketler alınamadı.");
     const data = await response.json() as { elements?: Array<{ id: number; lat?: number; lon?: number; center?: { lat: number; lon: number }; tags?: Record<string, string> }> };
-    markets = (data.elements ?? []).map((item) => { const latitude = item.lat ?? item.center?.lat; const longitude = item.lon ?? item.center?.lon; const name = item.tags?.name ?? "Market"; return latitude == null || longitude == null || !isSupportedMarket(name) ? null : { id: String(item.id), name, latitude, longitude, distanceMeters: distanceMeters(location, { latitude, longitude }), address: [item.tags?.["addr:street"], item.tags?.["addr:housenumber"], item.tags?.["addr:city"]].filter(Boolean).join(" ") || undefined, source: "osm" as const }; }).filter((x): x is NearbyMarket => x !== null);
+    markets = (data.elements ?? []).flatMap((item): NearbyMarket[] => { const latitude = item.lat ?? item.center?.lat; const longitude = item.lon ?? item.center?.lon; const name = item.tags?.name ?? "Market"; if (latitude == null || longitude == null || !isSupportedMarket(name)) return []; return [{ id: String(item.id), name, latitude, longitude, distanceMeters: distanceMeters(location, { latitude, longitude }), address: [item.tags?.["addr:street"], item.tags?.["addr:housenumber"], item.tags?.["addr:city"]].filter(Boolean).join(" ") || undefined, source: "osm" as const }]; });
   }
   return markets.sort((a, b) => a.distanceMeters - b.distanceMeters);
 }
