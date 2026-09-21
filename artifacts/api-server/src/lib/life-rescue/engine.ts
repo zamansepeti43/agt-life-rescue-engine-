@@ -7,7 +7,7 @@ import type {
 } from "./types.js";
 
 const categoryHints: Record<RescueCategory, string[]> = {
-  money: ["para", "borç", "borc", "maaş", "gelir", "ödeme", "ödemem"],
+  money: ["para", "borç", "borc", "maaş", "gelir", "ödeme", "ödemem", "nakit"],
   home: ["ev", "kira", "tamir", "buzdolabı", "çamaşır", "evde"],
   family: ["çocuk", "aile", "eş", "bebek", "okul"],
   work: ["iş", "maaş", "mesai", "vardiya", "patron", "işveren"],
@@ -29,6 +29,17 @@ const goalHints: Record<RescueGoal, string[]> = {
   cancel: ["iptal", "kapat", "vazgeç"],
   organize: ["düzenle", "organize", "planla"],
   solve: ["çöz", "sorun", "problem", "ne yap"],
+};
+
+const actionLabels: Record<RescueAction["type"], string> = {
+  reduce: "Azalt",
+  delay: "Ertele",
+  cancel: "İptal et",
+  rearrange: "Yeniden düzenle",
+  earn: "Ek gelir",
+  do_now: "Şimdi yap",
+  ask_help: "Destek iste",
+  compare: "Karşılaştır",
 };
 
 function normalize(value: string): string {
@@ -61,12 +72,19 @@ function detectByHints<T extends string>(
 function priorityFrom(input: RescueInput): RescueResult["priority"] {
   if ((input.urgency ?? 0) >= 9) return "critical";
   if ((input.urgency ?? 0) >= 6) return "high";
+
   const text = normalize(input.problem);
   if (/(bugün|acil|hemen|son gün|yarın)/.test(text)) return "high";
+  if (input.budget !== undefined && input.budget <= 0 && /para|borç|fatura|ödeme/.test(text)) return "high";
+
   return "normal";
 }
 
-function actionsFor(category: RescueCategory, goal: RescueGoal): RescueAction[] {
+function actionsFor(
+  category: RescueCategory,
+  goal: RescueGoal,
+  input: RescueInput,
+): RescueAction[] {
   const actions: RescueAction[] = [];
 
   if (goal === "find_money") {
@@ -77,7 +95,7 @@ function actionsFor(category: RescueCategory, goal: RescueGoal): RescueAction[] 
     );
   } else if (goal === "reduce_cost") {
     actions.push(
-      { type: "compare", title: "Aynı ihtiyacın daha düşük maliyetli alternatiflerini karşılaştır", reason: "Fiyatı tek başına değil toplam maliyeti dikkate al.", priority: 1 },
+      { type: "compare", title: "Daha düşük maliyetli alternatifleri karşılaştır", reason: "Fiyatı tek başına değil toplam maliyeti dikkate al.", priority: 1 },
       { type: "cancel", title: "Kullanılmayan abonelikleri kontrol et", reason: "Tekrarlayan küçük giderleri görünür hale getirir.", priority: 2 },
       { type: "rearrange", title: "Ödemeleri önem ve son tarihe göre sırala", reason: "Nakit akışındaki baskıyı azaltmaya yardımcı olur.", priority: 3 },
     );
@@ -101,7 +119,27 @@ function actionsFor(category: RescueCategory, goal: RescueGoal): RescueAction[] 
     );
   }
 
-  return actions;
+  // Kısıtları plana yansıt: az zaman veya sıfır bütçe varsa ilk adımlar buna göre öne çıkar.
+  if (input.availableHours !== undefined && input.availableHours <= 1) {
+    const quick = actions.find((action) => action.type === "do_now");
+    if (quick) quick.priority = 1;
+    actions.sort((a, b) => a.priority - b.priority);
+  }
+
+  if (input.budget !== undefined && input.budget <= 0) {
+    const noCost = actions.find((action) =>
+      ["reduce", "delay", "cancel", "earn", "ask_help"].includes(action.type),
+    );
+    if (noCost) noCost.priority = 1;
+    actions.sort((a, b) => a.priority - b.priority);
+  }
+
+  return actions.map((action, index) => ({
+    ...action,
+    priority: index + 1,
+    title: action.title,
+    reason: `${actionLabels[action.type]}: ${action.reason}`,
+  }));
 }
 
 export function analyzeRescue(input: RescueInput): RescueResult {
@@ -109,12 +147,26 @@ export function analyzeRescue(input: RescueInput): RescueResult {
   const goal = input.goal ?? detectByHints(input.problem, goalHints, "solve");
   const priority = priorityFrom(input);
 
+  const constraints: string[] = [];
+  if (input.budget !== undefined) constraints.push(`Bütçe: ${input.budget.toLocaleString("tr-TR")} TL`);
+  if (input.availableHours !== undefined) constraints.push(`Zaman: ${input.availableHours} saat`);
+  constraints.push(`Aciliyet: ${input.urgency ?? 5}/10`);
+
   const diagnosis =
     category === "money"
-      ? "Nakit akışı ve zorunlu giderler ayrıştırılmalı."
+      ? input.budget !== undefined && input.budget <= 0
+        ? "Nakit açığı var. Önce yeni harcamayı durdur, ertelenebilir yükleri ayır ve hızlı gelir seçeneklerini değerlendir."
+        : "Nakit akışı ve zorunlu giderler ayrıştırılmalı."
       : category === "time"
         ? "Zaman baskısı, sonraki adım ve devredilebilir işler ayrıştırılmalı."
-        : "Sorun; aciliyet, hedef ve uygulanabilir sonraki adım olarak parçalanmalı.";
+        : "Sorun; aciliyet, hedef, bütçe ve uygulanabilir sonraki adım olarak parçalanmalı.";
+
+  const nextQuestion =
+    category === "money"
+      ? "Eksik olan tutar ve en yakın ödeme tarihi nedir?"
+      : input.availableHours === undefined
+        ? "Bu sorunu çözmek için bugün kaç saatin var?"
+        : "Bu sorunda sonucu en çok değiştirecek kısıt veya son tarih nedir?";
 
   return {
     problem: input.problem.trim(),
@@ -122,7 +174,8 @@ export function analyzeRescue(input: RescueInput): RescueResult {
     goal,
     diagnosis,
     priority,
-    actions: actionsFor(category, goal),
-    nextQuestion: "Bu sorunda sonucu en çok değiştirecek kısıt veya son tarih nedir?",
+    actions: actionsFor(category, goal, input),
+    nextQuestion,
+    constraints,
   };
 }
