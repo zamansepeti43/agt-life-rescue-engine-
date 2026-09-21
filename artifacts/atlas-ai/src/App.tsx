@@ -12,6 +12,15 @@ import { Route, Switch, Router as WouterRouter } from 'wouter';
 
 const queryClient = new QueryClient();
 
+function getRuntimeBase(): string {
+  const configured = import.meta.env.BASE_URL;
+  if (configured !== "./") return configured.replace(/\/$/, "");
+  if (typeof window === "undefined") return "";
+  const pathname = window.location.pathname;
+  const slash = pathname.lastIndexOf("/");
+  return slash > 0 ? pathname.slice(0, slash) : "";
+}
+
 function Router() {
   return (
     <Switch>
