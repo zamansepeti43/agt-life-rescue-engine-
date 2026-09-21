@@ -45,8 +45,11 @@ export default function LifeRescue() {
       const data=await response.json();
       if(!response.ok||!data.success) throw new Error(data.error||"Analiz başarısız.");
       setResult(data.result); setOffline(false);
+      setMessages(prev => [...prev, { role: "engine", text: data.result.diagnosis }]);
     } catch {
-      setResult(analyzeOffline(combined) as OfflineResult as Result);
+      const localResult = analyzeOffline(combined) as OfflineResult as Result;
+      setResult(localResult);
+      setMessages(prev => [...prev, { role: "engine", text: localResult.diagnosis }]);
       setOffline(true);
     } finally { setLoading(false); }
   }
@@ -98,7 +101,7 @@ export default function LifeRescue() {
 
         {messages.length>0&&<section className="mt-6 rounded-2xl border bg-card p-5 md:p-7">
           <div className="mb-4 flex items-center gap-2 text-sm font-semibold"><MessageCircle className="h-4 w-4 text-primary"/>Konuşma</div>
-          <div className="space-y-3">{messages.map((m,i)=><div key={i} className={m.role==="user"?"ml-6 rounded-2xl bg-primary/10 p-4":"mr-6 rounded-2xl bg-muted p-4"}><p className="text-sm leading-6">{m.text}</p></div>)}</div>
+          <div className="space-y-3">{messages.map((m,i)=><div key={i} className={m.role==="user"?"ml-6 rounded-2xl bg-primary/10 p-4":"mr-6 rounded-2xl bg-muted p-4"}><div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{m.role==="user"?"Sen":"Life Rescue"}</div><p className="text-sm leading-6">{m.text}</p></div>)}</div>
         </section>}
 
         {result&&<section className="mt-6 space-y-4">
