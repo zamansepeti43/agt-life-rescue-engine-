@@ -26,6 +26,18 @@ export interface RescueAction {
   priority: number;
 }
 
+export interface RescuePlanStep {
+  label: "Şimdi" | "Bugün" | "Sonraki adım" | "Hedef";
+  title: string;
+  detail: string;
+  estimatedMinutes?: number;
+}
+
+export interface RescuePlan {
+  objective: string;
+  steps: RescuePlanStep[];
+}
+
 export interface RescueResult {
   problem: string;
   category: RescueCategory;
@@ -34,6 +46,7 @@ export interface RescueResult {
   priority: "critical" | "high" | "normal";
   phase: "understand" | "stabilize" | "prioritize" | "act";
   decisionBasis: string[];
+  plan: RescuePlan;
   actions: RescueAction[];
   nextQuestion: string;
   constraints: string[];
