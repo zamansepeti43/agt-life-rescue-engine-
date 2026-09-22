@@ -15,8 +15,7 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import { useAssistantState } from '@/hooks/useAssistantState';
-import { listConversationHistory } from '@/lib/conversation-history';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 
 const IZCI_ITEMS = [
   { label: 'Takipler', icon: Crosshair },
@@ -28,17 +27,7 @@ export function AtlasSidebar() {
   const [location, navigate] = useLocation();
   const { setOpenMobile } = useSidebar();
   const state = useAssistantState();
-  const [recentChats, setRecentChats] = useState(() => listConversationHistory());
 
-  useEffect(() => {
-    const refresh = () => setRecentChats(listConversationHistory());
-    window.addEventListener('atlas-conversation-history-change', refresh);
-    window.addEventListener('storage', refresh);
-    return () => {
-      window.removeEventListener('atlas-conversation-history-change', refresh);
-      window.removeEventListener('storage', refresh);
-    };
-  }, []);
 
   const unread = state.events.filter((event) => !event.read).length;
   const goTo = (path: string) => {
@@ -48,7 +37,7 @@ export function AtlasSidebar() {
 
   const newProblem = () => {
     goTo('/');
-    window.dispatchEvent(new Event('atlas-new-conversation'));
+    window.dispatchEvent(new Event('life-rescue-new-problem'));
   };
 
   return (
@@ -88,36 +77,15 @@ export function AtlasSidebar() {
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton
-                  isActive={location === '/atlas'}
-                  onClick={() => goTo('/atlas')}
+                  isActive={location === '/life-rescue-history'}
+                  onClick={() => goTo('/life-rescue-history')}
                   tooltip="Geçmiş"
                 >
                   <History />
                   <span>Geçmiş</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              {recentChats.slice(0, 5).map((chat) => (
-                <SidebarMenuItem key={chat.id}>
-                  <SidebarMenuButton
-                    onClick={() => {
-                      goTo('/atlas');
-                      window.setTimeout(
-                        () =>
-                          window.dispatchEvent(
-                            new CustomEvent('atlas-load-conversation', {
-                              detail: { id: chat.id },
-                            }),
-                          ),
-                        0,
-                      );
-                    }}
-                    tooltip={chat.title}
-                  >
-                    <History className="h-3.5 w-3.5" />
-                    <span className="truncate">{chat.title}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
