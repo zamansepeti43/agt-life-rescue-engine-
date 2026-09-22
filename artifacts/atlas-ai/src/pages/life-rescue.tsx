@@ -88,20 +88,44 @@ export default function LifeRescue() {
 
   function start() {
     const text=problem.trim();
-    if(!text) return;
-    setMessages([{role:"user",text}]);
-    setConversationContext(text);
-    void analyze(text);
+    if(text.length < 3 || loading) return;
+
+    // Android: produce the deterministic answer synchronously from the click
+    // handler. This deliberately avoids any async boundary before setResult.
+    try {
+      const localResult = analyzeOffline(text) as OfflineResult as Result;
+      setMessages([{role:"user",text},{role:"engine",text:localResult.diagnosis}]);
+      setConversationContext(text);
+      setResult(localResult);
+      setOffline(true);
+      setLoading(false);
+    } catch {
+      // Never leave the user on the input screen if the local engine fails.
+      setMessages([{role:"user",text},{role:"engine",text:"Sorunu aldım. Şimdi durumu adım adım sadeleştirelim."}]);
+      setConversationContext(text);
+      setLoading(false);
+    }
   }
 
   function continueConversation() {
-    if(!answer.trim() || !result) return;
+    if(!answer.trim() || !result || loading) return;
     const text=answer.trim();
     const nextContext=conversationContext ? conversationContext+"\nKullanıcı: "+text : text;
-    setMessages(prev=>[...prev,{role:"user",text}]);
-    setConversationContext(nextContext);
-    setAnswer("");
-    void analyze(nextContext);
+
+    try {
+      const localResult = analyzeOffline(nextContext) as OfflineResult as Result;
+      setMessages(prev=>[...prev,{role:"user",text},{role:"engine",text:localResult.diagnosis}]);
+      setConversationContext(nextContext);
+      setAnswer("");
+      setResult(localResult);
+      setOffline(true);
+      setLoading(false);
+    } catch {
+      setMessages(prev=>[...prev,{role:"user",text},{role:"engine",text:"Bu bilgiyi aldım. Bir sonraki adımı birlikte netleştirelim."}]);
+      setConversationContext(nextContext);
+      setAnswer("");
+      setLoading(false);
+    }
   }
 
   function reset() {
