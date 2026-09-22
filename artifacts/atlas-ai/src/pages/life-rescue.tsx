@@ -25,6 +25,8 @@ const uiText = {
     understand: "Önce seni anlayacağım, sonra çözüm çıkaracağım.",
     tableClear: "Tamam, tablo netleşti.", plan: "Kurtarma planı", hide: "Gizle", show: "Göster",
     thinking: "Şimdi verdiğin bilgileri bir araya getirip sana uygulanabilir, öncelik sırasına konmuş bir çıkış yolu çıkarıyorum.",
+    minutes: "dk", greeting: "Merhaba. Buradayım. Önce neyi çözmeye çalıştığını anlat; hemen sonuca atlamadan durumu birlikte netleştirelim.",
+    suggestions: ["Param yetmiyor", "Faturaları yetiştiremiyorum", "Bir karar veremiyorum", "Zamanım yetmiyor"],
   },
   en: {
     newProblem: "New problem", menu: "Open menu", whatHappened: "What happened?",
@@ -37,6 +39,8 @@ const uiText = {
     understand: "I'll understand the situation first, then work out a solution.",
     tableClear: "Okay, I have enough of the picture.", plan: "Rescue plan", hide: "Hide", show: "Show",
     thinking: "Okay. I have enough context now. I'm putting it together into a practical, prioritized way forward.",
+    minutes: "min", greeting: "Hello. I'm here. Tell me what you're trying to solve, and we'll understand the situation before jumping to a solution.",
+    suggestions: ["I don't have enough money", "I can't keep up with my bills", "I can't decide", "I don't have enough time"],
   },
 } as const;
 
@@ -176,6 +180,7 @@ function getOptions(
     urgency,
     budget: budget === "" ? undefined : Number(budget),
     availableHours: availableHours === "" ? undefined : Number(availableHours),
+    language,
   };
 }
 
@@ -200,10 +205,7 @@ export default function LifeRescue() {
   const { toggleSidebar } = useSidebar();
   const copy = uiText[language];
 
-  const suggestions = useMemo(
-    () => ["Param yetmiyor", "Faturaları yetiştiremiyorum", "Bir karar veremiyorum", "Zamanım yetmiyor"],
-    [],
-  );
+  const suggestions = copy.suggestions;
 
   useEffect(() => {
     window.localStorage.setItem("agt_life_rescue_language", language);
@@ -380,6 +382,23 @@ export default function LifeRescue() {
     const text = (textOverride ?? problem).trim();
     if (text.length < 3) return;
 
+    const normalized = text.toLocaleLowerCase("tr-TR").replace(/[!?.,]/g, "").trim();
+    const isGreeting = /^(merhaba|selam|hey|sa|selaam|hello|hi|hey there|good morning|good evening|iyi akşamlar|günaydın|iyi günler)$/.test(normalized);
+
+    if (isGreeting) {
+      setProblem("");
+      setAnswer("");
+      setQuestionIndex(0);
+      setShowPlan(false);
+      setConversationContext("");
+      setResult(null);
+      setMessages([
+        { role: "user", text },
+        { role: "engine", text: copy.greeting },
+      ]);
+      return;
+    }
+
     const localResult = runAnalysis(text);
     const questions = getQuestionSet(localResult.category, text).map((q) => translateKnown(q, language));
 
@@ -479,14 +498,15 @@ export default function LifeRescue() {
               onClick={toggleSidebar}
               aria-label={copy.menu}
               title={copy.menu}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border bg-card"
+              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border bg-card sm:h-10 sm:w-10"
             >
               <Menu className="h-5 w-5" />
             </button>
 
             <div className="flex min-w-0 items-center gap-2 text-primary">
               <Sparkles className="h-5 w-5 shrink-0" />
-              <span className="truncate text-sm font-bold tracking-wide">AGT LIFE RESCUE</span>
+              <span <span className="hidden truncate text-sm font-bold tracking-wide sm:inline">AGT LIFE RESCUE</span>
+              <span className="text-sm font-bold tracking-wide sm:hidden">AGT LIFE</span>
             </div>
 
             <div className="ml-auto flex items-center gap-1">
@@ -500,7 +520,7 @@ export default function LifeRescue() {
                 onClick={reset}
                 aria-label={copy.newProblem}
                 title={copy.newProblem}
-                className="flex h-10 w-10 items-center justify-center rounded-full border bg-card"
+                className="flex h-9 w-9 items-center justify-center rounded-full border bg-card sm:h-10 sm:w-10"
               >
                 <PencilLine className="h-5 w-5" />
               </button>
@@ -646,7 +666,7 @@ export default function LifeRescue() {
 
                   {showPlan && (
                     <div className="mt-3 space-y-2">
-                      {result.plan.steps.filter((step) => step.label !== "Hedef").map((step, index) => (
+                      {result.plan.steps.filter((step) => step.label !== "Hedef" && step.label !== "Goal").map((step, index) => (
                         <div key={step.label} className="flex gap-3 rounded-2xl bg-muted/60 p-3.5">
                           <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-background text-xs font-bold text-primary">
                             {index + 1}
@@ -655,7 +675,7 @@ export default function LifeRescue() {
                             <div className="flex flex-wrap items-center gap-2">
                               <span className="text-xs font-semibold text-primary">{step.label}</span>
                               {step.estimatedMinutes !== undefined && (
-                                <span className="text-xs text-muted-foreground">~{step.estimatedMinutes} dk</span>
+                                <span className="text-xs text-muted-foreground">~{step.estimatedMinutes} {copy.minutes}</span>
                               )}
                             </div>
                             <p className="mt-1 text-sm font-medium">{step.title}</p>
@@ -683,19 +703,19 @@ export default function LifeRescue() {
                     continueConversation();
                   }
                 }}
-                placeholder="Cevabını yaz..."
+                placeholder={copy.answer}
                 rows={1}
                 className="max-h-28 min-h-11 flex-1 resize-none bg-transparent px-3 py-2.5 text-sm leading-6 outline-none placeholder:text-muted-foreground"
               />
               <button type="button" onClick={sendFromComposer} disabled={!answer.trim()}
                 className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground disabled:opacity-40"
-                aria-label="Gönder">
+                aria-label={copy.send}>
                 <ArrowUp className="h-5 w-5" />
               </button>
             </div>
             <div className="mt-2 flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
               <CheckCircle2 className="h-3 w-3" />
-              Önce seni anlayacağım, sonra çözüm çıkaracağım.
+              {copy.understand}
             </div>
           </div>
         )}
