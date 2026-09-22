@@ -655,7 +655,6 @@ export default function LifeRescue() {
   }
 
   const conversationStarted = messages.length > 0;
-  const questions = result ? getQuestionSet(result.category, conversationContext).map((q) => translateKnown(q, language)) : [];
   const isReadyForPlan = showPlan && result;
 
   return (
