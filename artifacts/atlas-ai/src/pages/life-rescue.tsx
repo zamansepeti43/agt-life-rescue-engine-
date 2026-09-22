@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowUp, CheckCircle2, Menu, RotateCcw, Settings2, Sparkles, WifiOff } from "lucide-react";
 import { analyzeOffline, type OfflineResult } from "@/lib/life-rescue-offline";
-import { addTask } from "@/lib/assistant-store";
 import { saveLifeRescueHistory } from "@/lib/life-rescue-history";
 import { useSidebar } from "@/components/ui/sidebar";
 
@@ -105,6 +104,11 @@ export default function LifeRescue() {
     return () => window.removeEventListener("life-rescue-new-problem", resetFromMenu);
   }, []);
 
+  function extractMoney(text: string) {
+    const matches = text.toLocaleLowerCase("tr-TR").matchAll(/(\\d{1,3}(?:[. ]\\d{3})*(?:,\\d{1,2})?|\\d+(?:,\\d{1,2})?)\\s*(?:tl|₺|lira)/gi);
+    return Array.from(matches, (m) => Number(m[1].replace(/\\s/g, "").replace(/\\./g, "").replace(",", "."))).filter(Number.isFinite);
+  }
+
   function getQuestionSet(currentCategory: string, text: string) {
     const normalized = text.toLocaleLowerCase("tr-TR");
     const categoryName = categoryLabels[currentCategory] ?? currentCategory;
@@ -113,7 +117,7 @@ export default function LifeRescue() {
       return [
         "Şu an elinde kullanılabilir yaklaşık ne kadar para var?",
         "Önümüzdeki birkaç gün içinde kesinlikle ödenmesi gereken toplam tutar yaklaşık ne kadar?",
-        "Bu ödemelerin son tarihi ne ve gecikirse en ciddi sonucu hangisi doğurur?",
+        "Bu tutarın içinde hangi ödemeler var? Son tarihleri ve gecikirse doğuracağı en ciddi sonuçları da söyleyebilir misin?",
       ];
     }
 
@@ -158,10 +162,33 @@ export default function LifeRescue() {
     }
 
     return [
-      `${categoryName || "Bu problem"} içinde sonucu en çok değiştirecek bilgi sence ne?`,
-      "Bunu çözmek için şu anda elindeki en önemli imkân veya kısıt ne?",
-      "Bunun için bir son tarih, bütçe veya başka bir zorunluluk var mı?",
+      `${categoryName || "Bu problem"} için önce sonucu gerçekten değiştirecek bilgiyi bulalım. Şu anda seni en çok sıkıştıran şey ne?`,
+      "Bunu çözmemizi zorlaştıran en büyük kısıt ne: para, zaman, son tarih, başka bir kişinin kararı veya başka bir şey?",
+      "Bunu çözmezsek önümüzdeki birkaç gün içinde ne olması gerekiyor veya ne olabilir?",
     ];
+  }
+
+  function conversationBridge(category: string, context: string, answerText: string) {
+    const amounts = extractMoney(context);
+    if (category === "money" || category === "bills") {
+      if (amounts.length >= 2) {
+        const available = amounts[0];
+        const required = amounts[1];
+        const gap = required - available;
+        if (gap > 0) {
+          return `Anladım. Şu an yaklaşık ${available.toLocaleString("tr-TR")} TL var, önümüzdeki ödemeler yaklaşık ${required.toLocaleString("tr-TR")} TL. Yani ilk bakışta ${gap.toLocaleString("tr-TR")} TL'lik bir açık görünüyor. Şimdi bu açığın nereden oluştuğunu ve hangi ödemenin gerçekten önce gelmesi gerektiğini ayıralım.`;
+        }
+        if (gap <= 0) {
+          return `Anladım. Şu an verdiğin rakamlara göre ${available.toLocaleString("tr-TR")} TL kullanılabilir paran, yaklaşık ${required.toLocaleString("tr-TR")} TL'lik zorunlu ödemeye karşılık geliyor. Burada asıl mesele toplam tutardan çok ödeme tarihleri ve hangisinin gecikmesinin daha ağır sonuç doğuracağı. Onu netleştirelim.`;
+        }
+      }
+      if (amounts.length === 1) {
+        return `Tamam, ${amounts[0].toLocaleString("tr-TR")} TL'lik tutarı not ettim. Şimdi bunu diğer zorunlu ödemelerle karşılaştırıp gerçek açığı bulalım.`;
+      }
+    }
+    return answerText.length > 20
+      ? "Anladım. Verdiğin bu ayrıntı önemli; bunu sonraki adımda hesaba katacağım."
+      : "Tamam, bunu not ettim. Şimdi sonucu değiştirecek bir noktayı daha netleştirelim.";
   }
 
   function getOptions() {
@@ -227,10 +254,7 @@ export default function LifeRescue() {
     if (nextIndex < questions.length) {
       setQuestionIndex(nextIndex);
       const nextQuestion = questions[nextIndex];
-      const bridge =
-        nextIndex === 1
-          ? "Tamam, bunu anladım. Şimdi resmi biraz daha netleştirelim."
-          : "Anladım. Bir noktayı daha netleştirirsek sana rastgele tavsiye vermek yerine gerçekten durumuna uygun bir yol çıkarabilirim.";
+      const bridge = conversationBridge(result.category, nextContext, text);
 
       setMessages((prev) => [
         ...prev,
