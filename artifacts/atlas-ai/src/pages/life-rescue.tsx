@@ -1,7 +1,8 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AlertTriangle, ArrowRight, CheckCircle2, Loader2, Sparkles, WifiOff, RotateCcw, MessageCircle } from "lucide-react";
 import { analyzeOffline, type OfflineResult } from "@/lib/life-rescue-offline";
 import { addTask } from "@/lib/assistant-store";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 
 type Result = {
   problem: string;
@@ -38,6 +39,12 @@ export default function LifeRescue() {
   const [offline,setOffline]=useState(false);
   const [messages,setMessages]=useState<Message[]>([]);
   const [conversationContext,setConversationContext]=useState("");
+  const resultRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (!result) return;
+    window.setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+  }, [result]);
 
   async function analyze(context?: string) {
     const base=problem.trim();
@@ -133,9 +140,10 @@ export default function LifeRescue() {
   }
 
   return (
-    <main className="min-h-screen bg-background px-4 py-8 text-foreground md:px-8">
+    <main className="min-h-screen w-full overflow-x-hidden bg-background px-4 py-4 pb-16 text-foreground md:px-8 md:py-8">
       <div className="mx-auto max-w-4xl">
-        <header className="mb-8">
+        <header className="relative mb-8 pt-8 md:pt-0">
+          <div className="absolute left-0 top-0 md:hidden"><SidebarTrigger className="h-10 w-10 rounded-xl border border-border bg-card text-foreground" /></div>
           <div className="mb-3 flex items-center gap-2 text-primary"><Sparkles className="h-5 w-5"/><span className="text-sm font-semibold tracking-wide">AGT LIFE RESCUE ENGINE</span></div>
           <h1 className="text-3xl font-bold md:text-5xl">Hayat karıştı mı?</h1>
           <p className="mt-3 max-w-2xl text-muted-foreground">Anlat derdini. Sana hazır bir liste fırlatmak yerine önce seni ve içinde bulunduğun durumu anlamaya çalışalım; sonra en mantıklı adımları birlikte daraltalım.</p>
@@ -164,7 +172,7 @@ export default function LifeRescue() {
           <div className="space-y-3">{messages.map((m,i)=><div key={i} className={m.role==="user"?"ml-6 rounded-2xl bg-primary/10 p-4":"mr-6 rounded-2xl bg-muted p-4"}><div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{m.role==="user"?"Sen":"Life Rescue"}</div><p className="text-sm leading-6">{m.text}</p></div>)}</div>
         </section>}
 
-        {result&&<section className="mt-6 space-y-4">
+        {result&&<section ref={resultRef} className="mt-6 scroll-mt-4 space-y-4">
           <div className="rounded-2xl border bg-card p-5">
             {offline&&<div className="mb-4 flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-3 py-2 text-sm text-muted-foreground"><WifiOff className="h-4 w-4 text-primary"/>Çevrimdışı mod: temel karar motoru cihaz üzerinde çalıştı.</div>}
             <div className="flex flex-wrap items-center gap-2"><span className="rounded-full border px-3 py-1 text-xs font-medium">{result.category}</span><span className="rounded-full border px-3 py-1 text-xs font-medium">{result.goal}</span><span className="rounded-full border px-3 py-1 text-xs font-medium">Aşama: {result.phase}</span><span className="rounded-full border px-3 py-1 text-xs font-medium">{result.priority}</span></div>
