@@ -114,11 +114,26 @@ export default function LifeRescue() {
     const categoryName = categoryLabels[currentCategory] ?? currentCategory;
 
     if (currentCategory === "money" || /para|maaş|borç|ödeme|fatura/.test(normalized)) {
-      return [
-        "Şu an elinde kullanılabilir yaklaşık ne kadar para var?",
-        "Önümüzdeki birkaç gün içinde kesinlikle ödenmesi gereken toplam tutar yaklaşık ne kadar?",
-        "Bu tutarın içinde hangi ödemeler var? Son tarihleri ve gecikirse doğuracağı en ciddi sonuçları da söyleyebilir misin?",
-      ];
+      const hasPurpose = /kira|fatura|borç|borçlar|maaş|market|alışveriş|çocuk|çocuğ|ev|araba|araç|taksit|kredi|vergi|sigorta|ilaç|sağlık|okul|eğitim|seyahat|bilet|taşın|nakliye/.test(normalized);
+      const hasAvailableMoney = /elimde|elinde|cebimde|hesabımda|param var|para var|350 tl|600 tl|\\d+\\s*(?:tl|₺|lira)/.test(normalized);
+      const questions: string[] = [];
+
+      if (!hasPurpose) {
+        questions.push(
+          "Önce şunu anlayalım: Bu para tam olarak neye lazım? Kira, fatura, borç, market, çocuk masrafı veya başka bir şey mi?"
+        );
+      }
+      if (!hasAvailableMoney) {
+        questions.push("Şu an elinde veya hesabında gerçekten kullanabileceğin yaklaşık ne kadar para var?");
+      }
+      questions.push(
+        "Önümüzdeki birkaç gün içinde ödenmesi gereken neler var? Mümkünse tek tek yaz: örneğin kira 10.000 TL, elektrik 1.000 TL gibi."
+      );
+      questions.push(
+        "Bunların son ödeme tarihleri ne? Hangisi gecikirse senin için en ciddi sorun çıkar?"
+      );
+
+      return questions;
     }
 
     if (currentCategory === "time" || /zaman|yetiş|süre|yoğun/.test(normalized)) {
