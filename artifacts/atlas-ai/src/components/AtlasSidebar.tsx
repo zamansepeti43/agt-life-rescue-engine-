@@ -1,6 +1,19 @@
-import { BellRing, Bot, LifeBuoy, CheckSquare2, Crosshair, History, MemoryStick, Plus, Settings, Target, ShieldCheck } from 'lucide-react';
+import { BellRing, CheckSquare2, Crosshair, History, LifeBuoy, Plus, Target } from 'lucide-react';
 import { useLocation } from 'wouter';
-import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuBadge, SidebarMenuButton, SidebarMenuItem, SidebarRail, useSidebar } from '@/components/ui/sidebar';
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuBadge,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarRail,
+  useSidebar,
+} from '@/components/ui/sidebar';
 import { useAssistantState } from '@/hooks/useAssistantState';
 import { listConversationHistory } from '@/lib/conversation-history';
 import { useEffect, useState } from 'react';
@@ -16,6 +29,7 @@ export function AtlasSidebar() {
   const { setOpenMobile } = useSidebar();
   const state = useAssistantState();
   const [recentChats, setRecentChats] = useState(() => listConversationHistory());
+
   useEffect(() => {
     const refresh = () => setRecentChats(listConversationHistory());
     window.addEventListener('atlas-conversation-history-change', refresh);
@@ -25,32 +39,117 @@ export function AtlasSidebar() {
       window.removeEventListener('storage', refresh);
     };
   }, []);
+
   const unread = state.events.filter((event) => !event.read).length;
-  const goTo = (path: string) => { navigate(path); setOpenMobile(false); };
-  const newConversation = () => { goTo('/'); window.dispatchEvent(new Event('atlas-new-conversation')); window.dispatchEvent(new Event('atlas-conversation-history-change')); };
+  const goTo = (path: string) => {
+    navigate(path);
+    setOpenMobile(false);
+  };
+
+  const newProblem = () => {
+    goTo('/');
+    window.dispatchEvent(new Event('atlas-new-conversation'));
+  };
 
   return (
     <Sidebar collapsible="offcanvas">
       <SidebarHeader className="border-b border-sidebar-border p-4">
-        <div className="flex items-center gap-3"><img src="/favicon.svg" alt="" className="h-9 w-9 rounded-lg object-contain" /><div><p className="font-serif text-lg font-bold">Atlas <span className="text-primary">AI</span></p><p className="text-xs text-muted-foreground">Kişisel karar asistanı</p></div></div>
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/15 text-primary">
+            <LifeBuoy className="h-5 w-5" />
+          </div>
+          <div>
+            <p className="text-lg font-bold tracking-tight">AGT Life Rescue</p>
+            <p className="text-xs text-muted-foreground">Hayat Kurtarma Motoru</p>
+          </div>
+        </div>
       </SidebarHeader>
+
       <SidebarContent>
-        <SidebarGroup><SidebarGroupLabel>Çalışma alanı</SidebarGroupLabel><SidebarGroupContent><SidebarMenu>
-          <SidebarMenuItem><SidebarMenuButton isActive={location === '/'} onClick={() => goTo('/')} tooltip="Atlas"><Bot /><span>Atlas</span></SidebarMenuButton></SidebarMenuItem>
-          <SidebarMenuItem><SidebarMenuButton isActive={location === '/atlas-os'} onClick={() => goTo('/atlas-os')} tooltip="Atlas Life OS"><Bot /><span>Atlas Life OS</span></SidebarMenuButton></SidebarMenuItem>
-          <SidebarMenuItem><SidebarMenuButton isActive={location === '/life-rescue'} onClick={() => goTo('/life-rescue')} tooltip="Hayat Kurtarma Motoru"><LifeBuoy /><span>Hayat Kurtarma</span></SidebarMenuButton></SidebarMenuItem>
-          <SidebarMenuItem><SidebarMenuButton onClick={newConversation} tooltip="Yeni sohbet"><Plus /><span>Yeni Sohbet</span></SidebarMenuButton></SidebarMenuItem>
-          <SidebarMenuItem><SidebarMenuButton isActive={location === '/atlas'} onClick={() => goTo('/atlas')} tooltip="Geçmiş"><History /><span>Geçmiş</span></SidebarMenuButton></SidebarMenuItem>
-          {recentChats.slice(0, 5).map((chat) => <SidebarMenuItem key={chat.id}><SidebarMenuButton onClick={() => { goTo('/atlas'); window.setTimeout(() => window.dispatchEvent(new CustomEvent('atlas-load-conversation', { detail: { id: chat.id } })), 0); }} tooltip={chat.title}><History className="h-3.5 w-3.5" /><span className="truncate">{chat.title}</span></SidebarMenuButton></SidebarMenuItem>)}
-          <SidebarMenuItem><SidebarMenuButton disabled tooltip="Hafıza"><MemoryStick /><span>Hafıza</span></SidebarMenuButton></SidebarMenuItem>
-        </SidebarMenu></SidebarGroupContent></SidebarGroup>
-        <SidebarGroup><SidebarGroupLabel>Koruma & İzleme</SidebarGroupLabel><SidebarGroupContent><SidebarMenu>
-          <SidebarMenuItem><SidebarMenuButton isActive={location === '/atlas-os'} onClick={() => goTo('/atlas-os')} tooltip="Dolandırıcılık Kalkanı"><ShieldCheck /><span>Dolandırıcılık Kalkanı</span></SidebarMenuButton></SidebarMenuItem>
-          <SidebarMenuItem><SidebarMenuButton isActive={location === '/izci'} onClick={() => goTo('/izci')} tooltip="İzci"><BellRing /><span>İZCİ</span></SidebarMenuButton>{unread > 0 && <SidebarMenuBadge>{unread}</SidebarMenuBadge>}</SidebarMenuItem>
-          {IZCI_ITEMS.map(({ label, icon: Icon }) => <SidebarMenuItem key={label}><SidebarMenuButton onClick={() => goTo('/izci')} tooltip={label}><Icon /><span>{label}</span></SidebarMenuButton></SidebarMenuItem>)}
-        </SidebarMenu></SidebarGroupContent></SidebarGroup>
+        <SidebarGroup>
+          <SidebarGroupLabel>Hayat Kurtarma</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  isActive={location === '/'}
+                  onClick={() => goTo('/')}
+                  tooltip="Hayat Kurtarma"
+                >
+                  <LifeBuoy />
+                  <span>Hayat Kurtarma</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton onClick={newProblem} tooltip="Yeni problem">
+                  <Plus />
+                  <span>Yeni Problem</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  isActive={location === '/atlas'}
+                  onClick={() => goTo('/atlas')}
+                  tooltip="Geçmiş"
+                >
+                  <History />
+                  <span>Geçmiş</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              {recentChats.slice(0, 5).map((chat) => (
+                <SidebarMenuItem key={chat.id}>
+                  <SidebarMenuButton
+                    onClick={() => {
+                      goTo('/atlas');
+                      window.setTimeout(
+                        () =>
+                          window.dispatchEvent(
+                            new CustomEvent('atlas-load-conversation', {
+                              detail: { id: chat.id },
+                            }),
+                          ),
+                        0,
+                      );
+                    }}
+                    tooltip={chat.title}
+                  >
+                    <History className="h-3.5 w-3.5" />
+                    <span className="truncate">{chat.title}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>İZCİ</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  isActive={location === '/izci'}
+                  onClick={() => goTo('/izci')}
+                  tooltip="İZCİ"
+                >
+                  <BellRing />
+                  <span>İZCİ</span>
+                </SidebarMenuButton>
+                {unread > 0 && <SidebarMenuBadge>{unread}</SidebarMenuBadge>}
+              </SidebarMenuItem>
+              {IZCI_ITEMS.map(({ label, icon: Icon }) => (
+                <SidebarMenuItem key={label}>
+                  <SidebarMenuButton onClick={() => goTo('/izci')} tooltip={label}>
+                    <Icon />
+                    <span>{label}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="border-t border-sidebar-border p-2"><SidebarMenu><SidebarMenuItem><SidebarMenuButton disabled tooltip="Ayarlar"><Settings /><span>Ayarlar</span></SidebarMenuButton></SidebarMenuItem></SidebarMenu></SidebarFooter>
+
       <SidebarRail />
     </Sidebar>
   );
