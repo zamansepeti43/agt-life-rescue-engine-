@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowUp, CheckCircle2, Menu, RotateCcw, Settings2, Sparkles, WifiOff } from "lucide-react";
+import { ArrowUp, CheckCircle2, Menu, MoreVertical, PencilLine, Settings2, Sparkles, WifiOff } from "lucide-react";
 import { analyzeOffline, type OfflineResult } from "@/lib/life-rescue-offline";
 import { saveLifeRescueHistory } from "@/lib/life-rescue-history";
 import { useSidebar } from "@/components/ui/sidebar";
@@ -470,34 +470,54 @@ export default function LifeRescue() {
   return (
     <main className="h-[100dvh] w-full overflow-y-auto overscroll-contain bg-background text-foreground">
       <div className="mx-auto flex min-h-[100dvh] w-full max-w-3xl flex-col px-4 pb-28 md:px-6">
-        <header className={conversationStarted ? "sticky top-0 z-30 -mx-4 border-b bg-background/95 px-4 py-3 backdrop-blur md:-mx-6 md:px-6" : "pt-8 md:pt-12"}>
+        <header className="sticky top-0 z-30 -mx-4 border-b bg-background/95 px-4 py-3 backdrop-blur md:-mx-6 md:px-6">
           <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={toggleSidebar}
+              aria-label={copy.menu}
+              title={copy.menu}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border bg-card"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+
             <div className="flex min-w-0 items-center gap-2 text-primary">
               <Sparkles className="h-5 w-5 shrink-0" />
               <span className="truncate text-sm font-bold tracking-wide">AGT LIFE RESCUE</span>
             </div>
-            <div className="ml-auto flex items-center gap-2">
+
+            <div className="ml-auto flex items-center gap-1">
               <div className="inline-flex rounded-full border bg-card p-0.5" role="group" aria-label="Language">
                 <button type="button" onClick={() => setLanguage("tr")} className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${language === "tr" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>TR</button>
                 <button type="button" onClick={() => setLanguage("en")} className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${language === "en" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>EN</button>
-              </div> 
+              </div>
 
-            {conversationStarted && (
               <button
                 type="button"
                 onClick={reset}
-                className="ml-auto inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium"
+                aria-label={copy.newProblem}
+                title={copy.newProblem}
+                className="flex h-10 w-10 items-center justify-center rounded-full border bg-card"
               >
-                <RotateCcw className="h-3.5 w-3.5" />
-                Yeni problem
+                <PencilLine className="h-5 w-5" />
               </button>
-            )}
+
+              <button
+                type="button"
+                aria-label="More options"
+                title="More options"
+                className="flex h-10 w-10 items-center justify-center rounded-full border bg-card"
+              >
+                <MoreVertical className="h-5 w-5" />
+              </button>
+            </div>
           </div>
           {!conversationStarted && (
             <>
               <h1 className="mt-8 text-4xl font-bold tracking-tight md:text-5xl">{copy.whatHappened}</h1>
               <p className="mt-3 max-w-xl text-base leading-7 text-muted-foreground">
-                Anlat derdini. Önce seni anlayacağım, sonra birlikte en mantıklı çıkış yolunu bulacağız.
+                {copy.intro}
               </p>
             </>
           )}
