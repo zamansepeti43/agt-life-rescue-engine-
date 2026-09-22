@@ -101,7 +101,13 @@ export default function LifeRescue() {
     // Android: produce the deterministic answer synchronously from the click
     // handler. This deliberately avoids any async boundary before setResult.
     try {
-      const localResult = analyzeOffline(text) as OfflineResult as Result;
+      const localResult = analyzeOffline(text, {
+        category: category || undefined,
+        goal: goal || undefined,
+        urgency,
+        budget: budget === "" ? undefined : Number(budget),
+        availableHours: availableHours === "" ? undefined : Number(availableHours),
+      }) as OfflineResult as Result;
       setMessages([{role:"user",text},{role:"engine",text:localResult.diagnosis}]);
       setConversationContext(text);
       setResult(localResult);
@@ -121,7 +127,13 @@ export default function LifeRescue() {
     const nextContext=conversationContext ? conversationContext+"\nKullanıcı: "+text : text;
 
     try {
-      const localResult = analyzeOffline(nextContext) as OfflineResult as Result;
+      const localResult = analyzeOffline(nextContext, {
+        category: category || undefined,
+        goal: goal || undefined,
+        urgency,
+        budget: budget === "" ? undefined : Number(budget),
+        availableHours: availableHours === "" ? undefined : Number(availableHours),
+      }) as OfflineResult as Result;
       setMessages(prev=>[...prev,{role:"user",text},{role:"engine",text:localResult.diagnosis}]);
       setConversationContext(nextContext);
       setAnswer("");
