@@ -352,6 +352,7 @@ export default function LifeRescue() {
       if (amounts.length === 1) {
         return `Tamam, ${amounts[0].toLocaleString("tr-TR")} TL'lik tutarı not ettim. Şimdi bunu diğer zorunlu ödemelerle karşılaştırıp gerçek açığı bulalım.`;
       }
+      }
     }
     return answerText.length > 20
       ? "Anladım. Verdiğin bu ayrıntı önemli; bunu sonraki adımda hesaba katacağım."
