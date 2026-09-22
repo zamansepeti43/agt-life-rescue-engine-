@@ -184,8 +184,29 @@ function englishizeResult(result: OfflineResult): OfflineResult {
   return {
     ...result,
     goal: result.goal,
-    diagnosis: result.diagnosis,
-    constraints: result.constraints.map(tr),
+    diagnosis:
+      result.category === "money"
+        ? (result.constraints.length && /Konuşmada geçen/.test(result.constraints[0])
+          ? "We'll first map the available money and required payments, then identify the real gap and which payment must come first."
+          : "We'll put income, mandatory expenses and upcoming payments into one picture and find the real gap.")
+        : result.category === "vehicle"
+          ? "We'll separate safety risk first, then compare repair and alternative transport costs."
+          : result.category === "travel"
+            ? "We'll lock down the date and required arrival time first, then work out total travel cost and a backup plan."
+            : result.category === "moving"
+              ? "We'll lock down the move date and mandatory payments first, then reduce cash and time pressure."
+              : result.category === "home"
+                ? "We'll check safety and further-damage risk first, then compare repair, replacement and temporary solutions."
+                : "We'll simplify the situation first, identify what changes the outcome most, and build the plan around it.",
+    constraints: result.constraints.map((c) => c.startsWith("Konuşmada geçen parasal tutarlar:")
+      ? c.replace("Konuşmada geçen parasal tutarlar:", "Amounts mentioned:").replace(/ TL/g, " TL")
+      : c.startsWith("Bütçe:")
+        ? c.replace("Bütçe:", "Budget:")
+        : c.startsWith("Bugün ayrılabilecek zaman:")
+          ? c.replace("Bugün ayrılabilecek zaman:", "Time available today:")
+          : c.startsWith("Son tarih:")
+            ? c.replace("Son tarih:", "Deadline:")
+            : tr(c)),
     decisionBasis: result.decisionBasis.map(tr),
     actions: result.actions.map((a) => ({ ...a, title: tr(a.title), reason: tr(a.reason) })),
     plan: {
@@ -197,7 +218,18 @@ function englishizeResult(result: OfflineResult): OfflineResult {
         detail: tr(s.detail),
       })),
     },
-    nextQuestion: result.nextQuestion,
+    nextQuestion:
+      result.category === "money"
+        ? "Which of these payments truly cannot be delayed, and what are their due dates?"
+        : result.category === "vehicle"
+          ? "Can the vehicle be used safely right now, and what is the estimated cost?"
+          : result.category === "travel"
+            ? "What is the exact travel date and what time do you absolutely need to arrive?"
+            : result.category === "moving"
+              ? "What is the move date, and what total budget do you have for rent, deposit and moving?"
+              : result.category === "home"
+                ? "Does the problem create a safety, water, electrical, or further-damage risk?"
+                : "What constraint changes the outcome most: money, time, deadline, or something else?",
   };
 }
 
