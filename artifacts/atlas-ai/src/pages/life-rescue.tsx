@@ -1,56 +1,106 @@
-import { useEffect, useRef, useState } from "react";
-import { AlertTriangle, ArrowRight, CheckCircle2, Loader2, Sparkles, WifiOff, RotateCcw, MessageCircle, Menu } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { ArrowUp, CheckCircle2, Menu, RotateCcw, Settings2, Sparkles, WifiOff } from "lucide-react";
 import { analyzeOffline, type OfflineResult } from "@/lib/life-rescue-offline";
 import { addTask } from "@/lib/assistant-store";
 import { saveLifeRescueHistory } from "@/lib/life-rescue-history";
 import { useSidebar } from "@/components/ui/sidebar";
 
-type Result = {
-  problem: string;
-  category: string;
-  goal: string;
-  diagnosis: string;
-  priority: "critical" | "high" | "normal";
-  phase: "understand" | "stabilize" | "prioritize" | "act";
-  decisionBasis: string[];
-  plan: {
-    objective: string;
-    steps: { label: "Şimdi" | "Bugün" | "Sonraki adım" | "Hedef"; title: string; detail: string; estimatedMinutes?: number }[];
-  };
-  actions: { title: string; reason: string; priority: number }[];
-  nextQuestion: string;
-  constraints: string[];
+type Result = OfflineResult;
+
+type Message = {
+  role: "user" | "engine";
+  text: string;
 };
 
-type Message = { role: "user" | "engine"; text: string };
+const categories = [
+  ["", "Otomatik belirle"],
+  ["money", "Para"],
+  ["home", "Ev"],
+  ["family", "Aile"],
+  ["work", "İş"],
+  ["vehicle", "Araç"],
+  ["time", "Zaman"],
+  ["bills", "Faturalar"],
+  ["travel", "Seyahat"],
+  ["moving", "Taşınma"],
+  ["decision", "Karar"],
+];
 
-const categories = [["", "Otomatik belirle"],["money", "Para"],["home", "Ev"],["family", "Aile"],["work", "İş"],["vehicle", "Araç"],["time", "Zaman"],["bills", "Faturalar"],["travel", "Seyahat"],["moving", "Taşınma"],["decision", "Karar"]];
-const goals = [["", "Otomatik belirle"],["find_money", "Para bul"],["reduce_cost", "Masrafı azalt"],["save_time", "Zaman kazan"],["prioritize", "Önceliklendir"],["make_decision", "Karar ver"],["cancel", "İptal et"],["organize", "Düzenle"],["solve", "Çöz"]];
-const categoryLabels: Record<string, string> = { money: "Para", home: "Ev", family: "Aile", work: "İş", vehicle: "Araç", time: "Zaman", bills: "Faturalar", travel: "Seyahat", moving: "Taşınma", decision: "Karar" };
-const goalLabels: Record<string, string> = { find_money: "Para bul", reduce_cost: "Masrafı azalt", save_time: "Zaman kazan", prioritize: "Önceliklendir", make_decision: "Karar ver", cancel: "İptal et", organize: "Düzenle", solve: "Çöz" };
-const phaseLabels: Record<string, string> = { understand: "Anla", stabilize: "Dengele", prioritize: "Önceliklendir", act: "Uygula" };
-const priorityLabels: Record<string, string> = { critical: "Kritik", high: "Yüksek", normal: "Normal" };
+const goals = [
+  ["", "Otomatik belirle"],
+  ["find_money", "Para bul"],
+  ["reduce_cost", "Masrafı azalt"],
+  ["save_time", "Zaman kazan"],
+  ["prioritize", "Önceliklendir"],
+  ["make_decision", "Karar ver"],
+  ["cancel", "İptal et"],
+  ["organize", "Düzenle"],
+  ["solve", "Çöz"],
+];
+
+const categoryLabels: Record<string, string> = {
+  money: "Para",
+  home: "Ev",
+  family: "Aile",
+  work: "İş",
+  vehicle: "Araç",
+  time: "Zaman",
+  bills: "Faturalar",
+  travel: "Seyahat",
+  moving: "Taşınma",
+  decision: "Karar",
+};
+
+const goalLabels: Record<string, string> = {
+  find_money: "Para bul",
+  reduce_cost: "Masrafı azalt",
+  save_time: "Zaman kazan",
+  prioritize: "Önceliklendir",
+  make_decision: "Karar ver",
+  cancel: "İptal et",
+  organize: "Düzenle",
+  solve: "Çöz",
+};
+
+function getOptions(
+  category: string,
+  goal: string,
+  urgency: number,
+  budget: string,
+  availableHours: string,
+) {
+  return {
+    category: category || undefined,
+    goal: goal || undefined,
+    urgency,
+    budget: budget === "" ? undefined : Number(budget),
+    availableHours: availableHours === "" ? undefined : Number(availableHours),
+  };
+}
 
 export default function LifeRescue() {
-  const [problem,setProblem]=useState("");
-  const [category,setCategory]=useState("");
-  const [goal,setGoal]=useState("");
-  const [urgency,setUrgency]=useState(5);
-  const [budget,setBudget]=useState("");
-  const [availableHours,setAvailableHours]=useState("");
-  const [answer,setAnswer]=useState("");
-  const [loading,setLoading]=useState(false);
-  const [result,setResult]=useState<Result|null>(null);
-  const [offline,setOffline]=useState(false);
-  const [messages,setMessages]=useState<Message[]>([]);
-  const [conversationContext,setConversationContext]=useState("");
+  const [problem, setProblem] = useState("");
+  const [category, setCategory] = useState("");
+  const [goal, setGoal] = useState("");
+  const [urgency, setUrgency] = useState(5);
+  const [budget, setBudget] = useState("");
+  const [availableHours, setAvailableHours] = useState("");
+  const [answer, setAnswer] = useState("");
+  const [result, setResult] = useState<Result | null>(null);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [conversationContext, setConversationContext] = useState("");
+  const [showSettings, setShowSettings] = useState(false);
+  const [showPlan, setShowPlan] = useState(true);
+  const [offline] = useState(true);
   const { toggleSidebar } = useSidebar();
-  const resultRef = useRef<HTMLElement | null>(null);
 
-  useEffect(() => {
-    if (!result) return;
-    window.setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
-  }, [result]);
+  const activeCategory = result ? categoryLabels[result.category] ?? result.category : "";
+  const activeGoal = result ? goalLabels[result.goal] ?? result.goal : "";
+
+  const suggestions = useMemo(
+    () => ["Param yetmiyor", "Faturaları yetiştiremiyorum", "Bir karar veremiyorum", "Zamanım yetmiyor"],
+    [],
+  );
 
   useEffect(() => {
     const resetFromMenu = () => reset();
@@ -58,180 +108,351 @@ export default function LifeRescue() {
     return () => window.removeEventListener("life-rescue-new-problem", resetFromMenu);
   }, []);
 
-  async function analyze(context?: string) {
-    const base=problem.trim();
-    if(base.length<3 || loading) return;
+  function runAnalysis(context: string) {
+    const localResult = analyzeOffline(
+      context,
+      getOptions(category, goal, urgency, budget, availableHours),
+    );
 
-    const combined=context?.trim()
-      ? base+"\\n\\nKonuşmada verilen bilgiler:\\n"+context.trim()
-      : base;
-
-    // Life Rescue is offline-first by design. Render the deterministic result
-    // immediately so the APK never depends on a backend/API response.
-    const localResult = analyzeOffline(combined) as OfflineResult as Result;
     setResult(localResult);
-    setOffline(true);
-    setMessages(prev => [...prev, { role: "engine", text: localResult.diagnosis }]);
-    setLoading(false);
-
-    // On the web version, try the API only as an optional enrichment after
-    // the local answer is already visible. A failed request never blocks UX.
-    if (typeof window !== "undefined" && "AndroidLocalNotifications" in window) return;
-
-    try {
-      const controller = new AbortController();
-      const timeout = window.setTimeout(() => controller.abort(), 3500);
-      const response = await fetch("/api/life-rescue/analyze",{
-        method:"POST",
-        headers:{"Content-Type":"application/json"},
-        body:JSON.stringify({
-          problem:combined,
-          category:category||undefined,
-          goal:goal||undefined,
-          urgency,
-          budget:budget===""?undefined:Number(budget),
-          availableHours:availableHours===""?undefined:Number(availableHours)
-        }),
-        signal: controller.signal
-      });
-      window.clearTimeout(timeout);
-      const data = await response.json();
-      if(!response.ok||!data.success) return;
-      setResult(data.result);
-      setOffline(false);
-      setMessages(prev => [...prev, { role: "engine", text: data.result.diagnosis }]);
-    } catch {
-      // The local result is already rendered; stay in offline mode.
-    }
+    setShowPlan(true);
+    return localResult;
   }
 
-  function start() {
-    const text=problem.trim();
-    if(text.length < 3 || loading) return;
+  function start(textOverride?: string) {
+    const text = (textOverride ?? problem).trim();
+    if (text.length < 3) return;
 
-    // Android: produce the deterministic answer synchronously from the click
-    // handler. This deliberately avoids any async boundary before setResult.
-    try {
-      const localResult = analyzeOffline(text, {
-        category: category || undefined,
-        goal: goal || undefined,
-        urgency,
-        budget: budget === "" ? undefined : Number(budget),
-        availableHours: availableHours === "" ? undefined : Number(availableHours),
-      }) as OfflineResult as Result;
-      setMessages([{role:"user",text},{role:"engine",text:localResult.diagnosis}]);
-      setConversationContext(text);
-      setResult(localResult);
-      setOffline(true);
-      saveLifeRescueHistory({
-        problem: text,
-        category: localResult.category,
-        goal: localResult.goal,
-        diagnosis: localResult.diagnosis,
-        objective: localResult.plan.objective,
-      });
-      setLoading(false);
-    } catch {
-      // Never leave the user on the input screen if the local engine fails.
-      setMessages([{role:"user",text},{role:"engine",text:"Sorunu aldım. Şimdi durumu adım adım sadeleştirelim."}]);
-      setConversationContext(text);
-      setLoading(false);
-    }
+    const localResult = runAnalysis(text);
+    setProblem("");
+    setAnswer("");
+    setConversationContext(text);
+    setMessages([
+      { role: "user", text },
+      { role: "engine", text: localResult.diagnosis },
+    ]);
+
+    saveLifeRescueHistory({
+      problem: text,
+      category: localResult.category,
+      goal: localResult.goal,
+      diagnosis: localResult.diagnosis,
+      objective: localResult.plan.objective,
+    });
   }
 
   function continueConversation() {
-    if(!answer.trim() || !result || loading) return;
-    const text=answer.trim();
-    const nextContext=conversationContext ? conversationContext+"\nKullanıcı: "+text : text;
+    const text = answer.trim();
+    if (!text || !result) return;
 
-    try {
-      const localResult = analyzeOffline(nextContext, {
-        category: category || undefined,
-        goal: goal || undefined,
-        urgency,
-        budget: budget === "" ? undefined : Number(budget),
-        availableHours: availableHours === "" ? undefined : Number(availableHours),
-      }) as OfflineResult as Result;
-      setMessages(prev=>[...prev,{role:"user",text},{role:"engine",text:localResult.diagnosis}]);
-      setConversationContext(nextContext);
-      setAnswer("");
-      setResult(localResult);
-      setOffline(true);
-      setLoading(false);
-    } catch {
-      setMessages(prev=>[...prev,{role:"user",text},{role:"engine",text:"Bu bilgiyi aldım. Bir sonraki adımı birlikte netleştirelim."}]);
-      setConversationContext(nextContext);
-      setAnswer("");
-      setLoading(false);
-    }
+    const nextContext = conversationContext
+      ? conversationContext + "\nKullanıcı: " + text
+      : text;
+    const localResult = runAnalysis(nextContext);
+
+    setConversationContext(nextContext);
+    setMessages((prev) => [
+      ...prev,
+      { role: "user", text },
+      { role: "engine", text: localResult.diagnosis },
+    ]);
+    setAnswer("");
   }
 
   function reset() {
-    setProblem(""); setAnswer(""); setResult(null); setMessages([]); setConversationContext(""); setCategory(""); setGoal(""); setUrgency(5); setBudget(""); setAvailableHours(""); setOffline(false);
+    setProblem("");
+    setAnswer("");
+    setResult(null);
+    setMessages([]);
+    setConversationContext("");
+    setCategory("");
+    setGoal("");
+    setUrgency(5);
+    setBudget("");
+    setAvailableHours("");
+    setShowSettings(false);
+    setShowPlan(true);
+  }
+
+  function sendFromComposer() {
+    if (result) continueConversation();
+    else start();
   }
 
   return (
-    <main className="h-[100dvh] w-full min-h-0 overflow-x-hidden overflow-y-auto overscroll-contain touch-pan-y bg-background px-4 py-4 pb-24 text-foreground md:px-8 md:py-8">
-      <div className="mx-auto max-w-4xl">
-        <header className="relative mb-8 pt-12 md:pt-0">
-          <button type="button" onClick={toggleSidebar} aria-label="Menüyü aç" className="fixed left-3 top-3 z-50 flex h-11 w-11 items-center justify-center rounded-full border border-border bg-card/95 text-foreground shadow-lg backdrop-blur md:hidden"><Menu className="h-6 w-6" /></button>
-          <div className="mb-3 flex items-center gap-2 text-primary"><Sparkles className="h-5 w-5"/><span className="text-sm font-semibold tracking-wide">AGT LIFE RESCUE ENGINE</span></div>
-          <h1 className="text-3xl font-bold md:text-5xl">Hayat karıştı mı?</h1>
-          <p className="mt-3 max-w-2xl text-muted-foreground">Anlat derdini. Sana hazır bir liste fırlatmak yerine önce seni ve içinde bulunduğun durumu anlamaya çalışalım; sonra en mantıklı adımları birlikte daraltalım.</p>
+    <main className="min-h-[100dvh] w-full overflow-x-hidden bg-background text-foreground">
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-3xl flex-col px-4 pb-5 md:px-6">
+        <header className={result ? "sticky top-0 z-30 -mx-4 border-b bg-background/90 px-4 py-3 backdrop-blur md:-mx-6 md:px-6" : "pt-8 md:pt-12"}>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={toggleSidebar}
+              aria-label="Menüyü aç"
+              className="flex h-10 w-10 items-center justify-center rounded-full border bg-card md:hidden"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+            <div className="flex min-w-0 items-center gap-2 text-primary">
+              <Sparkles className="h-5 w-5 shrink-0" />
+              <span className="truncate text-sm font-bold tracking-wide">AGT LIFE RESCUE</span>
+            </div>
+            {result && (
+              <button
+                type="button"
+                onClick={reset}
+                className="ml-auto inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                Yeni problem
+              </button>
+            )}
+          </div>
+          {!result && (
+            <>
+              <h1 className="mt-8 text-4xl font-bold tracking-tight md:text-5xl">Ne oldu?</h1>
+              <p className="mt-3 max-w-xl text-base leading-7 text-muted-foreground">
+                Anlat derdini. Önce seni anlayacağım, sonra birlikte en mantıklı çıkış yolunu bulacağız.
+              </p>
+            </>
+          )}
         </header>
 
-        <section className="rounded-2xl border bg-card p-5 shadow-sm md:p-7">
-          <label className="mb-2 block text-sm font-medium">Şu an neyi çözmeye çalışıyorsun?</label>
-          <textarea value={problem} onChange={e=>setProblem(e.target.value)} onKeyDown={e=>{if((e.ctrlKey||e.metaKey)&&e.key==="Enter")start();}} placeholder="Örn: Bu ay faturalar ve diğer zorunlu ödemeler için param yetmiyor. Nereden başlamalıyım?" className="min-h-36 w-full resize-y rounded-xl border bg-background p-4 outline-none ring-primary/30 focus:ring-2"/>
-          <div className="mt-4 grid gap-3 md:grid-cols-3">
-            <select value={category} onChange={e=>setCategory(e.target.value)} className="rounded-xl border bg-background px-3 py-3">{categories.map(([v,l])=><option key={v} value={v}>{l}</option>)}</select>
-            <select value={goal} onChange={e=>setGoal(e.target.value)} className="rounded-xl border bg-background px-3 py-3">{goals.map(([v,l])=><option key={v} value={v}>{l}</option>)}</select>
-            <label className="rounded-xl border px-3 py-2"><span className="block text-xs text-muted-foreground">Aciliyet: {urgency}/10</span><input className="w-full" type="range" min="1" max="10" value={urgency} onChange={e=>setUrgency(Number(e.target.value))}/></label>
-          </div>
-          <div className="mt-3 grid gap-3 md:grid-cols-2">
-            <label className="rounded-xl border px-3 py-2"><span className="block text-xs text-muted-foreground">Bütçe (TL, isteğe bağlı)</span><input value={budget} onChange={e=>setBudget(e.target.value)} type="number" min="0" placeholder="Örn: 1500" className="mt-1 w-full bg-transparent outline-none"/></label>
-            <label className="rounded-xl border px-3 py-2"><span className="block text-xs text-muted-foreground">Bugün ayırabileceğin zaman (saat)</span><input value={availableHours} onChange={e=>setAvailableHours(e.target.value)} type="number" min="0" step="0.5" placeholder="Örn: 2" className="mt-1 w-full bg-transparent outline-none"/></label>
-          </div>
-          <div className="mt-4 flex flex-wrap gap-2">
-            <button type="button" onClick={start} disabled={loading||problem.trim().length<3} className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 font-semibold text-primary-foreground disabled:opacity-50">{loading?<Loader2 className="h-4 w-4 animate-spin"/>:<ArrowRight className="h-4 w-4"/>}{loading?"Düşünüyorum...":"Anlat, başlayalım"}</button>
-            {result&&<button type="button" onClick={reset} className="inline-flex items-center gap-2 rounded-xl border px-4 py-3 text-sm font-medium"><RotateCcw className="h-4 w-4"/>Yeni problem</button>}
-          </div>
-        </section>
+        {!result && (
+          <section className="flex flex-1 flex-col justify-center pb-10 pt-10">
+            <div className="rounded-3xl border bg-card p-3 shadow-sm">
+              <textarea
+                value={problem}
+                onChange={(e) => setProblem(e.target.value)}
+                onKeyDown={(e) => {
+                  if ((e.ctrlKey || e.metaKey) && e.key === "Enter") start();
+                }}
+                placeholder="Şu an neyi çözmeye çalışıyorsun?"
+                className="min-h-36 w-full resize-none bg-transparent px-3 py-3 text-lg leading-7 outline-none placeholder:text-muted-foreground"
+                autoFocus
+              />
 
-        {messages.length>0&&<section className="mt-6 rounded-2xl border bg-card p-5 md:p-7">
-          <div className="mb-4 flex items-center gap-2 text-sm font-semibold"><MessageCircle className="h-4 w-4 text-primary"/>Konuşma</div>
-          <div className="space-y-3">{messages.map((m,i)=><div key={i} className={m.role==="user"?"ml-6 rounded-2xl bg-primary/10 p-4":"mr-6 rounded-2xl bg-muted p-4"}><div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">{m.role==="user"?"Sen":"Life Rescue"}</div><p className="text-sm leading-6">{m.text}</p></div>)}</div>
-        </section>}
+              <div className="flex items-center justify-between gap-3 border-t pt-3">
+                <button
+                  type="button"
+                  onClick={() => setShowSettings((v) => !v)}
+                  className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm text-muted-foreground hover:bg-muted"
+                >
+                  <Settings2 className="h-4 w-4" />
+                  Ayrıntılar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => start()}
+                  disabled={problem.trim().length < 3}
+                  className="inline-flex h-11 items-center gap-2 rounded-full bg-primary px-5 font-semibold text-primary-foreground disabled:opacity-40"
+                >
+                  <ArrowUp className="h-4 w-4" />
+                  Gönder
+                </button>
+              </div>
+            </div>
 
-        {result&&<section ref={resultRef} className="mt-6 scroll-mt-4 space-y-4">
-          <div className="rounded-2xl border bg-card p-5">
-            {offline&&<div className="mb-4 flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-3 py-2 text-sm text-muted-foreground"><WifiOff className="h-4 w-4 text-primary"/>Çevrimdışı mod: temel karar motoru cihaz üzerinde çalıştı.</div>}
-            <div className="flex flex-wrap items-center gap-2"><span className="rounded-full border px-3 py-1 text-xs font-medium">{categoryLabels[result.category] ?? result.category}</span><span className="rounded-full border px-3 py-1 text-xs font-medium">{goalLabels[result.goal] ?? result.goal}</span><span className="rounded-full border px-3 py-1 text-xs font-medium">Aşama: {phaseLabels[result.phase] ?? result.phase}</span><span className="rounded-full border px-3 py-1 text-xs font-medium">{priorityLabels[result.priority] ?? result.priority}</span></div>
-            <h2 className="mt-4 text-xl font-bold">Durumu şöyle okuyorum</h2>
-            <p className="mt-2 leading-7 text-muted-foreground">{result.diagnosis}</p>
-            {result.decisionBasis?.length>0&&<div className="mt-4"><p className="text-xs font-semibold text-muted-foreground">Bu değerlendirmeyi etkileyenler</p><div className="mt-2 flex flex-wrap gap-2">{result.decisionBasis.map(c=><span key={c} className="rounded-full bg-muted px-3 py-1 text-xs">{c}</span>)}</div></div>}{result.constraints?.length>0&&<div className="mt-3 flex flex-wrap gap-2">{result.constraints.map(c=><span key={c} className="rounded-full bg-muted px-3 py-1 text-xs">{c}</span>)}</div>}
-          </div>
-          <div className="rounded-2xl border bg-card p-5 md:p-6">
-            <div className="flex items-center gap-2 text-primary"><CheckCircle2 className="h-5 w-5"/><span className="text-sm font-bold">KURTARMA PLANI</span><button type="button" onClick={() => { result.plan.steps.filter((step) => step.label !== "Hedef").forEach((step, index) => addTask({ title: `${step.label}: ${step.title}`, ...(step.label === "Şimdi" ? { dueAt: new Date(Date.now() + Math.max(15, step.estimatedMinutes ?? 20) * 60000).toISOString() } : index === 1 ? { dueAt: new Date(Date.now() + 24 * 60 * 60000).toISOString() } : {}) })); }} className="ml-auto rounded-lg border border-primary/30 px-3 py-1.5 text-xs font-semibold text-primary hover:bg-primary/10">İZCİ'ye aktar</button></div>
-            <h3 className="mt-2 text-lg font-bold">{result.plan.objective}</h3>
-            <div className="mt-5 grid gap-3 md:grid-cols-2">
-              {result.plan.steps.map((step)=><article key={step.label} className="rounded-xl border bg-background p-4">
-                <div className="flex items-center justify-between gap-3">
-                  <span className="text-xs font-bold uppercase tracking-wide text-primary">{step.label}</span>
-                  {step.estimatedMinutes !== undefined && <span className="text-xs text-muted-foreground">~{step.estimatedMinutes} dk</span>}
+            <div className="mt-4 flex flex-wrap gap-2">
+              {suggestions.map((item) => (
+                <button
+                  key={item}
+                  type="button"
+                  onClick={() => start(item)}
+                  className="rounded-full border bg-card px-3 py-2 text-sm text-muted-foreground transition hover:border-primary/40 hover:text-foreground"
+                >
+                  {item}
+                </button>
+              ))}
+            </div>
+
+            {showSettings && (
+              <div className="mt-4 rounded-2xl border bg-card p-4">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="text-sm">
+                    <span className="mb-1.5 block text-muted-foreground">Konu</span>
+                    <select
+                      value={category}
+                      onChange={(e) => setCategory(e.target.value)}
+                      className="w-full rounded-xl border bg-background px-3 py-3"
+                    >
+                      {categories.map(([value, label]) => (
+                        <option key={value} value={value}>{label}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="text-sm">
+                    <span className="mb-1.5 block text-muted-foreground">Hedef</span>
+                    <select
+                      value={goal}
+                      onChange={(e) => setGoal(e.target.value)}
+                      className="w-full rounded-xl border bg-background px-3 py-3"
+                    >
+                      {goals.map(([value, label]) => (
+                        <option key={value} value={value}>{label}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="rounded-xl border px-3 py-2 sm:col-span-2">
+                    <span className="block text-xs text-muted-foreground">Aciliyet: {urgency}/10</span>
+                    <input
+                      className="mt-1 w-full"
+                      type="range"
+                      min="1"
+                      max="10"
+                      value={urgency}
+                      onChange={(e) => setUrgency(Number(e.target.value))}
+                    />
+                  </label>
+                  <label className="rounded-xl border px-3 py-2">
+                    <span className="block text-xs text-muted-foreground">Bütçe (TL)</span>
+                    <input
+                      value={budget}
+                      onChange={(e) => setBudget(e.target.value)}
+                      type="number"
+                      min="0"
+                      placeholder="İsteğe bağlı"
+                      className="mt-1 w-full bg-transparent outline-none"
+                    />
+                  </label>
+                  <label className="rounded-xl border px-3 py-2">
+                    <span className="block text-xs text-muted-foreground">Bugün ayırabileceğin zaman</span>
+                    <input
+                      value={availableHours}
+                      onChange={(e) => setAvailableHours(e.target.value)}
+                      type="number"
+                      min="0"
+                      step="0.5"
+                      placeholder="Saat"
+                      className="mt-1 w-full bg-transparent outline-none"
+                    />
+                  </label>
                 </div>
-                <h4 className="mt-2 font-semibold">{step.title}</h4>
-                <p className="mt-1 text-sm leading-6 text-muted-foreground">{step.detail}</p>
-              </article>)}
+              </div>
+            )}
+
+            <div className="mt-6 flex items-center justify-center gap-2 text-xs text-muted-foreground">
+              <WifiOff className="h-3.5 w-3.5" />
+              Temel karar motoru cihazında çalışır.
+            </div>
+          </section>
+        )}
+
+        {result && (
+          <section className="flex-1 py-6 md:py-8">
+            <div className="space-y-5">
+              {messages.map((message, index) => (
+                <div
+                  key={index}
+                  className={message.role === "user" ? "flex justify-end" : "flex justify-start"}
+                >
+                  <div className={message.role === "user" ? "max-w-[88%]" : "max-w-[94%]"}>
+                    <div className="mb-1 px-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                      {message.role === "user" ? "Sen" : "Life Rescue"}
+                    </div>
+                    <div
+                      className={
+                        message.role === "user"
+                          ? "rounded-3xl rounded-tr-md bg-primary px-4 py-3.5 text-primary-foreground"
+                          : "rounded-3xl rounded-tl-md border bg-card px-4 py-4"
+                      }
+                    >
+                      <p className="text-[15px] leading-7">{message.text}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              <div className="rounded-3xl border bg-card p-4 md:p-5">
+                <div className="flex flex-wrap items-center gap-2">
+                  {activeCategory && (
+                    <span className="rounded-full bg-muted px-3 py-1 text-xs">{activeCategory}</span>
+                  )}
+                  {activeGoal && (
+                    <span className="rounded-full bg-muted px-3 py-1 text-xs">{activeGoal}</span>
+                  )}
+                  <span className="rounded-full bg-primary/10 px-3 py-1 text-xs text-primary">
+                    {result.priority === "critical" ? "Öncelikli" : "Sıradaki adım"}
+                  </span>
+                </div>
+
+                <div className="mt-4">
+                  <p className="text-sm font-semibold">Şimdi bunu netleştirelim.</p>
+                  <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{result.nextQuestion}</p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowPlan((v) => !v)}
+                  className="mt-5 flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left"
+                >
+                  <span className="text-sm font-semibold">İlk yol haritası</span>
+                  <span className="text-xs text-muted-foreground">{showPlan ? "Gizle" : "Göster"}</span>
+                </button>
+
+                {showPlan && (
+                  <div className="mt-3 space-y-2">
+                    {result.plan.steps.filter((step) => step.label !== "Hedef").map((step, index) => (
+                      <div key={step.label} className="flex gap-3 rounded-2xl bg-muted/60 p-3.5">
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-background text-xs font-bold text-primary">
+                          {index + 1}
+                        </div>
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="text-xs font-semibold text-primary">{step.label}</span>
+                            {step.estimatedMinutes !== undefined && (
+                              <span className="text-xs text-muted-foreground">~{step.estimatedMinutes} dk</span>
+                            )}
+                          </div>
+                          <p className="mt-1 text-sm font-medium">{step.title}</p>
+                          <p className="mt-0.5 text-xs leading-5 text-muted-foreground">{step.detail}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {result.decisionBasis.length > 0 && (
+                  <p className="mt-4 text-xs text-muted-foreground">
+                    Buna göre ilerliyorum: {result.decisionBasis.slice(0, 2).join(" · ")}.
+                  </p>
+                )}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {result && (
+          <div className="sticky bottom-0 z-30 -mx-4 border-t bg-background/90 px-4 py-3 backdrop-blur md:-mx-6 md:px-6">
+            <div className="mx-auto flex max-w-3xl items-end gap-2 rounded-3xl border bg-card p-2 shadow-lg">
+              <textarea
+                value={answer}
+                onChange={(e) => setAnswer(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    continueConversation();
+                  }
+                }}
+                placeholder="Cevabını yaz..."
+                rows={1}
+                className="max-h-28 min-h-11 flex-1 resize-none bg-transparent px-3 py-2.5 text-sm leading-6 outline-none placeholder:text-muted-foreground"
+              />
+              <button
+                type="button"
+                onClick={sendFromComposer}
+                disabled={!answer.trim()}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground disabled:opacity-40"
+                aria-label="Gönder"
+              >
+                <ArrowUp className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="mt-2 flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
+              <CheckCircle2 className="h-3 w-3" />
+              Cevabına göre planı yeniden şekillendiriyorum.
             </div>
           </div>
-          <div className="grid gap-3 md:grid-cols-3">{result.actions.map(a=><article key={a.priority} className="rounded-2xl border bg-card p-5"><div className="mb-3 flex items-center gap-2 text-primary"><CheckCircle2 className="h-5 w-5"/><span className="text-xs font-bold">ADIM {a.priority}</span></div><h3 className="font-semibold">{a.title}</h3><p className="mt-2 text-sm leading-6 text-muted-foreground">{a.reason}</p></article>)}</div>
-          <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5">
-            <div className="flex gap-3"><AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-primary"/><div className="flex-1"><h3 className="font-semibold">Şimdi senden şunu bilmem lazım</h3><p className="mt-1 leading-6 text-muted-foreground">{result.nextQuestion}</p>
-              <div className="mt-4 flex gap-2"><input value={answer} onChange={e=>setAnswer(e.target.value)} onKeyDown={e=>{if(e.key==="Enter"&&!e.shiftKey)continueConversation();}} placeholder="Cevabını doğal şekilde yaz..." className="min-w-0 flex-1 rounded-xl border bg-background px-4 py-3 outline-none focus:ring-2 focus:ring-primary/30"/><button type="button" onClick={continueConversation} disabled={!answer.trim()||loading} className="rounded-xl bg-primary px-4 py-3 font-semibold text-primary-foreground disabled:opacity-50">{loading?<Loader2 className="h-4 w-4 animate-spin"/>:"Devam"}</button></div>
-            </div></div>
-          </div>
-        </section>}
+        )}
       </div>
     </main>
   );
