@@ -31,6 +31,7 @@ export interface OfflineResult {
   priority: "critical" | "high" | "normal";
   phase: "understand" | "stabilize" | "prioritize" | "act";
   decisionBasis: string[];
+  constraints: string[];
   plan: OfflinePlan;
   diagnosis: string;
   actions: OfflineAction[];
@@ -131,7 +132,6 @@ export function analyzeOffline(problem: string, options?: OfflineAnalysisOptions
   else if (/yarın/i.test(problem)) constraints.push("Son tarih: yarın");
   if (options?.urgency !== undefined) constraints.push("Aciliyet: " + options.urgency + "/10");
   const urgent = options?.urgency !== undefined ? options.urgency >= 8 : /(acil|hemen|bugün|yarın|son gün)/i.test(problem);
-  const urgent = /(acil|hemen|bugün|yarın|son gün)/i.test(problem);
   const priority = urgent ? "critical" : options?.urgency !== undefined && options.urgency >= 6 ? "high" : "normal";
   const phase = phaseFrom(problem);
   const common: Record<string, OfflineAction[]> = {
