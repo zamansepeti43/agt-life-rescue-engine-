@@ -89,13 +89,10 @@ export default function LifeRescue() {
   const [result, setResult] = useState<Result | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [conversationContext, setConversationContext] = useState("");
+  const [questionIndex, setQuestionIndex] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
-  const [showPlan, setShowPlan] = useState(true);
-  const [offline] = useState(true);
+  const [showPlan, setShowPlan] = useState(false);
   const { toggleSidebar } = useSidebar();
-
-  const activeCategory = result ? categoryLabels[result.category] ?? result.category : "";
-  const activeGoal = result ? goalLabels[result.goal] ?? result.goal : "";
 
   const suggestions = useMemo(
     () => ["Param yetmiyor", "Faturaları yetiştiremiyorum", "Bir karar veremiyorum", "Zamanım yetmiyor"],
@@ -108,14 +105,78 @@ export default function LifeRescue() {
     return () => window.removeEventListener("life-rescue-new-problem", resetFromMenu);
   }, []);
 
-  function runAnalysis(context: string) {
-    const localResult = analyzeOffline(
-      context,
-      getOptions(category, goal, urgency, budget, availableHours),
-    );
+  function getQuestionSet(currentCategory: string, text: string) {
+    const normalized = text.toLocaleLowerCase("tr-TR");
+    const categoryName = categoryLabels[currentCategory] ?? currentCategory;
 
+    if (currentCategory === "money" || /para|maaş|borç|ödeme|fatura/.test(normalized)) {
+      return [
+        "Şu an elinde kullanılabilir yaklaşık ne kadar para var?",
+        "Önümüzdeki birkaç gün içinde kesinlikle ödenmesi gereken toplam tutar yaklaşık ne kadar?",
+        "Bu ödemelerin son tarihi ne ve gecikirse en ciddi sonucu hangisi doğurur?",
+      ];
+    }
+
+    if (currentCategory === "time" || /zaman|yetiş|süre|yoğun/.test(normalized)) {
+      return [
+        "Bunu en geç ne zamana kadar çözmüş olman gerekiyor?",
+        "Bugün gerçekten ayırabileceğin kaç saat var?",
+        "Şu anda seni en çok yavaşlatan veya engelleyen şey ne?",
+      ];
+    }
+
+    if (currentCategory === "decision" || /karar|seç|hangisini/.test(normalized)) {
+      return [
+        "Şu anda hangi seçenekler arasında kalmış durumdasın?",
+        "Senin için en önemli ölçüt ne: para, zaman, risk, rahatlık veya başka bir şey?",
+        "Yanlış seçeneği seçersen ortaya çıkabilecek en ciddi sonuç ne olur?",
+      ];
+    }
+
+    if (currentCategory === "vehicle" || /araç|araba|motor/.test(normalized)) {
+      return [
+        "Araçla ilgili tam olarak neyi çözmeye çalışıyoruz?",
+        "Bunun için ayırabileceğin yaklaşık bütçe nedir?",
+        "Bunu ne zamana kadar çözmen gerekiyor?",
+      ];
+    }
+
+    if (currentCategory === "travel" || /seyahat|uçak|bilet|yolculuk/.test(normalized)) {
+      return [
+        "Nereye gitmen gerekiyor ve hedef tarih nedir?",
+        "Bu yolculuk için yaklaşık bütçen ne kadar?",
+        "Tarih konusunda esnek misin, yoksa değişmeyecek bir son tarih var mı?",
+      ];
+    }
+
+    if (currentCategory === "moving" || /taşın|ev değiş/.test(normalized)) {
+      return [
+        "Taşınman gereken kesin tarih var mı?",
+        "Taşınma için yaklaşık ne kadar bütçe ayırabiliyorsun?",
+        "Şu anda seni en çok zorlayan kısım hangisi: ev, nakliye, para veya zaman?",
+      ];
+    }
+
+    return [
+      `${categoryName || "Bu problem"} içinde sonucu en çok değiştirecek bilgi sence ne?`,
+      "Bunu çözmek için şu anda elindeki en önemli imkân veya kısıt ne?",
+      "Bunun için bir son tarih, bütçe veya başka bir zorunluluk var mı?",
+    ];
+  }
+
+  function getOptions() {
+    return {
+      category: category || undefined,
+      goal: goal || undefined,
+      urgency,
+      budget: budget === "" ? undefined : Number(budget),
+      availableHours: availableHours === "" ? undefined : Number(availableHours),
+    };
+  }
+
+  function runAnalysis(context: string) {
+    const localResult = analyzeOffline(context, getOptions());
     setResult(localResult);
-    setShowPlan(true);
     return localResult;
   }
 
@@ -124,16 +185,24 @@ export default function LifeRescue() {
     if (text.length < 3) return;
 
     const localResult = runAnalysis(text);
+    const questions = getQuestionSet(localResult.category, text);
+
     setProblem("");
     setAnswer("");
+    setQuestionIndex(0);
+    setShowPlan(false);
     setConversationContext(text);
     setMessages([
       { role: "user", text },
       { role: "engine", text: localResult.diagnosis },
+      { role: "engine", text: questions[0] },
     ]);
+  }
 
+  function finishConversation(context: string, localResult: Result) {
+    setShowPlan(true);
     saveLifeRescueHistory({
-      problem: text,
+      problem: context.split("\nKullanıcı:")[0],
       category: localResult.category,
       goal: localResult.goal,
       diagnosis: localResult.diagnosis,
@@ -148,15 +217,32 @@ export default function LifeRescue() {
     const nextContext = conversationContext
       ? conversationContext + "\nKullanıcı: " + text
       : text;
+    const nextIndex = questionIndex + 1;
+    const questions = getQuestionSet(result.category, conversationContext);
     const localResult = runAnalysis(nextContext);
 
     setConversationContext(nextContext);
+    setAnswer("");
+
+    if (nextIndex < questions.length) {
+      setQuestionIndex(nextIndex);
+      setMessages((prev) => [
+        ...prev,
+        { role: "user", text },
+        { role: "engine", text: questions[nextIndex] },
+      ]);
+      return;
+    }
+
     setMessages((prev) => [
       ...prev,
       { role: "user", text },
-      { role: "engine", text: localResult.diagnosis },
+      {
+        role: "engine",
+        text: "Tamam. Şimdi elimizdeki bilgileri bir araya getirip sana uygulanabilir bir çıkış yolu çıkarıyorum.",
+      },
     ]);
-    setAnswer("");
+    finishConversation(nextContext, localResult);
   }
 
   function reset() {
@@ -165,13 +251,14 @@ export default function LifeRescue() {
     setResult(null);
     setMessages([]);
     setConversationContext("");
+    setQuestionIndex(0);
     setCategory("");
     setGoal("");
     setUrgency(5);
     setBudget("");
     setAvailableHours("");
     setShowSettings(false);
-    setShowPlan(true);
+    setShowPlan(false);
   }
 
   function sendFromComposer() {
@@ -179,10 +266,14 @@ export default function LifeRescue() {
     else start();
   }
 
+  const conversationStarted = messages.length > 0;
+  const questions = result ? getQuestionSet(result.category, conversationContext) : [];
+  const isReadyForPlan = showPlan && result;
+
   return (
-    <main className="min-h-[100dvh] w-full overflow-x-hidden bg-background text-foreground">
-      <div className="mx-auto flex min-h-[100dvh] w-full max-w-3xl flex-col px-4 pb-5 md:px-6">
-        <header className={result ? "sticky top-0 z-30 -mx-4 border-b bg-background/90 px-4 py-3 backdrop-blur md:-mx-6 md:px-6" : "pt-8 md:pt-12"}>
+    <main className="h-[100dvh] w-full overflow-y-auto overscroll-contain bg-background text-foreground">
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-3xl flex-col px-4 pb-28 md:px-6">
+        <header className={conversationStarted ? "sticky top-0 z-30 -mx-4 border-b bg-background/95 px-4 py-3 backdrop-blur md:-mx-6 md:px-6" : "pt-8 md:pt-12"}>
           <div className="flex items-center gap-3">
             <button
               type="button"
@@ -196,7 +287,7 @@ export default function LifeRescue() {
               <Sparkles className="h-5 w-5 shrink-0" />
               <span className="truncate text-sm font-bold tracking-wide">AGT LIFE RESCUE</span>
             </div>
-            {result && (
+            {conversationStarted && (
               <button
                 type="button"
                 onClick={reset}
@@ -207,7 +298,7 @@ export default function LifeRescue() {
               </button>
             )}
           </div>
-          {!result && (
+          {!conversationStarted && (
             <>
               <h1 className="mt-8 text-4xl font-bold tracking-tight md:text-5xl">Ne oldu?</h1>
               <p className="mt-3 max-w-xl text-base leading-7 text-muted-foreground">
@@ -217,7 +308,7 @@ export default function LifeRescue() {
           )}
         </header>
 
-        {!result && (
+        {!conversationStarted ? (
           <section className="flex flex-1 flex-col justify-center pb-10 pt-10">
             <div className="rounded-3xl border bg-card p-3 shadow-sm">
               <textarea
@@ -230,7 +321,6 @@ export default function LifeRescue() {
                 className="min-h-36 w-full resize-none bg-transparent px-3 py-3 text-lg leading-7 outline-none placeholder:text-muted-foreground"
                 autoFocus
               />
-
               <div className="flex items-center justify-between gap-3 border-t pt-3">
                 <button
                   type="button"
@@ -254,12 +344,8 @@ export default function LifeRescue() {
 
             <div className="mt-4 flex flex-wrap gap-2">
               {suggestions.map((item) => (
-                <button
-                  key={item}
-                  type="button"
-                  onClick={() => start(item)}
-                  className="rounded-full border bg-card px-3 py-2 text-sm text-muted-foreground transition hover:border-primary/40 hover:text-foreground"
-                >
+                <button key={item} type="button" onClick={() => start(item)}
+                  className="rounded-full border bg-card px-3 py-2 text-sm text-muted-foreground transition hover:border-primary/40 hover:text-foreground">
                   {item}
                 </button>
               ))}
@@ -270,61 +356,32 @@ export default function LifeRescue() {
                 <div className="grid gap-3 sm:grid-cols-2">
                   <label className="text-sm">
                     <span className="mb-1.5 block text-muted-foreground">Konu</span>
-                    <select
-                      value={category}
-                      onChange={(e) => setCategory(e.target.value)}
-                      className="w-full rounded-xl border bg-background px-3 py-3"
-                    >
-                      {categories.map(([value, label]) => (
-                        <option key={value} value={value}>{label}</option>
-                      ))}
+                    <select value={category} onChange={(e) => setCategory(e.target.value)}
+                      className="w-full rounded-xl border bg-background px-3 py-3">
+                      {categories.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                     </select>
                   </label>
                   <label className="text-sm">
                     <span className="mb-1.5 block text-muted-foreground">Hedef</span>
-                    <select
-                      value={goal}
-                      onChange={(e) => setGoal(e.target.value)}
-                      className="w-full rounded-xl border bg-background px-3 py-3"
-                    >
-                      {goals.map(([value, label]) => (
-                        <option key={value} value={value}>{label}</option>
-                      ))}
+                    <select value={goal} onChange={(e) => setGoal(e.target.value)}
+                      className="w-full rounded-xl border bg-background px-3 py-3">
+                      {goals.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                     </select>
                   </label>
                   <label className="rounded-xl border px-3 py-2 sm:col-span-2">
                     <span className="block text-xs text-muted-foreground">Aciliyet: {urgency}/10</span>
-                    <input
-                      className="mt-1 w-full"
-                      type="range"
-                      min="1"
-                      max="10"
-                      value={urgency}
-                      onChange={(e) => setUrgency(Number(e.target.value))}
-                    />
+                    <input className="mt-1 w-full" type="range" min="1" max="10" value={urgency}
+                      onChange={(e) => setUrgency(Number(e.target.value))} />
                   </label>
                   <label className="rounded-xl border px-3 py-2">
                     <span className="block text-xs text-muted-foreground">Bütçe (TL)</span>
-                    <input
-                      value={budget}
-                      onChange={(e) => setBudget(e.target.value)}
-                      type="number"
-                      min="0"
-                      placeholder="İsteğe bağlı"
-                      className="mt-1 w-full bg-transparent outline-none"
-                    />
+                    <input value={budget} onChange={(e) => setBudget(e.target.value)} type="number" min="0"
+                      placeholder="İsteğe bağlı" className="mt-1 w-full bg-transparent outline-none" />
                   </label>
                   <label className="rounded-xl border px-3 py-2">
                     <span className="block text-xs text-muted-foreground">Bugün ayırabileceğin zaman</span>
-                    <input
-                      value={availableHours}
-                      onChange={(e) => setAvailableHours(e.target.value)}
-                      type="number"
-                      min="0"
-                      step="0.5"
-                      placeholder="Saat"
-                      className="mt-1 w-full bg-transparent outline-none"
-                    />
+                    <input value={availableHours} onChange={(e) => setAvailableHours(e.target.value)} type="number"
+                      min="0" step="0.5" placeholder="Saat" className="mt-1 w-full bg-transparent outline-none" />
                   </label>
                 </div>
               </div>
@@ -335,94 +392,77 @@ export default function LifeRescue() {
               Temel karar motoru cihazında çalışır.
             </div>
           </section>
-        )}
-
-        {result && (
-          <section className="flex-1 py-6 md:py-8">
-            <div className="space-y-5">
+        ) : (
+          <section className="flex-1 py-5 md:py-8">
+            <div className="space-y-4">
               {messages.map((message, index) => (
-                <div
-                  key={index}
-                  className={message.role === "user" ? "flex justify-end" : "flex justify-start"}
-                >
+                <div key={index} className={message.role === "user" ? "flex justify-end" : "flex justify-start"}>
                   <div className={message.role === "user" ? "max-w-[88%]" : "max-w-[94%]"}>
                     <div className="mb-1 px-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                       {message.role === "user" ? "Sen" : "Life Rescue"}
                     </div>
-                    <div
-                      className={
-                        message.role === "user"
-                          ? "rounded-3xl rounded-tr-md bg-primary px-4 py-3.5 text-primary-foreground"
-                          : "rounded-3xl rounded-tl-md border bg-card px-4 py-4"
-                      }
-                    >
+                    <div className={message.role === "user"
+                      ? "rounded-3xl rounded-tr-md bg-primary px-4 py-3.5 text-primary-foreground"
+                      : "rounded-3xl rounded-tl-md border bg-card px-4 py-4"}>
                       <p className="text-[15px] leading-7">{message.text}</p>
                     </div>
                   </div>
                 </div>
               ))}
 
-              <div className="rounded-3xl border bg-card p-4 md:p-5">
-                <div className="flex flex-wrap items-center gap-2">
-                  {activeCategory && (
-                    <span className="rounded-full bg-muted px-3 py-1 text-xs">{activeCategory}</span>
-                  )}
-                  {activeGoal && (
-                    <span className="rounded-full bg-muted px-3 py-1 text-xs">{activeGoal}</span>
-                  )}
-                  <span className="rounded-full bg-primary/10 px-3 py-1 text-xs text-primary">
-                    {result.priority === "critical" ? "Öncelikli" : "Sıradaki adım"}
-                  </span>
+              {!isReadyForPlan && result && (
+                <div className="flex items-center gap-2 px-2 text-xs text-muted-foreground">
+                  <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                  {questionIndex + 1} / {questions.length} bilgi topluyoruz
                 </div>
+              )}
 
-                <div className="mt-4">
-                  <p className="text-sm font-semibold">Şimdi bunu netleştirelim.</p>
-                  <p className="mt-1.5 text-sm leading-6 text-muted-foreground">{result.nextQuestion}</p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setShowPlan((v) => !v)}
-                  className="mt-5 flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left"
-                >
-                  <span className="text-sm font-semibold">İlk yol haritası</span>
-                  <span className="text-xs text-muted-foreground">{showPlan ? "Gizle" : "Göster"}</span>
-                </button>
-
-                {showPlan && (
-                  <div className="mt-3 space-y-2">
-                    {result.plan.steps.filter((step) => step.label !== "Hedef").map((step, index) => (
-                      <div key={step.label} className="flex gap-3 rounded-2xl bg-muted/60 p-3.5">
-                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-background text-xs font-bold text-primary">
-                          {index + 1}
-                        </div>
-                        <div className="min-w-0">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-xs font-semibold text-primary">{step.label}</span>
-                            {step.estimatedMinutes !== undefined && (
-                              <span className="text-xs text-muted-foreground">~{step.estimatedMinutes} dk</span>
-                            )}
-                          </div>
-                          <p className="mt-1 text-sm font-medium">{step.title}</p>
-                          <p className="mt-0.5 text-xs leading-5 text-muted-foreground">{step.detail}</p>
-                        </div>
-                      </div>
-                    ))}
+              {isReadyForPlan && result && (
+                <div className="rounded-3xl border bg-card p-4 md:p-5">
+                  <div className="flex items-center gap-2 text-primary">
+                    <CheckCircle2 className="h-5 w-5" />
+                    <span className="text-sm font-semibold">Tamam, tablo netleşti.</span>
                   </div>
-                )}
+                  <p className="mt-3 text-base leading-7">{result.diagnosis}</p>
 
-                {result.decisionBasis.length > 0 && (
-                  <p className="mt-4 text-xs text-muted-foreground">
-                    Buna göre ilerliyorum: {result.decisionBasis.slice(0, 2).join(" · ")}.
-                  </p>
-                )}
-              </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowPlan((v) => !v)}
+                    className="mt-5 flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left"
+                  >
+                    <span className="text-sm font-semibold">Kurtarma planı</span>
+                    <span className="text-xs text-muted-foreground">{showPlan ? "Gizle" : "Göster"}</span>
+                  </button>
+
+                  {showPlan && (
+                    <div className="mt-3 space-y-2">
+                      {result.plan.steps.filter((step) => step.label !== "Hedef").map((step, index) => (
+                        <div key={step.label} className="flex gap-3 rounded-2xl bg-muted/60 p-3.5">
+                          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-background text-xs font-bold text-primary">
+                            {index + 1}
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="text-xs font-semibold text-primary">{step.label}</span>
+                              {step.estimatedMinutes !== undefined && (
+                                <span className="text-xs text-muted-foreground">~{step.estimatedMinutes} dk</span>
+                              )}
+                            </div>
+                            <p className="mt-1 text-sm font-medium">{step.title}</p>
+                            <p className="mt-0.5 text-xs leading-5 text-muted-foreground">{step.detail}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </section>
         )}
 
-        {result && (
-          <div className="sticky bottom-0 z-30 -mx-4 border-t bg-background/90 px-4 py-3 backdrop-blur md:-mx-6 md:px-6">
+        {conversationStarted && (
+          <div className="sticky bottom-0 z-30 -mx-4 border-t bg-background/95 px-4 py-3 backdrop-blur md:-mx-6 md:px-6">
             <div className="mx-auto flex max-w-3xl items-end gap-2 rounded-3xl border bg-card p-2 shadow-lg">
               <textarea
                 value={answer}
@@ -437,19 +477,15 @@ export default function LifeRescue() {
                 rows={1}
                 className="max-h-28 min-h-11 flex-1 resize-none bg-transparent px-3 py-2.5 text-sm leading-6 outline-none placeholder:text-muted-foreground"
               />
-              <button
-                type="button"
-                onClick={sendFromComposer}
-                disabled={!answer.trim()}
+              <button type="button" onClick={sendFromComposer} disabled={!answer.trim()}
                 className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground disabled:opacity-40"
-                aria-label="Gönder"
-              >
+                aria-label="Gönder">
                 <ArrowUp className="h-5 w-5" />
               </button>
             </div>
             <div className="mt-2 flex items-center justify-center gap-1.5 text-[11px] text-muted-foreground">
               <CheckCircle2 className="h-3 w-3" />
-              Cevabına göre planı yeniden şekillendiriyorum.
+              Önce seni anlayacağım, sonra çözüm çıkaracağım.
             </div>
           </div>
         )}
