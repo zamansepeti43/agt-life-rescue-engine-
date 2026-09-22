@@ -481,7 +481,7 @@ export default function LifeRescue() {
     });
 
     setResult(localResult);
-    const nextQuestion = getNextQuestion(localResult.category, context, nextLanguage, questionIndex);
+    const nextQuestion = getNextQuestion(localResult.category, context, nextLanguage);
     const translatedDiagnosis = localResult.diagnosis;
     setMessages([
       ...userMessages.map((text) => ({ role: "user" as const, text })),
@@ -512,7 +512,7 @@ export default function LifeRescue() {
     }
 
     const localResult = runAnalysis(text);
-    const firstQuestion = getNextQuestion(localResult.category, text, language, 0);
+    const firstQuestion = getNextQuestion(localResult.category, text, language);
 
     setProblem("");
     setAnswer("");
@@ -546,7 +546,7 @@ export default function LifeRescue() {
       : text;
     const nextIndex = questionIndex + 1;
     const localResult = runAnalysis(nextContext);
-    const nextQuestion = getNextQuestion(localResult.category, nextContext, language, nextIndex);
+    const nextQuestion = getNextQuestion(localResult.category, nextContext, language);
 
     setConversationContext(nextContext);
     setAnswer("");
