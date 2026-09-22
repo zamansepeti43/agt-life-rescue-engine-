@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from "react";
-import { AlertTriangle, ArrowRight, CheckCircle2, Loader2, Sparkles, WifiOff, RotateCcw, MessageCircle } from "lucide-react";
+import { AlertTriangle, ArrowRight, CheckCircle2, Loader2, Sparkles, WifiOff, RotateCcw, MessageCircle, Menu } from "lucide-react";
 import { analyzeOffline, type OfflineResult } from "@/lib/life-rescue-offline";
 import { addTask } from "@/lib/assistant-store";
-import { SidebarTrigger } from "@/components/ui/sidebar";
+import { useSidebar } from "@/components/ui/sidebar";
 
 type Result = {
   problem: string;
@@ -39,6 +39,7 @@ export default function LifeRescue() {
   const [offline,setOffline]=useState(false);
   const [messages,setMessages]=useState<Message[]>([]);
   const [conversationContext,setConversationContext]=useState("");
+  const { toggleSidebar } = useSidebar();
   const resultRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
@@ -142,8 +143,8 @@ export default function LifeRescue() {
   return (
     <main className="h-[100dvh] w-full min-h-0 overflow-x-hidden overflow-y-auto overscroll-contain touch-pan-y bg-background px-4 py-4 pb-24 text-foreground md:px-8 md:py-8">
       <div className="mx-auto max-w-4xl">
-        <header className="relative mb-8 pt-8 md:pt-0">
-          <div className="absolute left-0 top-0 md:hidden"><SidebarTrigger className="h-10 w-10 rounded-xl border border-border bg-card text-foreground" /></div>
+        <header className="relative mb-8 pt-12 md:pt-0">
+          <button type="button" onClick={toggleSidebar} aria-label="Menüyü aç" className="fixed left-3 top-3 z-50 flex h-11 w-11 items-center justify-center rounded-full border border-border bg-card/95 text-foreground shadow-lg backdrop-blur md:hidden"><Menu className="h-6 w-6" /></button>
           <div className="mb-3 flex items-center gap-2 text-primary"><Sparkles className="h-5 w-5"/><span className="text-sm font-semibold tracking-wide">AGT LIFE RESCUE ENGINE</span></div>
           <h1 className="text-3xl font-bold md:text-5xl">Hayat karıştı mı?</h1>
           <p className="mt-3 max-w-2xl text-muted-foreground">Anlat derdini. Sana hazır bir liste fırlatmak yerine önce seni ve içinde bulunduğun durumu anlamaya çalışalım; sonra en mantıklı adımları birlikte daraltalım.</p>
