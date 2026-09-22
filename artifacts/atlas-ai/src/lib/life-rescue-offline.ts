@@ -144,7 +144,6 @@ const enText: Record<string, string> = {
   "Geri dönüşü kolay seçeneği işaretle":"Mark the easiest-to-reverse option","Belirsizlik riskini azalt.":"Reduce uncertainty risk.",
   "Bugünün kritik işini seç":"Choose today's critical task","Önceliği netleştir.":"Clarify the priority.",
   "Devredilebilir işi ayır":"Separate delegable work","Kapasiteyi koru.":"Protect capacity.",
-  "Son tarihleri sırala":"Sort deadlines","Gecikme riskini azalt.":"Reduce late risk.",
   "Güvenlik riskini ayır":"Separate safety risk","Fren, lastik, direksiyon veya ciddi uyarıları masraf optimizasyonundan önce değerlendir.":"Check brakes, tires, steering and serious warnings before optimizing cost.",
   "Toplam araç maliyetini çıkar":"Calculate total vehicle cost","Parça, işçilik, çekici ve tekrar masrafını birlikte düşün.":"Include parts, labor, towing and possible repeat costs.",
   "Alternatif ulaşımı karşılaştır":"Compare alternative transport","Aracı kullanmamanın geçici ulaşım maliyetini de hesaba kat.":"Include temporary transport costs if you cannot use the vehicle.",
