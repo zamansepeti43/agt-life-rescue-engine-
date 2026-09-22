@@ -218,8 +218,32 @@ export default function LifeRescue() {
   }, []);
 
   function extractMoney(text: string) {
-    const matches = text.toLocaleLowerCase("tr-TR").matchAll(/(\\d{1,3}(?:[. ]\\d{3})*(?:,\\d{1,2})?|\\d+(?:,\\d{1,2})?)\\s*(?:tl|₺|lira)/gi);
-    return Array.from(matches, (m) => Number(m[1].replace(/\\s/g, "").replace(/\\./g, "").replace(",", "."))).filter(Number.isFinite);
+    const normalized = text.toLocaleLowerCase("tr-TR");
+    const values: number[] = [];
+    const explicit = normalized.matchAll(/(\d{1,3}(?:[. ]\d{3})*(?:,\d{1,2})?|\d+(?:,\d{1,2})?)\s*(?:tl|₺|lira|try)/gi);
+    for (const match of explicit) {
+      const value = Number(match[1].replace(/\s/g, "").replace(/\./g, "").replace(",", "."));
+      if (Number.isFinite(value)) values.push(value);
+    }
+    const thousands = normalized.matchAll(/(\d+(?:[.,]\d+)?)\s*(?:bin|k)\b/gi);
+    for (const match of thousands) {
+      const value = Number(match[1].replace(",", ".")) * 1000;
+      if (Number.isFinite(value)) values.push(value);
+    }
+    return values;
+  }
+
+  function lastUserAnswer(context: string) {
+    const parts = context.split(/\nKullanıcı:\s*/).filter(Boolean);
+    return parts[parts.length - 1]?.trim() ?? "";
+  }
+
+  function extractPaymentLabels(answerText: string) {
+    return answerText
+      .split(/[,;\n]|\s+ve\s+|\s+ile\s+/i)
+      .map((part) => part.trim())
+      .filter(Boolean)
+      .slice(0, 4);
   }
 
   function getNextQuestion(currentCategory: string, context: string): string | null {
@@ -380,33 +404,103 @@ export default function LifeRescue() {
   }
 
   function conversationBridge(category: string, context: string, answerText: string) {
-    const amounts = extractMoney(context);
     const answer = answerText.trim();
+    const normalized = answer.toLocaleLowerCase("tr-TR");
+    const amounts = extractMoney(answer);
+    const total = amounts.reduce((sum, value) => sum + value, 0);
+    const emptyAnswer = /^(hiç|yok|yoktu|bilmiyorum|emin değilim|none|nothing|don't know|not sure)$/i.test(normalized);
+
     if (category === "money" || category === "bills") {
       if (amounts.length >= 2) {
-        const available = amounts[0];
-        const required = amounts[1];
-        const gap = required - available;
-        if (language === "en") {
-          return gap > 0
-            ? `I noted the numbers: about ${available.toLocaleString("en-US")} TL available versus about ${required.toLocaleString("en-US")} TL due. That gives us an initial gap of about ${gap.toLocaleString("en-US")} TL. Now I'm checking what makes up that gap and what can actually move.`
-            : `Rakamları not ettim: yaklaşık ${available.toLocaleString("tr-TR")} TL kullanılabilir para ve ${required.toLocaleString("tr-TR")} TL yaklaşan ödeme var. İlk bakışta yaklaşık ${gap.toLocaleString("tr-TR")} TL açık görünüyor. Şimdi bu açığı oluşturan kalemleri ve gerçekten hareket ettirebileceğimiz yerleri ayırıyorum.`;
-        }
+        const labels = extractPaymentLabels(answer);
+        const names = labels.length ? " (" + labels.join(", ") + ")" : "";
+        return language === "en"
+          ? "I have the numbers. The items you mentioned" + names + " add up to about " + total.toLocaleString("en-US") + " TL. I won't prioritize them yet; first I'll separate what is due, what can move, and what happens if each one is late."
+          : "Rakamları aldım. Belirttiğin kalemler" + names + " toplam yaklaşık " + total.toLocaleString("tr-TR") + " TL ediyor. Henüz öncelik sıralamıyorum; önce hangisinin ne zaman ödeneceğini, hangisinin hareket ettirilebileceğini ve gecikince ne olacağını ayıracağım.";
+      }
+      if (emptyAnswer) {
+        return language === "en"
+          ? "Okay, so there is no usable cash available right now. That's important. I won't assume you can pay something you don't have; let's map the obligations first and then look at realistic ways to create room."
+          : "Tamam, şu an kullanabileceğin nakit yok. Bu önemli bir bilgi. Elinde olmayan parayı varmış gibi kabul etmeyeceğim; önce zorunlu ödemeleri çıkaracağız, sonra gerçekten uygulanabilecek hareket alanlarını arayacağız.";
+      }
+      if (/çok|bir sürü|birçok|fazla|many|a lot/i.test(normalized)) {
+        return language === "en"
+          ? "I understand. When several expenses are hitting at once, trying to solve them all together usually makes the picture worse. Let's list the obligations one by one and then rank them by deadline and consequence."
+          : "Anladım. Birçok gider aynı anda üstüne geliyorsa hepsini tek seferde çözmeye çalışmak tabloyu daha da karıştırır. Önce zorunlu ödemeleri tek tek çıkaralım; sonra son tarih ve sonuçlarına göre sıralayalım.";
       }
       if (amounts.length === 1) {
         return language === "en"
-          ? `I noted ${amounts[0].toLocaleString("en-US")} TL. I'll use that number in the next comparison.`
-          : `${amounts[0].toLocaleString("tr-TR")} TL'yi not ettim. Bir sonraki karşılaştırmada bu rakamı kullanacağım.`;
+          ? "I noted " + amounts[0].toLocaleString("en-US") + " TL. I'll keep that as a real constraint and compare it with the obligations you give me next."
+          : amounts[0].toLocaleString("tr-TR") + " TL'yi not ettim. Bunu gerçek bir kısıt olarak tutacağım ve şimdi söyleyeceğin zorunlu ödemelerle karşılaştıracağım.";
       }
     }
-    if (answer.length > 0) {
-      const short = answer.length > 90 ? answer.slice(0, 87) + "..." : answer;
-      return language === "en"
-        ? `I noted “${short}”. I'm using that as a constraint rather than giving you a generic answer.`
-        : `“${short}” dediğini not ettim. Bunu genel bir cevap vermek yerine sonraki soruda gerçek bir kısıt olarak kullanacağım.`;
+
+    if (category === "decision") {
+      if (/a mı|b mi|arasında|seçenek|alternatif|option|choose/i.test(normalized)) {
+        return language === "en"
+          ? "Good. I have the options. I won't pick one just because it sounds better; next I'll compare the trade-offs against what matters to you."
+          : "Güzel, seçenekleri artık görüyorum. Sadece kulağa daha iyi geliyor diye birini seçmeyeceğim; şimdi bunları senin için önemli ölçütlerle karşılaştıracağım.";
+      }
+      if (emptyAnswer) {
+        return language === "en" ? "That's okay. If you're unsure, we'll identify the missing information instead of guessing." : "Sorun değil. Emin değilsen tahmin yürütmek yerine kararı değiştirecek eksik bilgiyi bulacağız.";
+      }
     }
-    return language === "en" ? "Got it. I'm narrowing this down step by step." : "Anladım. Adım adım daraltıyorum.";
+
+    if (category === "time") {
+      const short = answer.length > 80 ? answer.slice(0, 77) + "..." : answer;
+      return language === "en"
+        ? "I have \"" + short + "\". I'll use it to separate hard deadlines from work that can move."
+        : "\"" + short + "\" bilgisini aldım. Şimdi kesin son tarihleri, ertelenebilecek işleri ve gerçekten zaman kazandıracak noktaları ayıracağım.";
+    }
+
+    if (category === "vehicle") {
+      return language === "en"
+        ? "I have the vehicle situation. Before cost, I'm checking whether it is safe to use and which repair/transport options are actually available."
+        : "Araç durumunu aldım. Maliyete geçmeden önce güvenli kullanılıp kullanılamadığını ve gerçekten hangi tamir/ulaşım seçeneklerinin bulunduğunu ayıracağım.";
+    }
+
+    if (category === "travel") {
+      return language === "en"
+        ? "Got it. I'm keeping the date and arrival requirement as hard constraints; next we'll compare the real options and total cost."
+        : "Anladım. Tarihi ve varış zorunluluğunu sabit kısıt olarak tutuyorum; şimdi gerçek seçenekleri ve toplam maliyeti karşılaştıracağız.";
+    }
+
+    if (category === "moving") {
+      return language === "en"
+        ? "I have that. A move is a chain of costs and deadlines, so I'll separate the fixed commitments from the parts we can change."
+        : "Bunu aldım. Taşınma tek bir masraf değil, birbirine bağlı bir zaman ve ödeme zinciri; sabit zorunluluklarla değiştirebileceğimiz kısımları ayıracağım.";
+    }
+
+    if (category === "home") {
+      return language === "en"
+        ? "I understand the home problem. I'm checking safety and further-damage risk before we optimize price."
+        : "Evdeki sorunu anladım. Fiyatı optimize etmeden önce güvenlik ve daha büyük hasar riskini kontrol edeceğim.";
+    }
+
+    if (category === "family") {
+      return language === "en"
+        ? "I have the family constraint. I'll keep the people affected and the practical limits in view while we compare the options."
+        : "Aile tarafındaki kısıtı aldım. Seçenekleri karşılaştırırken etkilenen kişileri ve gerçek hayattaki sınırları göz önünde tutacağım.";
+    }
+
+    if (category === "work") {
+      return language === "en"
+        ? "I have the work pressure. Next I'll separate what is truly urgent from what only feels urgent."
+        : "İş tarafındaki baskıyı aldım. Şimdi gerçekten acil olanla sadece acil gibi görünen işleri birbirinden ayıracağım.";
+    }
+
+    if (emptyAnswer) {
+      return language === "en"
+        ? "No problem. If you don't know yet, we'll find out what information is worth getting before making a decision."
+        : "Sorun değil. Henüz bilmiyorsan tahmin etmeyeceğiz; önce hangi bilginin kararı gerçekten değiştireceğini bulacağız.";
+    }
+
+    const short = answer.length > 90 ? answer.slice(0, 87) + "..." : answer;
+    return language === "en"
+      ? "I noted \"" + short + "\". I'll use it as a real constraint and keep narrowing the situation before suggesting anything."
+      : "\"" + short + "\" dediğini not ettim. Bunu gerçek bir kısıt olarak tutacağım; bir şey önermeden önce tabloyu biraz daha netleştireceğim.";
   }
+
   function getOptions() {
     return {
       category: category || undefined,
@@ -545,8 +639,8 @@ export default function LifeRescue() {
 
   return (
     <main className="h-[100dvh] w-full overflow-y-auto overscroll-contain bg-background text-foreground">
-      <div className="mx-auto flex min-h-[100dvh] w-full max-w-3xl flex-col px-4 pb-28 md:px-6">
-        <header className="sticky top-0 z-30 -mx-4 border-b bg-background/95 px-4 py-3 backdrop-blur md:-mx-6 md:px-6">
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-3xl flex-col px-4 pb-28 pt-[calc(env(safe-area-inset-top)+5.2rem)] md:px-6">
+        <header className="fixed inset-x-0 top-0 z-50 border-b bg-background/95 px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.65rem)] shadow-sm backdrop-blur md:px-6">
           <div className="flex items-center gap-3">
             <button
               type="button"
@@ -747,7 +841,7 @@ export default function LifeRescue() {
         )}
 
         {conversationStarted && (
-          <div className="sticky bottom-0 z-30 -mx-4 border-t bg-background/95 px-4 py-3 backdrop-blur md:-mx-6 md:px-6">
+          <div className="fixed inset-x-0 bottom-0 z-50 border-t bg-background/95 px-4 pb-[calc(env(safe-area-inset-bottom)+0.7rem)] pt-3 backdrop-blur md:px-6">
             <div className="mx-auto flex max-w-3xl items-end gap-2 rounded-3xl border bg-card p-2 shadow-lg">
               <textarea
                 value={answer}
@@ -755,7 +849,7 @@ export default function LifeRescue() {
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
                     e.preventDefault();
-                    continueConversation();
+                    sendFromComposer();
                   }
                 }}
                 placeholder={copy.answer}
