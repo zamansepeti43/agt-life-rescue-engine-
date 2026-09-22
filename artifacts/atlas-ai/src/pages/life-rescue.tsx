@@ -52,6 +52,57 @@ const goalsEn: Record<string, string> = {
 function translateKnown(text: string, lang: Language): string {
   if (lang === "tr") return text;
   const exact: Record<string, string> = {
+    "Önce şunu anlayalım: Bu para tam olarak neye lazım? Kira, fatura, borç, market, çocuk masrafı veya başka bir şey mi?": "First, what exactly is this money needed for? Rent, bills, debt, groceries, child expenses, or something else?",
+    "Şu an elinde veya hesabında gerçekten kullanabileceğin yaklaşık ne kadar para var?": "How much money do you actually have available to use right now?",
+    "Önümüzdeki birkaç gün içinde ödenmesi gereken neler var? Mümkünse tek tek yaz: örneğin kira 10.000 TL, elektrik 1.000 TL gibi.": "What needs to be paid in the next few days? List them one by one if you can, for example: rent 10,000 TL, electricity 1,000 TL.",
+    "Bu ödemelerin hangileri gerçekten ertelenemez? Son tarihlerini de mümkün olduğunca yaz.": "Which of these payments truly cannot be delayed? Include their due dates if you can.",
+    "Tamam, şimdi seçenekleri değerlendirebiliriz: erteleme, taksitlendirme, masraf azaltma, mevcut parayı yeniden dağıtma veya ek para bulma gibi hangi seçenekleri uygulama şansın var?": "Now we can look at the options: which of these can you realistically use—delaying, installments, cutting costs, reallocating available money, or finding additional money?",
+    "Bu seçenekler arasında senin için en önemli ölçüt ne: gecikme riskini azaltmak, toplam maliyeti düşürmek, bugün nakit bulmak veya başka bir şey?": "What matters most to you among these options: reducing late-payment risk, lowering total cost, finding cash today, or something else?",
+    "Önce seçenekleri masaya koyalım. Şu anda gerçekten değerlendirdiğin seçenekler neler?": "Let's put the options on the table first. What options are you actually considering?",
+    "Bu seçeneklerin her biri için bildiğin önemli farklar neler: fiyat, zaman, risk, kolaylık veya başka bir şey?": "What important differences do you know between the options: price, time, risk, convenience, or something else?",
+    "Senin için kesinlikle vazgeçilmez olan şey ne? Örneğin bütçeyi aşmamak, hızlı çözmek veya riski düşük tutmak.": "What is absolutely non-negotiable for you—for example, staying within budget, solving it quickly, or keeping risk low?",
+    "Her seçeneğin en kötü durumda doğurabileceği sonuç ne olur?": "What is the worst-case consequence of each option?",
+    "Şimdi bu bilgilerle seçenekleri senin önceliklerine göre sıralayabiliriz. En çok hangi sonucu korumak istiyorsun?": "Now we can compare the options based on your priorities. Which outcome do you most want to protect?",
+    "Önce yetiştirmeye çalıştığın işleri çıkaralım. Şu anda önünde hangi işler veya sorumluluklar var?": "Let's list what you're trying to get done first. What tasks or responsibilities are in front of you right now?",
+    "Bunların hangileri gerçekten bugün veya belirli bir tarihe kadar yapılmak zorunda?": "Which of these truly must be done today or by a specific date?",
+    "Her iş yaklaşık ne kadar zaman alıyor ve hangilerini erteleyebilir, bölebilir veya başka birine devredebilirsin?": "How long does each task take, and which ones can be delayed, split up, or delegated?",
+    "Seni en çok zorlayan kısıt ne: toplam zaman, enerji, başka insanların beklemesi veya başka bir şey?": "What is your biggest constraint: total time, energy, other people waiting on you, or something else?",
+    "Şimdi işleri son tarih, sonuç ve harcanacak zamana göre önceliklendirebiliriz. Önceliğin neyi korumak?": "Now we can prioritize the tasks by deadline, impact, and time required. What do you most want to protect?",
+    "Önce mevcut yükü çıkaralım. Şu anda senden beklenen işler veya görevler neler?": "Let's map the current workload first. What tasks or responsibilities are expected from you right now?",
+    "Bunlardan hangilerinin kesin son tarihi var ve hangilerinin sonucu daha kritik?": "Which have hard deadlines, and which have more serious consequences?",
+    "Hangilerini erteleyebilir, bölebilir veya devredebilirsin?": "Which can you delay, split, or delegate?",
+    "İş yükünü etkileyen kısıtların neler: vardiya, süre, ekip, para veya başka bir şey?": "What constraints affect your workload: shifts, time, team capacity, money, or something else?",
+    "Şimdi görevleri etkisi, aciliyeti ve maliyeti üzerinden önceliklendirelim. Senin için korunması gereken en önemli sonuç hangisi?": "Now let's prioritize the tasks by impact, urgency, and cost. Which outcome is most important to protect?",
+    "Önce sorunun tamamını anlayalım. Araçta tam olarak ne oluyor ve şu anda araç kullanılabiliyor mu?": "Let's understand the vehicle problem first. What exactly is happening, and can the vehicle still be used?",
+    "Şu ana kadar bildiğin çözüm seçenekleri neler: tamir, parça değişimi, servis, beklemek veya geçici başka bir ulaşım çözümü?": "What solutions do you know about so far: repair, part replacement, service, waiting, or temporary transport?",
+    "Her seçeneğin yaklaşık maliyeti ve ne kadar süreceği hakkında ne biliyorsun?": "What do you know about the approximate cost and time for each option?",
+    "Aracı kullanmaya devam etmek güvenlik veya daha büyük hasar açısından bir risk oluşturuyor mu?": "Does continuing to drive create a safety risk or risk of greater damage?",
+    "Şimdi seçenekleri güvenlik, maliyet, süre ve zorunluluk açısından önceliklendirebiliriz. Hangisini korumamız gerekiyor?": "Now we can prioritize the options by safety, cost, time, and necessity. What do we need to protect first?",
+    "Önce yolculuğun seçeneklerini çıkaralım. Nereye, hangi tarihte ve hangi amaçla gitmen gerekiyor?": "Let's map the travel options first. Where do you need to go, when, and why?",
+    "Hangi ulaşım veya konaklama seçeneklerini değerlendiriyorsun?": "Which transport or accommodation options are you considering?",
+    "Her seçeneğin yaklaşık toplam maliyeti ve zaman farkı ne kadar?": "What is the approximate total cost and time difference for each option?",
+    "Tarih veya saat konusunda ne kadar esneksin? Değiştirilemeyecek bir zorunluluk var mı?": "How flexible are you on the date or time? Is there a fixed requirement that cannot change?",
+    "Şimdi seçenekleri toplam maliyet, süre, risk ve esneklik açısından önceliklendirebiliriz. Senin için hangisi daha önemli?": "Now we can prioritize the options by total cost, time, risk, and flexibility. Which matters most to you?",
+    "Önce taşınma tablosunu çıkaralım. Taşınman gereken tarih ve şu an değerlendirdiğin seçenekler neler?": "Let's map the move first. What is the move date, and what options are you considering?",
+    "Ev, nakliye, depozito, eşya ve ulaşım tarafında hangi seçeneklerin var?": "What options do you have for the home, moving service, deposit, belongings, and transport?",
+    "Her seçeneğin yaklaşık maliyeti ve ne kadar zaman istediği hakkında ne biliyorsun?": "What do you know about the approximate cost and time required for each option?",
+    "Kesin olarak değişmeyecek kısıtların neler: tarih, bütçe, ev, iş veya aile durumu?": "What constraints definitely cannot change: date, budget, housing, work, or family circumstances?",
+    "Şimdi seçenekleri zorunluluk, maliyet, süre ve risk açısından önceliklendirebiliriz. Öncelikle neyi güvenceye almalıyız?": "Now we can prioritize the options by necessity, cost, time, and risk. What must we secure first?",
+    "Önce sorunun kapsamını çıkaralım. Evde tam olarak ne oldu ve hangi şeyler etkileniyor?": "Let's define the scope of the problem first. What exactly happened at home, and what is affected?",
+    "Şu anda düşündüğün çözüm seçenekleri neler: tamir, değiştirme, geçici çözüm, servis çağırma veya başka bir şey?": "What solutions are you considering: repair, replacement, a temporary fix, calling a service, or something else?",
+    "Bu seçeneklerin yaklaşık maliyeti, süresi ve varsa ek riskleri hakkında ne biliyorsun?": "What do you know about the approximate cost, time, and additional risks of these options?",
+    "Su, elektrik, gaz, yapısal hasar veya daha büyük bir zarara dönüşme riski var mı?": "Is there a risk involving water, electricity, gas, structural damage, or further damage?",
+    "Şimdi seçenekleri güvenlik, aciliyet, maliyet ve kalıcılık açısından önceliklendirebiliriz. Önce hangi sonucu korumalıyız?": "Now we can prioritize the options by safety, urgency, cost, and durability. What outcome should we protect first?",
+    "Önce durumu anlayalım. Şu anda aile içinde çözmeye çalıştığın konu tam olarak ne?": "Let's understand the situation first. What exactly are you trying to solve within the family?",
+    "Şu ana kadar düşündüğün veya uygulayabileceğin seçenekler neler?": "What options have you considered or could realistically use?",
+    "Her seçeneğin aile üzerindeki zaman, para, düzen veya ilişki açısından etkisi ne olur?": "How would each option affect the family in terms of time, money, routine, or relationships?",
+    "Kesinlikle korunması gereken bir ihtiyaç, sınır veya son tarih var mı?": "Is there a need, boundary, or deadline that absolutely must be protected?",
+    "Şimdi seçenekleri etkilerine ve aciliyetlerine göre önceliklendirebiliriz. Önce neyi güvenceye almalıyız?": "Now we can prioritize the options by impact and urgency. What should we secure first?",
+    "Önce durumu tam olarak anlayalım. Şu anda çözmeye çalıştığın problem nedir ve seni en çok zorlayan kısmı hangisi?": "Let's understand the situation fully first. What problem are you trying to solve, and what part is putting the most pressure on you?",
+    "Şu ana kadar düşündüğün, denediğin veya kullanabileceğin seçenekler neler?": "What options have you considered, tried, or could use?",
+    "Bu seçeneklerin her biri için bildiğin önemli farklar neler: para, zaman, risk, kolaylık veya başka bir şey?": "What important differences do you know between the options: money, time, risk, convenience, or something else?",
+    "Seni sınırlayan kesin bir şey var mı: bütçe, son tarih, başka bir kişinin kararı, mevcut kaynaklar veya başka bir kısıt?": "Is there a firm constraint: budget, deadline, another person's decision, available resources, or something else?",
+    "Şimdi seçenekleri sonuç, aciliyet, maliyet ve risk açısından karşılaştırabiliriz. Senin için en önemli kriter hangisi?": "Now we can compare the options by outcome, urgency, cost, and risk. Which criterion matters most to you?",
     "Önce tabloyu sadeleştirelim. Sonucu en çok değiştirecek noktayı bulup planı buna göre şekillendireceğim.": "Let's simplify the situation first. We'll find what changes the outcome most and build the plan around it.",
     "Burada önce gelir, zorunlu gider ve yaklaşan ödemeyi aynı tabloya koyup gerçek açığı bulacağız.": "We'll put income, mandatory expenses and upcoming payments into one picture and find the real gap.",
     "Önce güvenlik riskini ayıracağız; ardından tamir ve alternatif ulaşım maliyetini birlikte değerlendireceğiz.": "We'll separate any safety risk first, then compare repair and alternative transport costs.",
@@ -278,6 +329,15 @@ export default function LifeRescue() {
   function conversationBridge(category: string, context: string, answerText: string) {
     const amounts = extractMoney(context);
     if (category === "money" || category === "bills") {
+      if (language === "en" && amounts.length >= 2) {
+        const available = amounts[0];
+        const required = amounts[1];
+        const gap = required - available;
+        return gap > 0
+          ? `Got it. You have about ${available.toLocaleString("en-US")} TL available and about ${required.toLocaleString("en-US")} TL of upcoming payments. That leaves an initial gap of about ${gap.toLocaleString("en-US")} TL. Now let's identify what those payments are and which one needs attention first.`
+          : `Got it. Based on those numbers, you have about ${available.toLocaleString("en-US")} TL available against about ${required.toLocaleString("en-US")} TL of required payments. The key now is not just the total, but the due dates and consequences of each payment.`;
+      }
+      if (category === "money" || category === "bills") {
       if (amounts.length >= 2) {
         const available = amounts[0];
         const required = amounts[1];
