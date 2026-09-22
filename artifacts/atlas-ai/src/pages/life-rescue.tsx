@@ -505,7 +505,7 @@ export default function LifeRescue() {
 
             <div className="flex min-w-0 items-center gap-2 text-primary">
               <Sparkles className="h-5 w-5 shrink-0" />
-              <span <span className="hidden truncate text-sm font-bold tracking-wide sm:inline">AGT LIFE RESCUE</span>
+              <span className="hidden truncate text-sm font-bold tracking-wide sm:inline">AGT LIFE RESCUE</span>
               <span className="text-sm font-bold tracking-wide sm:hidden">AGT LIFE</span>
             </div>
 
