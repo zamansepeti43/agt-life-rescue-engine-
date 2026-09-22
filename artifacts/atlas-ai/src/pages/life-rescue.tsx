@@ -246,159 +246,159 @@ export default function LifeRescue() {
       .slice(0, 4);
   }
 
-  function getNextQuestion(currentCategory: string, context: string): string | null {
+  function getNextQuestion(currentCategory: string, context: string, uiLanguage: Language = language): string | null {
     const normalized = context.toLocaleLowerCase("tr-TR");
     const has = (...patterns: RegExp[]) => patterns.some((pattern) => pattern.test(normalized));
 
     if (currentCategory === "money" || currentCategory === "bills" || has(/para|maaş|borç|ödeme|fatura/)) {
       if (!has(/kira|fatura|borç|maaş|market|alışveriş|çocuk|çocuğ|ev|araba|araç|taksit|kredi|vergi|sigorta|ilaç|sağlık|okul|eğitim|seyahat|bilet|taşın|nakliye/)) {
-        return language === "en"
+        return uiLanguage === "en"
           ? "What exactly do you need the money for? Tell me the main expenses, one by one if possible."
           : "Önce paranın nereye gideceğini netleştirelim. Kira, fatura, borç, market, çocuk masrafı veya başka neler var? Mümkünse tek tek yaz.";
       }
       if (!has(/elimde|elinde|cebimde|hesabımda|param var|para var|\d+\s*(?:tl|₺|lira)|hiç|yok/)) {
-        return language === "en"
+        return uiLanguage === "en"
           ? "How much money do you actually have available right now, including your bank account?"
           : "Şu an elinde veya hesabında gerçekten kullanabileceğin yaklaşık ne kadar para var?";
       }
       if (!has(/ödenmesi|ödenecek|ödemem|ödemeler|kira\s*\d|fatura\s*\d|kredi\s*\d|borç\s*\d|taksit\s*\d|\d+\s*(?:tl|₺|lira)/)) {
-        return language === "en"
+        return uiLanguage === "en"
           ? "What payments are coming up? List each one with its amount if you know it."
           : "Önümüzdeki günlerde ödenmesi gereken neler var? Mümkünse tutarlarıyla birlikte tek tek yaz.";
       }
       if (!has(/son tarih|vade|yarın|bugün|ayın|tarih|gecik|deadline|due/)) {
-        return language === "en"
+        return uiLanguage === "en"
           ? "Which payments cannot be delayed, and when are they due? If you don't know an exact date, say roughly when."
           : "Bu ödemelerin hangileri gerçekten ertelenemez ve son tarihleri ne? Kesin tarihi bilmiyorsan yaklaşık zamanı söyle.";
       }
       if (!has(/ertele|taksit|azalt|kes|iptal|ek para|para bul|sat|borç al|avans|ek gelir|alternatif|delay|installment|cut|cancel|extra money|sell|advance/)) {
-        return language === "en"
+        return uiLanguage === "en"
           ? "Now let's look at the real options. What could you actually do: delay or split a payment, cut an expense, find extra money, borrow, sell something, or another route?"
           : "Şimdi seçenekleri gerçekten masaya koyalım. Uygulayabileceğin yollar neler: ödeme erteleme veya taksit, masraf kısma, ek para bulma, borç alma, bir şey satma ya da başka bir yol?";
       }
-      return language === "en"
+      return uiLanguage === "en"
         ? "Now I can prioritize them. What matters most to you: avoiding the most serious consequence, keeping essential needs covered, minimizing total cost, or finding cash fastest?"
         : "Artık önceliklendirebiliriz. Senin için hangisi daha önemli: en ciddi sonucu önlemek, temel ihtiyaçları korumak, toplam maliyeti düşürmek veya en hızlı şekilde nakit bulmak?";
     }
 
     if (currentCategory === "decision" || has(/karar|seç|hangisi|option|choose|decision/)) {
-      if (!has(/seçenek|alternatif|a mı|b mi|şunu|bunu|arasında/)) return language === "en"
+      if (!has(/seçenek|alternatif|a mı|b mi|şunu|bunu|arasında/)) return uiLanguage === "en"
         ? "What are the actual options you're deciding between? List them plainly."
         : "Önce seçenekleri net görelim. Gerçekte hangi seçenekler arasında karar veriyorsun? Tek tek yaz.";
-      if (!has(/fiyat|maliyet|süre|zaman|risk|kolay|özellik|avantaj|dezavantaj/)) return language === "en"
+      if (!has(/fiyat|maliyet|süre|zaman|risk|kolay|özellik|avantaj|dezavantaj/)) return uiLanguage === "en"
         ? "What do you know about the differences between these options—cost, time, risk, quality, or anything else?"
         : "Bu seçenekler arasındaki bildiğin farklar neler: fiyat, zaman, risk, kalite, kolaylık veya başka bir şey?";
-      if (!has(/bütçe|para|son tarih|acil|önemli|vazgeçilmez|öncelik|kriter/)) return language === "en"
+      if (!has(/bütçe|para|son tarih|acil|önemli|vazgeçilmez|öncelik|kriter/)) return uiLanguage === "en"
         ? "What is non-negotiable for you: budget, deadline, speed, safety, quality, or something else?"
         : "Senin için vazgeçilmez olan ne: bütçe, son tarih, hız, güvenlik, kalite veya başka bir şey?";
-      if (!has(/en kötü|risk|sonuç|kayb|zarar|worst|consequence/)) return language === "en"
+      if (!has(/en kötü|risk|sonuç|kayb|zarar|worst|consequence/)) return uiLanguage === "en"
         ? "If each option goes badly, what is the consequence you most want to avoid?"
         : "Her seçenek kötü giderse ortaya çıkabilecek sonuçlardan hangisinden özellikle kaçınmak istiyorsun?";
-      return language === "en"
+      return uiLanguage === "en"
         ? "I have the options and your constraints. Which outcome should the final decision protect first?"
         : "Seçenekleri ve kısıtlarını artık görüyorum. Son kararın öncelikle hangi sonucu korumasını istiyorsun?";
     }
 
     if (currentCategory === "time" || has(/zaman|yetiş|süre|yoğun|vakit|deadline/)) {
-      if (!has(/iş|görev|sorumluluk|yapmam|yetiştirmem|task/)) return language === "en"
+      if (!has(/iş|görev|sorumluluk|yapmam|yetiştirmem|task/)) return uiLanguage === "en"
         ? "What exactly are you trying to get done? List the tasks or responsibilities."
         : "Önce yükü çıkaralım. Şu anda yetiştirmeye çalıştığın işler veya sorumluluklar neler?";
-      if (!has(/bugün|yarın|son tarih|deadline|tarih|saat|süre/)) return language === "en"
+      if (!has(/bugün|yarın|son tarih|deadline|tarih|saat|süre/)) return uiLanguage === "en"
         ? "Which of these have a hard deadline or a specific time?"
         : "Bunların hangilerinin kesin son tarihi veya belirli bir saati var?";
-      if (!has(/dakika|saat|uzun|kısa|sürüyor/)) return language === "en"
+      if (!has(/dakika|saat|uzun|kısa|sürüyor/)) return uiLanguage === "en"
         ? "Roughly how long does each important task take, and what can be delayed or delegated?"
         : "Önemli işlerin her biri yaklaşık ne kadar sürüyor? Hangisini erteleyebilir, bölebilir veya devredebilirsin?";
-      return language === "en"
+      return uiLanguage === "en"
         ? "What should we protect first: the hardest deadline, the biggest consequence, or your available energy?"
         : "Önceliği neye göre kuralım: en yakın son tarih, en ağır sonuç veya elindeki enerji/zaman?";
     }
 
     if (currentCategory === "vehicle" || has(/araç|araba|motor|lastik|akü|servis|vehicle|car/)) {
-      if (!has(/ne oldu|arıza|bozuk|çalışm|ses|ışık|sorun/)) return language === "en"
+      if (!has(/ne oldu|arıza|bozuk|çalışm|ses|ışık|sorun/)) return uiLanguage === "en"
         ? "What exactly is wrong with the vehicle, and can you safely use it right now?"
         : "Araçta tam olarak ne oldu ve şu an güvenli şekilde kullanabiliyor musun?";
-      if (!has(/tamir|servis|değiş|bekle|geçici|alternatif|seçenek/)) return language === "en"
+      if (!has(/tamir|servis|değiş|bekle|geçici|alternatif|seçenek/)) return uiLanguage === "en"
         ? "What solutions are you considering: repair, replacement, service, waiting, or alternative transport?"
         : "Şu an düşündüğün çözüm yolları neler: tamir, parça değişimi, servis, beklemek veya alternatif ulaşım?";
-      if (!has(/tl|₺|lira|maliyet|fiyat|kaç para|saat|gün/)) return language === "en"
+      if (!has(/tl|₺|lira|maliyet|fiyat|kaç para|saat|gün/)) return uiLanguage === "en"
         ? "What do you know about the cost and time for each option?"
         : "Bu seçeneklerin yaklaşık maliyeti ve ne kadar süreceği hakkında ne biliyorsun?";
-      return language === "en"
+      return uiLanguage === "en"
         ? "Which outcome matters most: safety, getting mobile quickly, minimizing cost, or preventing further damage?"
         : "Hangisini önce korumalıyız: güvenlik, hızlıca yeniden hareket edebilmek, maliyeti düşürmek veya daha büyük hasarı önlemek?";
     }
 
     if (currentCategory === "travel" || has(/seyahat|uçuş|uçak|bilet|yolculuk|otel|travel|flight/)) {
-      if (!has(/nereye|gidece|varış|destinasyon|şehir|ülke/)) return language === "en"
+      if (!has(/nereye|gidece|varış|destinasyon|şehir|ülke/)) return uiLanguage === "en"
         ? "Where are you going, on what date, and what is the reason for the trip?"
         : "Nereye, hangi tarihte ve hangi amaçla gitmen gerekiyor?";
-      if (!has(/uçak|otobüs|tren|araba|otel|konak|bilet|seçenek/)) return language === "en"
+      if (!has(/uçak|otobüs|tren|araba|otel|konak|bilet|seçenek/)) return uiLanguage === "en"
         ? "What transport and accommodation options are you actually considering?"
         : "Gerçekte hangi ulaşım ve konaklama seçeneklerini değerlendiriyorsun?";
-      if (!has(/tl|₺|lira|maliyet|fiyat|süre|saat|gün/)) return language === "en"
+      if (!has(/tl|₺|lira|maliyet|fiyat|süre|saat|gün/)) return uiLanguage === "en"
         ? "What do you know about the total cost and time of each option?"
         : "Her seçeneğin toplam maliyeti ve zaman farkı hakkında ne biliyorsun?";
-      return language === "en"
+      return uiLanguage === "en"
         ? "What must not change: the date, arrival time, budget, or something else?"
         : "Hangisi değişemez: tarih, varış saati, bütçe veya başka bir zorunluluk?";
     }
 
     if (currentCategory === "moving" || has(/taşın|ev değiş|nakliye|depozito|moving/)) {
-      if (!has(/tarih|ne zaman|gün/)) return language === "en"
+      if (!has(/tarih|ne zaman|gün/)) return uiLanguage === "en"
         ? "When do you have to move?"
         : "Taşınman gereken kesin veya yaklaşık tarih ne?";
-      if (!has(/ev|nakliye|depozito|eşya|taşıma|seçenek/)) return language === "en"
+      if (!has(/ev|nakliye|depozito|eşya|taşıma|seçenek/)) return uiLanguage === "en"
         ? "What options do you have for the home, mover, deposit, and belongings?"
         : "Ev, nakliye, depozito ve eşyalar konusunda hangi seçeneklerin var?";
-      if (!has(/tl|₺|lira|maliyet|fiyat|bütçe/)) return language === "en"
+      if (!has(/tl|₺|lira|maliyet|fiyat|bütçe/)) return uiLanguage === "en"
         ? "What do you know about the total moving cost?"
         : "Toplam taşınma maliyeti hakkında şu an ne biliyorsun?";
-      return language === "en"
+      return uiLanguage === "en"
         ? "What must be protected first: the move date, cash, housing, work, or family stability?"
         : "Önce neyi güvenceye almalıyız: taşınma tarihi, nakit, ev, iş veya aile düzeni?";
     }
 
     if (currentCategory === "home" || has(/ev|tamir|bozuk|eşya|tesisat|home|repair/)) {
-      if (!has(/ne oldu|bozuk|arız|sorun|çalışm|kırık/)) return language === "en"
+      if (!has(/ne oldu|bozuk|arız|sorun|çalışm|kırık/)) return uiLanguage === "en"
         ? "What exactly happened at home, and what is affected?"
         : "Evde tam olarak ne oldu ve hangi şeyler etkilendi?";
-      if (!has(/tamir|değiş|servis|geçici|seçenek/)) return language === "en"
+      if (!has(/tamir|değiş|servis|geçici|seçenek/)) return uiLanguage === "en"
         ? "What solutions are you considering: repair, replacement, service, or a temporary fix?"
         : "Hangi çözüm yollarını düşünüyorsun: tamir, değişim, servis veya geçici çözüm?";
-      if (!has(/tl|₺|lira|maliyet|fiyat/)) return language === "en"
+      if (!has(/tl|₺|lira|maliyet|fiyat/)) return uiLanguage === "en"
         ? "What do you know about the cost, time, and risks of each option?"
         : "Her seçeneğin maliyeti, süresi ve riskleri hakkında ne biliyorsun?";
-      return language === "en"
+      return uiLanguage === "en"
         ? "What should we protect first: safety, preventing further damage, cost, or speed?"
         : "Önce neyi koruyalım: güvenlik, daha büyük hasarı önlemek, maliyet veya hız?";
     }
 
     if (currentCategory === "family" || has(/aile|eş|çocuk|çocuğ|bebek|family/)) {
-      if (!has(/sorun|konu|ihtiyaç|çöz/)) return language === "en"
+      if (!has(/sorun|konu|ihtiyaç|çöz/)) return uiLanguage === "en"
         ? "What exactly are you trying to solve within the family?"
         : "Aile içinde tam olarak hangi konuyu çözmeye çalışıyorsun?";
-      if (!has(/seçenek|yapabil|dened|düşün/)) return language === "en"
+      if (!has(/seçenek|yapabil|dened|düşün/)) return uiLanguage === "en"
         ? "What options have you considered or could realistically use?"
         : "Şu ana kadar düşündüğün veya gerçekten uygulayabileceğin seçenekler neler?";
-      if (!has(/para|zaman|düzen|ilişki|etki|maliyet/)) return language === "en"
+      if (!has(/para|zaman|düzen|ilişki|etki|maliyet/)) return uiLanguage === "en"
         ? "How would each option affect money, time, routine, or relationships?"
         : "Bu seçeneklerin para, zaman, düzen veya ilişkiler üzerindeki etkileri neler?";
-      return language === "en"
+      return uiLanguage === "en"
         ? "What must be protected first: a basic need, a boundary, safety, or a deadline?"
         : "Önce neyi güvenceye almalıyız: temel ihtiyaç, bir sınır, güvenlik veya son tarih?";
     }
 
-    if (!has(/sorun|problem|mesele|ne oldu|çöz/)) return language === "en"
+    if (!has(/sorun|problem|mesele|ne oldu|çöz/)) return uiLanguage === "en"
       ? "What exactly is happening, and what part is putting the most pressure on you?"
       : "Tam olarak ne oluyor ve seni en çok zorlayan kısmı hangisi?";
-    if (!has(/seçenek|alternatif|yapabil|dened|düşün/)) return language === "en"
+    if (!has(/seçenek|alternatif|yapabil|dened|düşün/)) return uiLanguage === "en"
       ? "What options have you already considered, tried, or could realistically use?"
       : "Şu ana kadar düşündüğün, denediğin veya gerçekten uygulayabileceğin seçenekler neler?";
-    if (!has(/para|zaman|risk|maliyet|fiyat|kolay|sonuç|etki/)) return language === "en"
+    if (!has(/para|zaman|risk|maliyet|fiyat|kolay|sonuç|etki/)) return uiLanguage === "en"
       ? "What important differences are there between those options—money, time, risk, or impact?"
       : "Bu seçenekler arasında sonucu değiştirecek farklar neler: para, zaman, risk, maliyet veya etki?";
-    return language === "en"
+    return uiLanguage === "en"
       ? "What constraint or outcome must the final plan protect first?"
       : "Son planın öncelikle koruması gereken kısıt veya sonuç ne?";
   }
@@ -516,6 +516,33 @@ export default function LifeRescue() {
     const localResult = analyzeOffline(context, getOptions());
     setResult(localResult);
     return localResult;
+  }
+
+  function changeLanguage(nextLanguage: Language) {
+    setLanguage(nextLanguage);
+    if (!messages.length) return;
+
+    const userMessages = messages.filter((message) => message.role === "user").map((message) => message.text);
+    const context = conversationContext || userMessages.join("\nKullanıcı: ");
+    if (!context) return;
+
+    const localResult = analyzeOffline(context, {
+      category: category || undefined,
+      goal: goal || undefined,
+      urgency,
+      budget: budget === "" ? undefined : Number(budget),
+      availableHours: availableHours === "" ? undefined : Number(availableHours),
+      language: nextLanguage,
+    });
+
+    setResult(localResult);
+    const nextQuestion = getNextQuestion(localResult.category, context, nextLanguage);
+    const translatedDiagnosis = localResult.diagnosis;
+    setMessages([
+      ...userMessages.map((text) => ({ role: "user" as const, text })),
+      { role: "engine", text: translatedDiagnosis },
+      ...(nextQuestion ? [{ role: "engine" as const, text: nextQuestion }] : []),
+    ]);
   }
 
   function start(textOverride?: string) {
@@ -660,8 +687,8 @@ export default function LifeRescue() {
 
             <div className="ml-auto flex items-center gap-1">
               <div className="inline-flex rounded-full border bg-card p-0.5" role="group" aria-label="Language">
-                <button type="button" onClick={() => setLanguage("tr")} className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${language === "tr" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>TR</button>
-                <button type="button" onClick={() => setLanguage("en")} className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${language === "en" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>EN</button>
+                <button type="button" onClick={() => changeLanguage("tr")} className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${language === "tr" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>TR</button>
+                <button type="button" onClick={() => changeLanguage("en")} className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${language === "en" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>EN</button>
               </div>
 
               <button
