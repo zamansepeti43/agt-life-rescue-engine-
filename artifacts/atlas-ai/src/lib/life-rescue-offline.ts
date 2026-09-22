@@ -235,9 +235,22 @@ function englishizeResult(result: OfflineResult): OfflineResult {
 export function analyzeOffline(problem: string, options?: OfflineAnalysisOptions): OfflineResult {
   const selected = pick(problem, options);
   const constraints: string[] = [];
-  const moneyMatches = problem.toLocaleLowerCase("tr-TR").matchAll(/(\d{1,3}(?:[. ]\d{3})*(?:,\d{1,2})?|\d+(?:,\d{1,2})?)\s*(?:tl|₺|lira)/gi);
-  const amounts = Array.from(moneyMatches, (m) => Number(m[1].replace(/\s/g, "").replace(/\./g, "").replace(",", "."))).filter(Number.isFinite);
-  if (amounts.length) constraints.push("Konuşmada geçen tutarlar: " + amounts.slice(0, 3).map((n) => n.toLocaleString("tr-TR") + " TL").join(" / "));
+  const normalizedProblem = problem.toLocaleLowerCase("tr-TR");
+  const explicitMatches = normalizedProblem.matchAll(/(\d{1,3}(?:[. ]\d{3})*(?:,\d{1,2})?|\d+(?:,\d{1,2})?)\s*(?:tl|₺|lira|try)/gi);
+  const amounts = Array.from(explicitMatches, (m) => Number(m[1].replace(/\s/g, "").replace(/\./g, "").replace(",", "."))).filter(Number.isFinite);
+  const thousandMatches = normalizedProblem.matchAll(/(\d+(?:[.,]\d+)?)\s*(?:bin|k)\b/gi);
+  for (const match of thousandMatches) amounts.push(Number(match[1].replace(",", ".")) * 1000);
+  const noCash = /(^|\n)\s*(?:kullanıcı:\s*)?(?:hiç|yok|param yok|nakit yok)\s*($|\n)/i.test(problem)
+    || /(?:elimde|elinde|hesabımda|kullanabileceğim).*?(?:hiç|yok)/i.test(normalizedProblem);
+  const availableMatch = normalizedProblem.match(/(?:elimde|elinde|hesabımda|kullanabileceğim|available).*?(\d+(?:[.,]\d+)?)\s*(?:bin|k|tl|₺|lira)/i);
+  const availableAmount = availableMatch
+    ? Number(availableMatch[1].replace(",", ".")) * (/(?:bin|k)/i.test(availableMatch[0]) ? 1000 : 1)
+    : noCash ? 0 : undefined;
+  const paymentAmounts = availableAmount !== undefined
+    ? amounts.filter((value, index) => value !== availableAmount || amounts.indexOf(value) !== index)
+    : amounts;
+  if (availableAmount !== undefined) constraints.push("Kullanılabilir para: " + availableAmount.toLocaleString("tr-TR") + " TL");
+  if (paymentAmounts.length) constraints.push("Konuşmada geçen tutarlar: " + paymentAmounts.slice(0, 5).map((n) => n.toLocaleString("tr-TR") + " TL").join(" / "));
   if (options?.budget !== undefined) constraints.push("Bütçe: " + options.budget.toLocaleString("tr-TR") + " TL");
   if (options?.availableHours !== undefined) constraints.push("Bugün ayrılabilecek zaman: " + options.availableHours + " saat");
   if (/bugün/i.test(problem)) constraints.push("Son tarih: bugün");
@@ -318,7 +331,7 @@ export function analyzeOffline(problem: string, options?: OfflineAnalysisOptions
       ...(urgent ? ["Yüksek aciliyet"] : []),
       ...(constraints.some((item) => item.startsWith("Son tarih")) ? ["Yakın son tarih"] : []),
     ] : ["Sorunun hedefi ve mevcut kısıtlar"],
-    plan: buildPlan(selected.rule.category, actions, phase, amounts),
+    plan: buildPlan(selected.rule.category, actions, phase, availableAmount !== undefined ? [availableAmount, paymentAmounts.reduce((a, b) => a + b, 0)] : []),
     diagnosis:
       selected.rule.category === "vehicle"
         ? "Önce güvenlik riskini ayıracağız; ardından tamir ve alternatif ulaşım maliyetini birlikte değerlendireceğiz."
@@ -329,16 +342,18 @@ export function analyzeOffline(problem: string, options?: OfflineAnalysisOptions
             : selected.rule.category === "home"
               ? "Önce güvenlik ve daha büyük hasar riskini kontrol edeceğiz; sonra tamir, değişim veya geçici çözümü karşılaştıracağız."
               : selected.rule.category === "money"
-                ? amounts.length >= 2
-                  ? `Şu an yaklaşık ${amounts[0].toLocaleString("tr-TR")} TL kullanılabilir para ve ${amounts[1].toLocaleString("tr-TR")} TL zorunlu ödeme görünüyor. Yaklaşık ${Math.max(amounts[1] - amounts[0], 0).toLocaleString("tr-TR")} TL açık varsa önce hangi ödemenin kritik olduğunu ayırıp açığı nasıl kapatacağımızı planlayacağız.`
-                  : "Burada önce gelir, zorunlu gider ve yaklaşan ödemeyi aynı tabloya koyup gerçek açığı bulacağız."
+                ? paymentAmounts.length && availableAmount !== undefined
+                  ? `Kullanılabilir para yaklaşık ${availableAmount.toLocaleString("tr-TR")} TL. Belirttiğin ödemeler toplam yaklaşık ${paymentAmounts.reduce((a, b) => a + b, 0).toLocaleString("tr-TR")} TL. İlk farkı hesaplayıp sonra hangi ödemenin kritik olduğunu ve hangi seçeneğin uygulanabilir olduğunu ayıracağız.`
+                  : paymentAmounts.length
+                    ? `Belirttiğin ödemeler toplam yaklaşık ${paymentAmounts.reduce((a, b) => a + b, 0).toLocaleString("tr-TR")} TL. Kullanılabilir nakdi ayrıca netleştirip gerçek açığı hesaplayacağız.`
+                    : "Burada önce gelir, zorunlu gider ve yaklaşan ödemeyi aynı tabloya koyup gerçek açığı bulacağız."
                 : "Önce tabloyu sadeleştirelim. Sonucu en çok değiştirecek noktayı bulup planı buna göre şekillendireceğim.",
     actions,
     constraints,
     nextQuestion: selected.rule.category === "money"
-      ? amounts.length >= 2
-        ? "Bu zorunlu ödemelerin içinde hangileri gerçekten ertelenemez ve son tarihleri ne?"
-        : "Şu an elinde kullanılabilir ne kadar para ve en yakın zorunlu ödeme yaklaşık ne kadar?"
+      ? availableAmount !== undefined && paymentAmounts.length
+        ? "Bu ödemelerin her biri için son tarihi ve gecikirse en ciddi sonucu söyle. Sonra hangisini önce ele alacağımızı birlikte sıralayalım."
+        : "Şu an elinde kullanılabilir ne kadar para var ve önündeki en yakın zorunlu ödeme yaklaşık ne kadar?"
       : selected.rule.category === "vehicle"
         ? "Araç şu an güvenli şekilde kullanılabiliyor mu ve tahmini masraf ne kadar?"
         : selected.rule.category === "travel"
