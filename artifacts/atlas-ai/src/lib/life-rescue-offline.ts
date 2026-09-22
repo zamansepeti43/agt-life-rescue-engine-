@@ -71,7 +71,7 @@ function phaseFrom(text: string): OfflineResult["phase"] {
   return "understand";
 }
 
-function buildPlan(category: string, actions: OfflineAction[], phase: OfflineResult["phase"]): OfflinePlan {
+function buildPlan(category: string, actions: OfflineAction[], phase: OfflineResult["phase"], amounts: number[] = []): OfflinePlan {
   const first = actions[0];
   const second = actions[1];
   const third = actions[2];
@@ -85,6 +85,14 @@ function buildPlan(category: string, actions: OfflineAction[], phase: OfflineRes
     category === "moving" ? "Taşınmayı zaman, nakit ve zorunluluk sırasına göre yönetmek." :
     category === "home" ? "Evdeki baskıyı önce güvenli şekilde azaltıp kalıcı çözümü netleştirmek." :
     "Sorunun ana baskısını azaltıp kontrolü geri kazanmak.";
+  const moneyDetail = amounts.length >= 2
+    ? (() => {
+        const gap = amounts[1] - amounts[0];
+        if (gap > 0) return `Şu an yaklaşık ${amounts[0].toLocaleString("tr-TR")} TL var ve yaklaşık ${amounts[1].toLocaleString("tr-TR")} TL gerekiyor; yaklaşık ${gap.toLocaleString("tr-TR")} TL açık var.`;
+        return `Verilen rakamlara göre yaklaşık ${amounts[0].toLocaleString("tr-TR")} TL kullanılabilir para, ${amounts[1].toLocaleString("tr-TR")} TL zorunlu ödeme var.`;
+      })()
+    : undefined;
+
   return {
     objective,
     steps: [
@@ -93,7 +101,7 @@ function buildPlan(category: string, actions: OfflineAction[], phase: OfflineRes
         title: phase === "act" ? "Sonucu doğrula" : (first?.title ?? "İlk adımı seç"),
         detail: phase === "act"
           ? "Yaptığın işlemin sorunu gerçekten azaltıp azaltmadığını kontrol et."
-          : (first?.reason ?? "Sonucu en çok değiştirecek ilk adıma odaklan."),
+          : (moneyDetail ?? first?.reason ?? "Sonucu en çok değiştirecek ilk adıma odaklan."),
         estimatedMinutes: 20,
       },
       {
@@ -206,7 +214,7 @@ export function analyzeOffline(problem: string, options?: OfflineAnalysisOptions
       ...(urgent ? ["Yüksek aciliyet"] : []),
       ...(constraints.some((item) => item.startsWith("Son tarih")) ? ["Yakın son tarih"] : []),
     ] : ["Sorunun hedefi ve mevcut kısıtlar"],
-    plan: buildPlan(selected.rule.category, actions, phase),
+    plan: buildPlan(selected.rule.category, actions, phase, amounts),
     diagnosis:
       selected.rule.category === "vehicle"
         ? "Önce güvenlik riskini ayıracağız; ardından tamir ve alternatif ulaşım maliyetini birlikte değerlendireceğiz."
@@ -217,12 +225,16 @@ export function analyzeOffline(problem: string, options?: OfflineAnalysisOptions
             : selected.rule.category === "home"
               ? "Önce güvenlik ve daha büyük hasar riskini kontrol edeceğiz; sonra tamir, değişim veya geçici çözümü karşılaştıracağız."
               : selected.rule.category === "money"
-                ? "Burada önce gelir, zorunlu gider ve yaklaşan ödemeyi aynı tabloya koyup gerçek açığı bulacağız."
+                ? amounts.length >= 2
+                  ? `Şu an yaklaşık ${amounts[0].toLocaleString("tr-TR")} TL kullanılabilir para ve ${amounts[1].toLocaleString("tr-TR")} TL zorunlu ödeme görünüyor. Yaklaşık ${Math.max(amounts[1] - amounts[0], 0).toLocaleString("tr-TR")} TL açık varsa önce hangi ödemenin kritik olduğunu ayırıp açığı nasıl kapatacağımızı planlayacağız.`
+                  : "Burada önce gelir, zorunlu gider ve yaklaşan ödemeyi aynı tabloya koyup gerçek açığı bulacağız."
                 : "Önce tabloyu sadeleştirelim. Sonucu en çok değiştirecek noktayı bulup planı buna göre şekillendireceğim.",
     actions,
     constraints,
     nextQuestion: selected.rule.category === "money"
-      ? "Şu an elinde kullanılabilir ne kadar para var ve en yakın zorunlu ödeme yaklaşık ne kadar?"
+      ? amounts.length >= 2
+        ? "Bu zorunlu ödemelerin içinde hangileri gerçekten ertelenemez ve son tarihleri ne?"
+        : "Şu an elinde kullanılabilir ne kadar para ve en yakın zorunlu ödeme yaklaşık ne kadar?"
       : selected.rule.category === "vehicle"
         ? "Araç şu an güvenli şekilde kullanılabiliyor mu ve tahmini masraf ne kadar?"
         : selected.rule.category === "travel"
