@@ -703,9 +703,10 @@ export default function LifeRescue() {
 
               <button
                 type="button"
-                aria-label="More options"
-                title="More options"
-                className="flex h-10 w-10 items-center justify-center rounded-full border bg-card"
+                aria-label={copy.details}
+                title={copy.details}
+                onClick={() => setShowSettings((value) => !value)}
+                className="flex h-9 w-9 items-center justify-center rounded-full border bg-card sm:h-10 sm:w-10"
               >
                 <MoreVertical className="h-5 w-5" />
               </button>
