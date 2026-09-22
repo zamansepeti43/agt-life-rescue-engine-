@@ -22,6 +22,7 @@ export interface OfflineAnalysisOptions {
   urgency?: number;
   budget?: number;
   availableHours?: number;
+  language?: "tr" | "en";
 }
 
 export interface OfflineResult {
@@ -39,16 +40,16 @@ export interface OfflineResult {
 }
 
 const rules = [
-  { category: "money", goal: "find_money", words: ["para", "borç", "borc", "maaş", "nakit", "ödeme"] },
-  { category: "bills", goal: "reduce_cost", words: ["fatura", "elektrik", "su", "internet", "doğalgaz", "abonelik"] },
-  { category: "time", goal: "save_time", words: ["zaman", "yetiş", "yoğun", "vakit", "çok iş"] },
-  { category: "decision", goal: "make_decision", words: ["hangisi", "karar", "seç", "almalı"] },
-  { category: "family", goal: "organize", words: ["çocuk", "aile", "eş", "bebek"] },
-  { category: "work", goal: "prioritize", words: ["iş", "mesai", "vardiya", "patron"] },
-  { category: "vehicle", goal: "reduce_cost", words: ["araba", "araç", "motor", "lastik", "akü", "servis", "yakıt"] },
-  { category: "travel", goal: "organize", words: ["seyahat", "uçuş", "uçak", "otobüs", "otel", "bilet", "yolculuk"] },
-  { category: "moving", goal: "organize", words: ["taşınma", "taşınıyorum", "ev taşı", "nakliye", "depozito"] },
-  { category: "home", goal: "solve", words: ["ev", "tamir", "bozuk", "eşya", "temizlik", "tesisat"] },
+  { category: "money", goal: "find_money", words: ["para", "borç", "borc", "maaş", "nakit", "ödeme", "money", "debt", "salary", "cash", "payment"] },
+  { category: "bills", goal: "reduce_cost", words: ["fatura", "elektrik", "su", "internet", "doğalgaz", "abonelik", "bill", "electricity", "water", "subscription"] },
+  { category: "time", goal: "save_time", words: ["zaman", "yetiş", "yoğun", "vakit", "çok iş", "time", "deadline", "busy", "tasks"] },
+  { category: "decision", goal: "make_decision", words: ["hangisi", "karar", "seç", "almalı", "decision", "choose", "option", "which"] },
+  { category: "family", goal: "organize", words: ["çocuk", "aile", "eş", "bebek", "family", "child", "baby", "spouse"] },
+  { category: "work", goal: "prioritize", words: ["iş", "mesai", "vardiya", "patron", "work", "shift", "boss", "job"] },
+  { category: "vehicle", goal: "reduce_cost", words: ["araba", "araç", "motor", "lastik", "akü", "servis", "yakıt", "car", "vehicle", "engine", "tire", "battery", "fuel"] },
+  { category: "travel", goal: "organize", words: ["seyahat", "uçuş", "uçak", "otobüs", "otel", "bilet", "yolculuk", "travel", "flight", "plane", "bus", "hotel", "ticket", "trip"] },
+  { category: "moving", goal: "organize", words: ["taşınma", "taşınıyorum", "ev taşı", "nakliye", "depozito", "moving", "move", "moving house", "deposit"] },
+  { category: "home", goal: "solve", words: ["ev", "tamir", "bozuk", "eşya", "temizlik", "tesisat", "home", "repair", "broken", "plumbing", "cleaning"] },
 ];
 
 function pick(text: string, options?: OfflineAnalysisOptions) {
@@ -128,6 +129,78 @@ function buildPlan(category: string, actions: OfflineAction[], phase: OfflineRes
   };
 }
 
+const enText: Record<string, string> = {
+  "Açığı netleştir":"Clarify the cash gap","Eksik kalan tutarı tek rakama indir.":"Reduce the missing amount to one clear number.",
+  "Zorunlu olmayan giderleri ayır":"Separate non-essential expenses","Kısa vadeli nakit çıkışını azalt.":"Reduce short-term cash outflow.",
+  "Ertelenebilir ödemeleri listele":"List deferrable payments","Vade baskısını görünür hale getir.":"Make payment pressure visible.",
+  "Son tarihleri sırala":"Sort by due date","Gecikme riski en yüksek ödemeyi önce gör.":"See the payment with the highest late-payment risk first.",
+  "Tekrarlayan giderleri kontrol et":"Review recurring expenses","Kullanılmayan abonelikleri ayır.":"Identify unused subscriptions.",
+  "Daha düşük maliyetli alternatifleri karşılaştır":"Compare lower-cost alternatives","Aynı ihtiyacı daha düşük maliyetle karşılamayı araştır.":"Look for a lower-cost way to meet the same need.",
+  "Tek sonraki adımı seç":"Choose the next step","Karar yükünü azalt.":"Reduce decision load.",
+  "Düşük etkili işleri ertele":"Delay low-impact tasks","Kritik sonucu koru.":"Protect the critical outcome.",
+  "Devredilebilecek işi ayır":"Separate delegable work","Zamanı geri kazan.":"Recover time.",
+  "Kriterleri belirle":"Define the criteria","Seçenekleri aynı ölçekte karşılaştır.":"Compare options on the same scale.",
+  "Kritik eksik bilgiyi bul":"Find the critical missing information","Gereksiz araştırmayı azalt.":"Reduce unnecessary research.",
+  "Geri dönüşü kolay seçeneği işaretle":"Mark the easiest-to-reverse option","Belirsizlik riskini azalt.":"Reduce uncertainty risk.",
+  "Bugünün kritik işini seç":"Choose today's critical task","Önceliği netleştir.":"Clarify the priority.",
+  "Devredilebilir işi ayır":"Separate delegable work","Kapasiteyi koru.":"Protect capacity.",
+  "Son tarihleri sırala":"Sort deadlines","Gecikme riskini azalt.":"Reduce late risk.",
+  "Güvenlik riskini ayır":"Separate safety risk","Fren, lastik, direksiyon veya ciddi uyarıları masraf optimizasyonundan önce değerlendir.":"Check brakes, tires, steering and serious warnings before optimizing cost.",
+  "Toplam araç maliyetini çıkar":"Calculate total vehicle cost","Parça, işçilik, çekici ve tekrar masrafını birlikte düşün.":"Include parts, labor, towing and possible repeat costs.",
+  "Alternatif ulaşımı karşılaştır":"Compare alternative transport","Aracı kullanmamanın geçici ulaşım maliyetini de hesaba kat.":"Include temporary transport costs if you cannot use the vehicle.",
+  "Tarihi ve zorunlu varış saatini sabitle":"Lock the date and required arrival time","Esnek ve zorunlu parçaları ayırmadan seçim yapma.":"Separate fixed requirements from flexible choices before deciding.",
+  "Toplam yol maliyetini hesapla":"Calculate total travel cost","Biletin yanında bagaj, transfer ve konaklama giderlerini de hesaba kat.":"Include baggage, transfers and accommodation, not just the ticket.",
+  "B planını hazırla":"Prepare a backup plan","İptal veya gecikme halinde kullanabileceğin alternatifi belirle.":"Identify an alternative for cancellation or delay.",
+  "Taşınma tarihini ve zorunlu ödemeleri çıkar":"Map the move date and mandatory payments","Kira, depozito, nakliye ve abonelikleri aynı zaman çizelgesine koy.":"Put rent, deposit, moving and subscriptions on one timeline.",
+  "Taşınma maliyetini kalemlere böl":"Break moving costs into line items","Nakit baskısını hangi kalemin oluşturduğunu görünür yap.":"Identify which cost is creating the cash pressure.",
+  "Ertelenebilir işleri ayır":"Separate deferrable tasks","İlk gün gerekli olmayan masraf ve işleri sonraya bırak.":"Delay costs and tasks that are not needed on day one.",
+  "Güvenlik ve hasar riskini kontrol et":"Check safety and damage risk","Su, elektrik veya daha büyük hasar riskini önce durdur.":"Stop water, electrical or further-damage risks first.",
+  "Tamir mi değişim mi karşılaştır":"Compare repair vs replacement","Parça, işçilik ve kullanım ömrünü birlikte değerlendir.":"Consider parts, labor and useful life together.",
+  "Geçici çözümü belirle":"Identify a temporary solution","Kalıcı çözüm zaman alıyorsa güvenli geçici seçeneği ayır.":"If the permanent fix takes time, identify a safe temporary option.",
+  "Çocuğu/aileyi etkileyen sonucu önce belirle":"Identify the family impact first","Aile üzerindeki doğrudan etkiyi koru.":"Protect the direct impact on the family.",
+  "Acil ve ertelenebilir işleri ayır":"Separate urgent and deferrable tasks","Gereksiz yükü azalt.":"Reduce unnecessary load.",
+  "Destek alınabilecek işi belirle":"Identify what can be supported","Tüm yükün tek kişide kalmasını önle.":"Avoid keeping the whole load on one person.",
+  "Sorunun ana baskısını azaltıp kontrolü geri kazanmak.":"Reduce the main pressure and regain control.",
+  "Nakit baskısını azaltıp en kritik ödemeyi güvenceye almak.":"Reduce cash pressure and secure the most critical payment.",
+  "Ödemeleri son tarih ve sonuçlarına göre sadeleştirmek.":"Simplify payments by deadline and consequence.",
+  "Kısıtlı zamanı en önemli sonuca yönlendirmek.":"Direct limited time toward the most important outcome.",
+  "Belirsizliği azaltıp uygulanabilir bir karar vermek.":"Reduce uncertainty and make a practical decision.",
+  "Güvenliği koruyup araç kaynaklı toplam maliyeti kontrol etmek.":"Protect safety and control total vehicle cost.",
+  "Seyahati tarih, maliyet ve risk açısından kontrol altına almak.":"Control the trip by date, cost and risk.",
+  "Taşınmayı zaman, nakit ve zorunluluk sırasına göre yönetmek.":"Manage the move by time, cash and necessity.",
+  "Evdeki baskıyı önce güvenli şekilde azaltıp kalıcı çözümü netleştirmek.":"Reduce the pressure at home safely first, then clarify the lasting solution.",
+  "Sonucu doğrula":"Verify the result","Yaptığın işlemin sorunu gerçekten azaltıp azaltmadığını kontrol et.":"Check whether the action actually reduced the problem.",
+  "İlk adımı seç":"Choose the first step","Sonucu en çok değiştirecek ilk adıma odaklan.":"Focus on the first step that changes the outcome most.",
+  "Kısıtları netleştir":"Clarify constraints","Bugün uygulanabilecek seçenekleri ayır.":"Separate options that can be applied today.",
+  "Planı yeniden değerlendir":"Reassess the plan","İlk adımdan sonra yeni duruma göre yönünü güncelle.":"Update direction based on the new situation after the first step.",
+  "Kontrolü geri al":"Regain control","Sorunun ana baskısı azaltılmış ve sonraki karar netleşmiş olsun.":"Reduce the main pressure and make the next decision clear.",
+  "Zorunlu ödemeler ayrılmış ve nakit açığı için net bir yol oluşmuş olsun.":"Separate mandatory payments and establish a clear path for the cash gap.",
+  "Kritik iş tamamlanmış ve kalan işler sıraya girmiş olsun.":"Complete the critical task and put the remaining tasks in order.",
+  "Konuşmada geçen parasal tutarlar":"Amounts mentioned in the conversation","Belirtilen bütçe":"Stated budget","Belirtilen zaman kapasitesi":"Stated time capacity","Yüksek aciliyet":"High urgency","Yakın son tarih":"Near deadline","Sorunun hedefi ve mevcut kısıtlar":"Problem goal and current constraints"
+};
+
+function englishizeResult(result: OfflineResult): OfflineResult {
+  const tr = (value: string) => enText[value] ?? value;
+  return {
+    ...result,
+    goal: result.goal,
+    diagnosis: result.diagnosis,
+    constraints: result.constraints.map(tr),
+    decisionBasis: result.decisionBasis.map(tr),
+    actions: result.actions.map((a) => ({ ...a, title: tr(a.title), reason: tr(a.reason) })),
+    plan: {
+      objective: tr(result.plan.objective),
+      steps: result.plan.steps.map((s) => ({
+        ...s,
+        label: s.label === "Şimdi" ? "Now" as never : s.label === "Bugün" ? "Today" as never : s.label === "Sonraki adım" ? "Next step" as never : "Goal" as never,
+        title: tr(s.title),
+        detail: tr(s.detail),
+      })),
+    },
+    nextQuestion: result.nextQuestion,
+  };
+}
+
 export function analyzeOffline(problem: string, options?: OfflineAnalysisOptions): OfflineResult {
   const selected = pick(problem, options);
   const constraints: string[] = [];
@@ -195,7 +268,7 @@ export function analyzeOffline(problem: string, options?: OfflineAnalysisOptions
     ],
   };
   const actions = common[selected.rule.category] ?? common.decision;
-  return {
+  const result: OfflineResult = {
     problem,
     category: selected.rule.category,
     goal: options?.goal ?? selected.rule.goal,
@@ -245,4 +318,5 @@ export function analyzeOffline(problem: string, options?: OfflineAnalysisOptions
               ? "Sorun güvenlik, su/elektrik veya daha büyük hasar riski oluşturuyor mu?"
               : "Bunu doğru yönlendirebilmem için sonucu en çok değiştiren kısıt ne: para, zaman, son tarih veya başka bir şey mi?",
   };
+  return options?.language === "en" ? englishizeResult(result) : result;
 }
