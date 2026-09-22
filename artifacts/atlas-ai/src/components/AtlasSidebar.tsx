@@ -15,7 +15,6 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import { useAssistantState } from '@/hooks/useAssistantState';
-import { useEffect } from 'react';
 
 const IZCI_ITEMS = [
   { label: 'Takipler', icon: Crosshair },
