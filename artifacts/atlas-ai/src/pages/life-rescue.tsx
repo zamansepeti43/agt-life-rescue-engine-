@@ -114,7 +114,39 @@ function translateKnown(text: string, lang: Language): string {
     "Önce taşınma tarihini ve zorunlu ödemeleri sabitleyeceğiz; sonra nakit ve zaman baskısını azaltacağız.": "We'll lock down the move date and mandatory payments first, then reduce the cash and time pressure.",
     "Önce güvenlik ve daha büyük hasar riskini kontrol edeceğiz; sonra tamir, değişim veya geçici çözümü karşılaştıracağız.": "We'll check safety and the risk of further damage first, then compare repair, replacement and temporary solutions.",
   };
-  return exact[text] ?? text;
+  const adaptive: Record<string, string> = {
+    "Önce paranın nereye gideceğini netleştirelim. Hangi ödemeler veya ihtiyaçlar için para gerekiyor? Mümkünse kalem kalem yaz.": "Let's first map where the money needs to go. What payments or needs are you covering? List them if you can.",
+    "Şu an gerçekten kullanabileceğin para ne kadar? Banka hesabı, nakit ve hemen erişebileceğin başka para varsa birlikte düşün.": "How much money can you actually use right now? Include your bank balance, cash, and anything else immediately available.",
+    "Şimdi zorunlu ödemeleri tek tek çıkaralım. Tutarını bilmiyorsan yaklaşık yaz; örneğin kira 15.000, kredi 10.000 gibi.": "Let's list the mandatory payments one by one. If you don't know an exact amount, give an estimate.",
+    "Bu ödemelerin hangileri ertelenemez? Son tarihlerini ve gecikirse ne olacağını mümkün olduğunca yaz.": "Which payments cannot be delayed? Give the due dates and what happens if each one is late.",
+    "Elimizde artık tablo var. Hangi seçenekleri gerçekten uygulayabilirsin: erteleme, taksit, masraf kısma, ek gelir, satış, borç alma veya başka bir yol?": "We have the basic picture now. Which options can you realistically use: delay, installments, cutting costs, extra income, selling, borrowing, or another route?",
+    "Son olarak neyi korumamız gerekiyor: temel ihtiyaçlar, en ciddi sonucu önlemek, toplam maliyeti düşürmek veya en hızlı nakdi oluşturmak?": "Finally, what do we need to protect first: essential needs, avoiding the most serious consequence, reducing total cost, or creating cash fastest?",
+    "“Ev işleri” dediğinde hangi işleri kastediyorsun? Örneğin yemek, bulaşık, çamaşır, temizlik, çocuk, alışveriş gibi mümkün olduğunca tek tek yaz.": "When you say “housework,” which tasks do you mean? For example cooking, dishes, laundry, cleaning, childcare, shopping—list them specifically.",
+    "Bunlardan hangilerinin kesin bir son tarihi veya belirli bir saati var? Yoksa hiçbiri zorunlu bir saate bağlı değil mi?": "Which of these have a hard deadline or specific time? Or are none tied to a fixed time?",
+    "Her önemli iş yaklaşık ne kadar sürüyor? Ayrıca seni en çok yavaşlatan şey ne: enerji, çocuk, iş/mesai, dağınıklık, malzeme eksikliği veya başka bir şey?": "Roughly how long does each important task take? What slows you down most: energy, childcare, work, clutter, missing supplies, or something else?",
+    "Hangilerini erteleyebilir, bölebilir veya başka birine devredebilirsin? Hiç devredemediğin işler varsa onları da belirt.": "Which tasks can be delayed, split up, or delegated? Also tell me which ones cannot be delegated.",
+    "Artık önceliklendirebiliriz. Senin için önce ne korunmalı: bugün bitmesi gereken işler, evin temel düzeni, çocuk/aile ihtiyacı veya dinlenmek için zaman?": "Now we can prioritize. What should be protected first: tasks that must be done today, basic home order, family needs, or time to rest?",
+    "Şu anda senden beklenen işleri veya sorumlulukları mümkün olduğunca tek tek yaz.": "List the tasks or responsibilities expected from you right now, as specifically as possible.",
+    "Hangilerinin kesin son tarihi veya belirli bir saati var?": "Which have a hard deadline or a specific time?",
+    "Her iş yaklaşık ne kadar sürüyor ve hangisinin gecikmesi en ciddi sonucu doğurur?": "Roughly how long does each task take, and which has the most serious consequence if delayed?",
+    "Hangilerini erteleyebilir, bölebilir veya devredebilirsin?": "Which can you delay, split up, or delegate?",
+    "Önceliği neye göre kuralım: son tarih, sonuç, gelir kaybı veya enerjini korumak?": "What should determine priority: deadline, impact, lost income, or protecting your energy?",
+    "Önce seçenekleri masaya koyalım. Gerçekte hangi seçenekler arasında karar veriyorsun?": "Let's put the actual options on the table. What choices are you deciding between?",
+    "Bu seçeneklerin bildiğin farkları neler: fiyat, zaman, kalite, risk, kullanım kolaylığı veya başka bir şey?": "What differences do you know between the options: price, time, quality, risk, convenience, or something else?",
+    "Senin için vazgeçilmez olan ölçüt hangisi? Örneğin bütçe, hız, güvenlik veya uzun ömür.": "What is non-negotiable for you? For example budget, speed, safety, or long-term value.",
+    "Her seçeneğin kötü gitmesi durumunda özellikle kaçınmak istediğin sonuç ne?": "If each option goes badly, what outcome do you most want to avoid?",
+    "Son kararda neyi korumamız gerekiyor? Bunu netleştirince seçenekleri buna göre sıralayacağım.": "What must the final decision protect? Once we know that, I'll compare the options against it.",
+    "Araçta tam olarak ne oldu? Şu anda güvenli şekilde kullanılabiliyor mu?": "What exactly happened with the vehicle? Can it still be used safely right now?",
+    "Nereye, hangi tarihte ve hangi amaçla gitmen gerekiyor?": "Where do you need to go, on what date, and why?",
+    "Taşınman gereken tarih ne ve o tarihin değişme ihtimali var mı?": "When do you have to move, and can that date change?",
+    "Evde tam olarak ne oldu ve şu anda hangi şeyler etkileniyor?": "What exactly happened at home, and what is affected right now?",
+    "Aile içinde tam olarak hangi konuyu çözmeye çalışıyorsun ve kimler etkileniyor?": "What exactly are you trying to solve within the family, and who is affected?",
+    "Önce problemi biraz açalım: tam olarak ne oluyor ve seni en çok zorlayan kısım hangisi?": "Let's open this up: what exactly is happening, and which part is putting the most pressure on you?",
+    "Şu ana kadar düşündüğün, denediğin veya gerçekten uygulayabileceğin seçenekler neler?": "What options have you considered, tried, or could realistically use?",
+    "Seni sınırlayan kesin bir şey var mı: bütçe, son tarih, başka bir kişinin kararı veya mevcut kaynaklar?": "Is there a firm constraint: budget, deadline, another person's decision, or available resources?",
+    "Son planın öncelikle hangi sonucu koruması gerekiyor?": "What outcome must the final plan protect first?",
+  };
+  return adaptive[text] ?? exact[text] ?? text;
 }
 
 const categories = [
@@ -547,8 +579,8 @@ export default function LifeRescue() {
 
   return (
     <main className="h-[100dvh] w-full overflow-y-auto overscroll-contain bg-background text-foreground">
-      <div className="mx-auto flex min-h-[100dvh] w-full max-w-3xl flex-col px-4 pb-28 pt-20 md:px-6">
-        <header className="fixed inset-x-0 top-0 z-50 border-b bg-background/95 px-4 pb-3 pt-3 shadow-sm backdrop-blur md:px-6">
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-3xl flex-col px-4 pb-28 pt-28 md:px-6">
+        <header className="fixed inset-x-0 top-6 z-50 border-b bg-background/95 px-4 pb-3 pt-2 shadow-sm backdrop-blur md:top-0 md:px-6">
           <div className="flex items-center gap-3">
             <button
               type="button"
