@@ -11,6 +11,57 @@ type Message = {
   text: string;
 };
 
+type Language = "tr" | "en";
+
+const uiText = {
+  tr: {
+    newProblem: "Yeni problem", menu: "Menüyü aç", whatHappened: "Ne oldu?",
+    intro: "Anlat derdini. Önce seni anlayacağım, sonra birlikte en mantıklı çıkış yolunu bulacağız.",
+    placeholder: "Şu an neyi çözmeye çalışıyorsun?", details: "Ayrıntılar", send: "Gönder",
+    topic: "Konu", goal: "Hedef", auto: "Otomatik belirle", urgency: "Aciliyet",
+    budget: "Bütçe (TL)", timeToday: "Bugün ayırabileceğin zaman", optional: "İsteğe bağlı",
+    hours: "Saat", offline: "Temel karar motoru cihazında çalışır.",
+    answer: "Cevabını yaz...", you: "Sen", engine: "Life Rescue",
+    understand: "Önce seni anlayacağım, sonra çözüm çıkaracağım.",
+    tableClear: "Tamam, tablo netleşti.", plan: "Kurtarma planı", hide: "Gizle", show: "Göster",
+    thinking: "Şimdi verdiğin bilgileri bir araya getirip sana uygulanabilir, öncelik sırasına konmuş bir çıkış yolu çıkarıyorum.",
+  },
+  en: {
+    newProblem: "New problem", menu: "Open menu", whatHappened: "What happened?",
+    intro: "Tell me what's going on. I'll understand the situation first, then we'll work out a practical way forward.",
+    placeholder: "What are you trying to solve right now?", details: "Details", send: "Send",
+    topic: "Topic", goal: "Goal", auto: "Auto-detect", urgency: "Urgency",
+    budget: "Budget", timeToday: "Time available today", optional: "Optional",
+    hours: "Hours", offline: "The core decision engine runs on your device.",
+    answer: "Type your answer...", you: "You", engine: "Life Rescue",
+    understand: "I'll understand the situation first, then work out a solution.",
+    tableClear: "Okay, I have enough of the picture.", plan: "Rescue plan", hide: "Hide", show: "Show",
+    thinking: "Okay. I have enough context now. I'm putting it together into a practical, prioritized way forward.",
+  },
+} as const;
+
+const categoriesEn: Record<string, string> = {
+  "": uiText.en.auto, money: "Money", home: "Home", family: "Family", work: "Work",
+  vehicle: "Vehicle", time: "Time", bills: "Bills", travel: "Travel", moving: "Moving", decision: "Decision",
+};
+const goalsEn: Record<string, string> = {
+  "": uiText.en.auto, find_money: "Find money", reduce_cost: "Reduce cost", save_time: "Save time",
+  prioritize: "Prioritize", make_decision: "Make a decision", cancel: "Cancel", organize: "Organize", solve: "Solve",
+};
+
+function translateKnown(text: string, lang: Language): string {
+  if (lang === "tr") return text;
+  const exact: Record<string, string> = {
+    "Önce tabloyu sadeleştirelim. Sonucu en çok değiştirecek noktayı bulup planı buna göre şekillendireceğim.": "Let's simplify the situation first. We'll find what changes the outcome most and build the plan around it.",
+    "Burada önce gelir, zorunlu gider ve yaklaşan ödemeyi aynı tabloya koyup gerçek açığı bulacağız.": "We'll put income, mandatory expenses and upcoming payments into one picture and find the real gap.",
+    "Önce güvenlik riskini ayıracağız; ardından tamir ve alternatif ulaşım maliyetini birlikte değerlendireceğiz.": "We'll separate any safety risk first, then compare repair and alternative transport costs.",
+    "Önce tarih ve zorunlu varış saatini sabitleyeceğiz; sonra toplam seyahat maliyetini ve B planını çıkaracağız.": "We'll lock down the date and required arrival time first, then work out the total travel cost and a backup plan.",
+    "Önce taşınma tarihini ve zorunlu ödemeleri sabitleyeceğiz; sonra nakit ve zaman baskısını azaltacağız.": "We'll lock down the move date and mandatory payments first, then reduce the cash and time pressure.",
+    "Önce güvenlik ve daha büyük hasar riskini kontrol edeceğiz; sonra tamir, değişim veya geçici çözümü karşılaştıracağız.": "We'll check safety and the risk of further damage first, then compare repair, replacement and temporary solutions.",
+  };
+  return exact[text] ?? text;
+}
+
 const categories = [
   ["", "Otomatik belirle"],
   ["money", "Para"],
@@ -91,12 +142,21 @@ export default function LifeRescue() {
   const [questionIndex, setQuestionIndex] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
   const [showPlan, setShowPlan] = useState(false);
+  const [language, setLanguage] = useState<Language>(() => {
+    if (typeof window === "undefined") return "tr";
+    return window.localStorage.getItem("agt_life_rescue_language") === "en" ? "en" : "tr";
+  });
   const { toggleSidebar } = useSidebar();
+  const copy = uiText[language];
 
   const suggestions = useMemo(
     () => ["Param yetmiyor", "Faturaları yetiştiremiyorum", "Bir karar veremiyorum", "Zamanım yetmiyor"],
     [],
   );
+
+  useEffect(() => {
+    window.localStorage.setItem("agt_life_rescue_language", language);
+  }, [language]);
 
   useEffect(() => {
     const resetFromMenu = () => reset();
@@ -259,7 +319,7 @@ export default function LifeRescue() {
     if (text.length < 3) return;
 
     const localResult = runAnalysis(text);
-    const questions = getQuestionSet(localResult.category, text);
+    const questions = getQuestionSet(localResult.category, text).map((q) => translateKnown(q, language));
 
     setProblem("");
     setAnswer("");
@@ -292,7 +352,7 @@ export default function LifeRescue() {
       ? conversationContext + "\nKullanıcı: " + text
       : text;
     const nextIndex = questionIndex + 1;
-    const questions = getQuestionSet(result.category, conversationContext);
+    const questions = getQuestionSet(result.category, conversationContext).map((q) => translateKnown(q, language));
     const localResult = runAnalysis(nextContext);
 
     setConversationContext(nextContext);
@@ -301,7 +361,7 @@ export default function LifeRescue() {
     if (nextIndex < questions.length) {
       setQuestionIndex(nextIndex);
       const nextQuestion = questions[nextIndex];
-      const bridge = conversationBridge(result.category, nextContext, text);
+      const bridge = translateKnown(conversationBridge(result.category, nextContext, text), language);
 
       setMessages((prev) => [
         ...prev,
@@ -316,7 +376,7 @@ export default function LifeRescue() {
       { role: "user", text },
       {
         role: "engine",
-        text: "Tamam dostum, artık tabloyu yeterince net görüyorum. Şimdi verdiğin bilgileri bir araya getirip sana uygulanabilir, öncelik sırasına konmuş bir çıkış yolu çıkarıyorum.",
+        text: copy.thinking,
       },
     ]);
     finishConversation(nextContext, localResult);
@@ -344,7 +404,7 @@ export default function LifeRescue() {
   }
 
   const conversationStarted = messages.length > 0;
-  const questions = result ? getQuestionSet(result.category, conversationContext) : [];
+  const questions = result ? getQuestionSet(result.category, conversationContext).map((q) => translateKnown(q, language)) : [];
   const isReadyForPlan = showPlan && result;
 
   return (
@@ -352,18 +412,16 @@ export default function LifeRescue() {
       <div className="mx-auto flex min-h-[100dvh] w-full max-w-3xl flex-col px-4 pb-28 md:px-6">
         <header className={conversationStarted ? "sticky top-0 z-30 -mx-4 border-b bg-background/95 px-4 py-3 backdrop-blur md:-mx-6 md:px-6" : "pt-8 md:pt-12"}>
           <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={toggleSidebar}
-              aria-label="Menüyü aç"
-              className="flex h-10 w-10 items-center justify-center rounded-full border bg-card md:hidden"
-            >
-              <Menu className="h-5 w-5" />
-            </button>
             <div className="flex min-w-0 items-center gap-2 text-primary">
               <Sparkles className="h-5 w-5 shrink-0" />
               <span className="truncate text-sm font-bold tracking-wide">AGT LIFE RESCUE</span>
             </div>
+            <div className="ml-auto flex items-center gap-2">
+              <div className="inline-flex rounded-full border bg-card p-0.5" role="group" aria-label="Language">
+                <button type="button" onClick={() => setLanguage("tr")} className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${language === "tr" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>TR</button>
+                <button type="button" onClick={() => setLanguage("en")} className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${language === "en" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}>EN</button>
+              </div> 
+
             {conversationStarted && (
               <button
                 type="button"
@@ -377,7 +435,7 @@ export default function LifeRescue() {
           </div>
           {!conversationStarted && (
             <>
-              <h1 className="mt-8 text-4xl font-bold tracking-tight md:text-5xl">Ne oldu?</h1>
+              <h1 className="mt-8 text-4xl font-bold tracking-tight md:text-5xl">{copy.whatHappened}</h1>
               <p className="mt-3 max-w-xl text-base leading-7 text-muted-foreground">
                 Anlat derdini. Önce seni anlayacağım, sonra birlikte en mantıklı çıkış yolunu bulacağız.
               </p>
@@ -394,7 +452,7 @@ export default function LifeRescue() {
                 onKeyDown={(e) => {
                   if ((e.ctrlKey || e.metaKey) && e.key === "Enter") start();
                 }}
-                placeholder="Şu an neyi çözmeye çalışıyorsun?"
+                placeholder={copy.placeholder}
                 className="min-h-36 w-full resize-none bg-transparent px-3 py-3 text-lg leading-7 outline-none placeholder:text-muted-foreground"
                 autoFocus
               />
@@ -432,33 +490,33 @@ export default function LifeRescue() {
               <div className="mt-4 rounded-2xl border bg-card p-4">
                 <div className="grid gap-3 sm:grid-cols-2">
                   <label className="text-sm">
-                    <span className="mb-1.5 block text-muted-foreground">Konu</span>
+                    <span className="mb-1.5 block text-muted-foreground">{copy.topic}</span>
                     <select value={category} onChange={(e) => setCategory(e.target.value)}
                       className="w-full rounded-xl border bg-background px-3 py-3">
-                      {categories.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                      {categories.map(([value, label]) => <option key={value} value={value}>{language === "en" ? categoriesEn[value] : label}</option>)}
                     </select>
                   </label>
                   <label className="text-sm">
-                    <span className="mb-1.5 block text-muted-foreground">Hedef</span>
+                    <span className="mb-1.5 block text-muted-foreground">{copy.goal}</span>
                     <select value={goal} onChange={(e) => setGoal(e.target.value)}
                       className="w-full rounded-xl border bg-background px-3 py-3">
-                      {goals.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
+                      {goals.map(([value, label]) => <option key={value} value={value}>{language === "en" ? goalsEn[value] : label}</option>)}
                     </select>
                   </label>
                   <label className="rounded-xl border px-3 py-2 sm:col-span-2">
-                    <span className="block text-xs text-muted-foreground">Aciliyet: {urgency}/10</span>
+                    <span className="block text-xs text-muted-foreground">{copy.urgency}: {urgency}/10</span>
                     <input className="mt-1 w-full" type="range" min="1" max="10" value={urgency}
                       onChange={(e) => setUrgency(Number(e.target.value))} />
                   </label>
                   <label className="rounded-xl border px-3 py-2">
-                    <span className="block text-xs text-muted-foreground">Bütçe (TL)</span>
+                    <span className="block text-xs text-muted-foreground">{copy.budget}</span>
                     <input value={budget} onChange={(e) => setBudget(e.target.value)} type="number" min="0"
-                      placeholder="İsteğe bağlı" className="mt-1 w-full bg-transparent outline-none" />
+                      placeholder={copy.optional} className="mt-1 w-full bg-transparent outline-none" />
                   </label>
                   <label className="rounded-xl border px-3 py-2">
-                    <span className="block text-xs text-muted-foreground">Bugün ayırabileceğin zaman</span>
+                    <span className="block text-xs text-muted-foreground">{copy.timeToday}</span>
                     <input value={availableHours} onChange={(e) => setAvailableHours(e.target.value)} type="number"
-                      min="0" step="0.5" placeholder="Saat" className="mt-1 w-full bg-transparent outline-none" />
+                      min="0" step="0.5" placeholder={copy.hours} className="mt-1 w-full bg-transparent outline-none" />
                   </label>
                 </div>
               </div>
@@ -476,7 +534,7 @@ export default function LifeRescue() {
                 <div key={index} className={message.role === "user" ? "flex justify-end" : "flex justify-start"}>
                   <div className={message.role === "user" ? "max-w-[88%]" : "max-w-[94%]"}>
                     <div className="mb-1 px-2 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                      {message.role === "user" ? "Sen" : "Life Rescue"}
+                      {message.role === "user" ? copy.you : copy.engine}
                     </div>
                     <div className={message.role === "user"
                       ? "rounded-3xl rounded-tr-md bg-primary px-4 py-3.5 text-primary-foreground"
@@ -491,7 +549,7 @@ export default function LifeRescue() {
                 <div className="rounded-3xl border bg-card p-4 md:p-5">
                   <div className="flex items-center gap-2 text-primary">
                     <CheckCircle2 className="h-5 w-5" />
-                    <span className="text-sm font-semibold">Tamam, tablo netleşti.</span>
+                    <span className="text-sm font-semibold">{copy.tableClear}</span>
                   </div>
                   <p className="mt-3 text-base leading-7">{result.diagnosis}</p>
 
@@ -500,8 +558,8 @@ export default function LifeRescue() {
                     onClick={() => setShowPlan((v) => !v)}
                     className="mt-5 flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left"
                   >
-                    <span className="text-sm font-semibold">Kurtarma planı</span>
-                    <span className="text-xs text-muted-foreground">{showPlan ? "Gizle" : "Göster"}</span>
+                    <span className="text-sm font-semibold">{copy.plan}</span>
+                    <span className="text-xs text-muted-foreground">{showPlan ? copy.hide : copy.show}</span>
                   </button>
 
                   {showPlan && (
@@ -560,6 +618,15 @@ export default function LifeRescue() {
           </div>
         )}
       </div>
+        <button
+          type="button"
+          onClick={toggleSidebar}
+          aria-label={copy.menu}
+          className="fixed bottom-24 left-4 z-50 flex h-11 w-11 items-center justify-center rounded-full border bg-card/95 shadow-lg backdrop-blur md:hidden"
+        >
+          <Menu className="h-5 w-5" />
+        </button>
+
     </main>
   );
 }
