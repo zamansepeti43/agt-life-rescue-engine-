@@ -173,6 +173,7 @@ function getOptions(
   urgency: number,
   budget: string,
   availableHours: string,
+  language: Language,
 ) {
   return {
     category: category || undefined,
@@ -180,7 +181,6 @@ function getOptions(
     urgency,
     budget: budget === "" ? undefined : Number(budget),
     availableHours: availableHours === "" ? undefined : Number(availableHours),
-    language,
   };
 }
 
@@ -373,7 +373,7 @@ export default function LifeRescue() {
   }
 
   function runAnalysis(context: string) {
-    const localResult = analyzeOffline(context, getOptions());
+    const localResult = analyzeOffline(context, getOptions(category, goal, urgency, budget, availableHours, language));
     setResult(localResult);
     return localResult;
   }
