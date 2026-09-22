@@ -480,8 +480,18 @@ export default function LifeRescue() {
   }
 
   function sendFromComposer() {
-    if (result) continueConversation();
-    else start();
+    const text = answer.trim();
+    if (!text) return;
+    if (result) {
+      continueConversation();
+      return;
+    }
+    if (conversationStarted) {
+      start(text);
+      return;
+    }
+    setProblem(text);
+    window.setTimeout(() => start(text), 0);
   }
 
   const conversationStarted = messages.length > 0;
@@ -489,9 +499,9 @@ export default function LifeRescue() {
   const isReadyForPlan = showPlan && result;
 
   return (
-    <main className="h-[100dvh] w-full overflow-y-auto overscroll-contain bg-background text-foreground">
+    <main className="h-[100dvh] w-full overflow-y-auto overscroll-contain bg-background text-foreground [padding-top:env(safe-area-inset-top)]">
       <div className="mx-auto flex min-h-[100dvh] w-full max-w-3xl flex-col px-4 pb-28 md:px-6">
-        <header className="sticky top-0 z-30 -mx-4 border-b bg-background/95 px-4 py-3 backdrop-blur md:-mx-6 md:px-6">
+        <header className="sticky top-0 z-30 -mx-4 border-b bg-background/95 px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.75rem)] backdrop-blur md:-mx-6 md:px-6">
           <div className="flex items-center gap-3">
             <button
               type="button"
