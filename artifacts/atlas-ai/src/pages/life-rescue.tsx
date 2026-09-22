@@ -140,7 +140,7 @@ export default function LifeRescue() {
   }
 
   return (
-    <main className="min-h-screen w-full overflow-x-hidden bg-background px-4 py-4 pb-16 text-foreground md:px-8 md:py-8">
+    <main className="h-[100dvh] w-full min-h-0 overflow-x-hidden overflow-y-auto overscroll-contain touch-pan-y bg-background px-4 py-4 pb-24 text-foreground md:px-8 md:py-8">
       <div className="mx-auto max-w-4xl">
         <header className="relative mb-8 pt-8 md:pt-0">
           <div className="absolute left-0 top-0 md:hidden"><SidebarTrigger className="h-10 w-10 rounded-xl border border-border bg-card text-foreground" /></div>
