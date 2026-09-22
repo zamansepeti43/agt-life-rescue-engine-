@@ -226,10 +226,16 @@ export default function LifeRescue() {
 
     if (nextIndex < questions.length) {
       setQuestionIndex(nextIndex);
+      const nextQuestion = questions[nextIndex];
+      const bridge =
+        nextIndex === 1
+          ? "Tamam, bunu anladım. Şimdi resmi biraz daha netleştirelim."
+          : "Anladım. Bir noktayı daha netleştirirsek sana rastgele tavsiye vermek yerine gerçekten durumuna uygun bir yol çıkarabilirim.";
+
       setMessages((prev) => [
         ...prev,
         { role: "user", text },
-        { role: "engine", text: questions[nextIndex] },
+        { role: "engine", text: bridge + "\n\n" + nextQuestion },
       ]);
       return;
     }
@@ -239,7 +245,7 @@ export default function LifeRescue() {
       { role: "user", text },
       {
         role: "engine",
-        text: "Tamam. Şimdi elimizdeki bilgileri bir araya getirip sana uygulanabilir bir çıkış yolu çıkarıyorum.",
+        text: "Tamam dostum, artık tabloyu yeterince net görüyorum. Şimdi verdiğin bilgileri bir araya getirip sana uygulanabilir, öncelik sırasına konmuş bir çıkış yolu çıkarıyorum.",
       },
     ]);
     finishConversation(nextContext, localResult);
@@ -393,7 +399,7 @@ export default function LifeRescue() {
             </div>
           </section>
         ) : (
-          <section className="flex-1 py-5 md:py-8">
+          <section className="min-h-0 flex-1 py-5 md:py-8">
             <div className="space-y-4">
               {messages.map((message, index) => (
                 <div key={index} className={message.role === "user" ? "flex justify-end" : "flex justify-start"}>
@@ -409,13 +415,6 @@ export default function LifeRescue() {
                   </div>
                 </div>
               ))}
-
-              {!isReadyForPlan && result && (
-                <div className="flex items-center gap-2 px-2 text-xs text-muted-foreground">
-                  <span className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
-                  {questionIndex + 1} / {questions.length} bilgi topluyoruz
-                </div>
-              )}
 
               {isReadyForPlan && result && (
                 <div className="rounded-3xl border bg-card p-4 md:p-5">
