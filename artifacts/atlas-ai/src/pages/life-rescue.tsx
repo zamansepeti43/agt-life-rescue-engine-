@@ -272,149 +272,160 @@ export default function LifeRescue() {
       .slice(0, 4);
   }
 
-  function getNextQuestion(currentCategory: string, context: string, uiLanguage: Language = language, fromIndex = 0): string | null {
-    const normalized = context.toLocaleLowerCase("tr-TR");
+  function getNextQuestion(currentCategory: string, context: string, uiLanguage: Language = language): string | null {
+    const text = context.toLocaleLowerCase("tr-TR");
+    const q = (tr: string, en: string) => uiLanguage === "en" ? en : tr;
 
-    type Slot = { question: string; patterns: RegExp[] };
+    const has = (...patterns: RegExp[]) => patterns.some((pattern) => pattern.test(text));
+    const hasAmount = /\b\d{1,3}(?:[. ]\d{3})*(?:,\d{1,2})?\s*(?:tl|₺|lira|bin|k)\b/i.test(text);
+    const hasMoneyPurpose = has(
+      /\bkira\b|\bfatura\b|\bkredi\b|\bborç\b|\btaksit\b|\bmarket\b|\bçocuk\b|\bokul\b|\bilaç\b|\byakıt\b|\babonelik\b/,
+      /rent|bill|loan|debt|installment|grocer|child|school|medicine|fuel|subscription/
+    );
+    const hasAvailableMoney = has(
+      /elimde|elinde|hesabımda|hesabında|cebimde|nakit|kullanabileceğim|kullanılabilir|param yok|hiç para|para yok|banka hesab/,
+      /available|in my account|cash|money i can use|i have no money|no money/
+    );
+    const hasPaymentList = hasAmount && hasMoneyPurpose;
+    const hasDeadline = has(/son tarih|vade|bugün|yarın|ayın \d+|\d{1,2}[./]\d{1,2}|gecik|kesilir|faiz|ceza|icra/, /deadline|due|today|tomorrow|late|cut off|interest|penalty|collection/);
+    const hasOptions = has(/ertele|taksit|azalt|kıs|iptal|sat|ek gelir|ek para|avans|yardım|borç al|alternatif|seçenek/, /delay|installment|reduce|cancel|sell|extra income|advance|borrow|alternative|option/);
+    const hasPriority = has(/öncelik|en önemli|korumamız|neyi koru|kriter|maliyet|nakit|temel ihtiyaç|güvenlik/, /priority|most important|protect|criterion|cost|cash|essential|safety/);
 
-    const tr = (text: string) => text;
-    const en = (text: string) => translateKnown(text, "en");
-    const q = (text: string) => uiLanguage === "en" ? en(text) : tr(text);
+    if (currentCategory === "money") {
+      if (!hasMoneyPurpose) return q(
+        "Önce paranın nereye gideceğini çıkaralım. Şu an para hangi ihtiyaçlar için gerekiyor? Kira, kredi, faturalar, market, çocuk, sağlık veya başka neler var? Mümkünse kalem kalem yaz.",
+        "First, let's map where the money needs to go. What does the money have to cover—rent, loans, bills, groceries, children, health, or something else? List the items if you can."
+      );
+      if (!hasAvailableMoney) return q(
+        "Şimdi kaynak tarafını netleştirelim. Şu an gerçekten kullanabileceğin para ne kadar? Banka hesabı, nakit ve hemen erişebileceğin başka bir para varsa birlikte düşün.",
+        "Now let's establish the resources. How much money can you actually use right now? Include cash, bank balance, and anything else you can access immediately."
+      );
+      if (!hasPaymentList) return q(
+        "Şimdi giderleri rakama çevirelim. Önümüzdeki günlerde ödenecek kalemleri mümkün olduğunca tutarlarıyla yaz: örneğin kira 15.000 TL, kredi 10.000 TL gibi.",
+        "Now let's turn the expenses into numbers. List the upcoming payments with amounts where possible—for example, rent $500, loan $300."
+      );
+      if (!hasDeadline) return q(
+        "Rakamları gördüm. Şimdi zaman baskısını anlamam gerekiyor: Bu ödemelerin son tarihleri ne ve hangisi gecikirse en ciddi sonucu doğurur?",
+        "I have the amounts. Now I need the timing: when are these payments due, and which one causes the most serious consequence if it is late?"
+      );
+      if (!hasOptions) return q(
+        "Artık açık ile zorunlu ödemeleri karşılaştırabiliriz. Gerçekte kullanabileceğin yollar hangileri: erteleme, taksit, gider kısma, satış, ek gelir, avans, borç alma veya başka bir seçenek?",
+        "Now we can compare the gap with the mandatory payments. Which options are actually available to you: delaying, installments, cutting expenses, selling something, extra income, an advance, borrowing, or another route?"
+      );
+      if (!hasPriority) return q(
+        "Son kararı verirken neyi korumamız gerekiyor? Temel ihtiyaçların devam etmesi, en ağır sonucu önlemek, toplam maliyeti düşürmek veya mümkün olan en hızlı nakdi oluşturmak gibi bir önceliğin var mı?",
+        "Before I prioritize the plan, what must we protect? Essential needs, avoiding the most serious consequence, reducing total cost, or creating cash as quickly as possible?"
+      );
+      return null;
+    }
 
-    const flows: Record<string, Slot[]> = {
-      money: [
-        { question: "Önce paranın nereye gideceğini netleştirelim. Hangi ödemeler veya ihtiyaçlar için para gerekiyor? Mümkünse kalem kalem yaz.", patterns: [/kira.*\d|fatura.*\d|kredi.*\d|borç.*\d|taksit.*\d|market.*\d|çocuk.*\d|\d+\s*(?:tl|₺|lira|bin|k)/] },
-        { question: "Şu an gerçekten kullanabileceğin para ne kadar? Banka hesabı, nakit ve hemen erişebileceğin başka para varsa birlikte düşün.", patterns: [/elimde|elinde|hesabımda|hesabında|cebimde|nakit.*\d|\d+\s*(?:tl|₺|lira|bin|k)|hiç para|param yok|para yok/] },
-        { question: "Şimdi zorunlu ödemeleri tek tek çıkaralım. Tutarını bilmiyorsan yaklaşık yaz; örneğin kira 15.000, kredi 10.000 gibi.", patterns: [/\d+\s*(?:tl|₺|lira|bin|k).*\d|kira.*\d|kredi.*\d|borç.*\d|fatura.*\d|taksit.*\d/] },
-        { question: "Bu ödemelerin hangileri ertelenemez? Son tarihlerini ve gecikirse ne olacağını mümkün olduğunca yaz.", patterns: [/son tarih|vade|bugün|yarın|ayın|tarih|gecik|icra|kesilir|faiz|ceza/] },
-        { question: "Elimizde artık tablo var. Hangi seçenekleri gerçekten uygulayabilirsin: erteleme, taksit, masraf kısma, ek gelir, satış, borç alma veya başka bir yol?", patterns: [/ertele|taksit|masraf.*kıs|gider.*kıs|ek gelir|ek para|sat(abil|mak)|borç al|avans|yardım|alternatif/] },
-        { question: "Son olarak neyi korumamız gerekiyor: temel ihtiyaçlar, en ciddi sonucu önlemek, toplam maliyeti düşürmek veya en hızlı nakdi oluşturmak?", patterns: [/temel ihtiyaç|en ciddi|maliyet|nakit|en hızlı|öncelik|korumak|önemli/] },
-      ],
+    const plans: Record<string, Array<{needs: () => boolean; tr: string; en: string}>> = {
       bills: [
-        { question: "Hangi faturalar veya abonelikler birikti? İsimlerini mümkünse tutarlarıyla birlikte yaz.", patterns: [/elektrik.*\d|su.*\d|doğalgaz.*\d|internet.*\d|telefon.*\d|fatura.*\d|abonelik.*\d/] },
-        { question: "Şu an bu faturalar için ayırabileceğin toplam para ne kadar?", patterns: [/\d+\s*(?:tl|₺|lira|bin|k)|hiç para|param yok|para yok/] },
-        { question: "Hangilerinin son tarihi yakın ve hangisi gecikirse kesinti, faiz veya başka ciddi sonuç doğurur?", patterns: [/son tarih|vade|bugün|yarın|kesil|faiz|ceza|gecik/] },
-        { question: "Hangisini erteleme, taksitlendirme, düşürme veya iptal etme ihtimalin var?", patterns: [/ertele|taksit|azalt|iptal|indirim|destek/] },
-        { question: "Önceliği neye göre kuralım: temel hizmetin kesilmemesi, gecikme maliyetini azaltmak veya toplam borcu küçültmek?", patterns: [/kesil|gecikme|maliyet|toplam|temel|öncelik/] },
+        { needs: () => !hasMoneyPurpose, tr: "Hangi faturalar veya abonelikler sorun çıkarıyor? İsimlerini ve mümkünse tutarlarını tek tek yaz.", en: "Which bills or subscriptions are causing the problem? List them one by one with amounts if possible." },
+        { needs: () => !hasAvailableMoney, tr: "Bu faturalar için şu an gerçekten ayırabileceğin toplam para ne kadar?", en: "How much money can you actually set aside for these bills right now?" },
+        { needs: () => !hasDeadline, tr: "Hangilerinin son tarihi yakın ve gecikirse kesinti, faiz veya başka ciddi bir sonuç doğurur?", en: "Which ones are closest to their deadlines, and which could cause a serious consequence if late?" },
+        { needs: () => !hasOptions, tr: "Hangisini erteleme, taksitlendirme, düşürme veya iptal etme ihtimalin var?", en: "Which ones could you delay, put on installments, reduce, or cancel?" },
+        { needs: () => !hasPriority, tr: "Önceliği neye göre kuralım: temel hizmetin kesilmemesi, gecikme maliyetini azaltmak veya toplam borcu küçültmek?", en: "What should drive priority: keeping essential services active, reducing late costs, or reducing the total debt?" },
       ],
       time: [
-        { question: "“Ev işleri” dediğinde hangi işleri kastediyorsun? Örneğin yemek, bulaşık, çamaşır, temizlik, çocuk, alışveriş gibi mümkün olduğunca tek tek yaz.", patterns: [/yemek|bulaşık|çamaşır|temizlik|çocuk|alışveriş|ütü|evcil|iş.*ve.*iş|\b\d+\s*(?:iş|görev)/] },
-        { question: "Bunlardan hangilerinin kesin bir son tarihi veya belirli bir saati var? Yoksa hiçbiri zorunlu bir saate bağlı değil mi?", patterns: [/bugün|yarın|son tarih|saat|deadline|akşam|sabah|öğlen|hafta sonu|yok|hiçbiri/] },
-        { question: "Her önemli iş yaklaşık ne kadar sürüyor? Ayrıca seni en çok yavaşlatan şey ne: enerji, çocuk, iş/mesai, dağınıklık, malzeme eksikliği veya başka bir şey?", patterns: [/dakika|saat|yarım|enerji|çocuk|mesai|vardiya|dağınık|malzeme|yorul/] },
-        { question: "Hangilerini erteleyebilir, bölebilir veya başka birine devredebilirsin? Hiç devredemediğin işler varsa onları da belirt.", patterns: [/ertele|böl|devret|yardım|eşim|ailem|başkası|kimse|devredem/] },
-        { question: "Artık önceliklendirebiliriz. Senin için önce ne korunmalı: bugün bitmesi gereken işler, evin temel düzeni, çocuk/aile ihtiyacı veya dinlenmek için zaman?", patterns: [/öncelik|bugün|temel|çocuk|aile|dinlen|uyku|düzen/] },
-      ],
-      work: [
-        { question: "Şu anda senden beklenen işleri veya sorumlulukları mümkün olduğunca tek tek yaz.", patterns: [/rapor|toplantı|müşteri|sipariş|vardiya|mesai|iş.*|görev|proje|teslim/] },
-        { question: "Hangilerinin kesin son tarihi veya belirli bir saati var?", patterns: [/bugün|yarın|son tarih|saat|deadline|teslim|vardiya/] },
-        { question: "Her iş yaklaşık ne kadar sürüyor ve hangisinin gecikmesi en ciddi sonucu doğurur?", patterns: [/dakika|saat|gün|gecik|ceza|müşteri|patron|sonuç/] },
-        { question: "Hangilerini erteleyebilir, bölebilir veya devredebilirsin?", patterns: [/ertele|böl|devret|yardım|ekip|mesai/] },
-        { question: "Önceliği neye göre kuralım: son tarih, sonuç, gelir kaybı veya enerjini korumak?", patterns: [/son tarih|sonuç|gelir|para|enerji|öncelik/] },
+        { needs: () => !has(/yemek|bulaşık|çamaşır|temizlik|çocuk|alışveriş|ütü|görev|işler|toplantı|rapor/), tr: "Zamanını ne tüketiyor? Yapman gereken işleri mümkünse tek tek yaz; hepsini aynı anda acil kabul etmeyeceğim.", en: "What is consuming your time? List the tasks if you can; I won't assume they are all equally urgent." },
+        { needs: () => !hasDeadline, tr: "Bu işlerin hangilerinin gerçek son tarihi veya belirli saati var?", en: "Which of these tasks have a real deadline or fixed time?" },
+        { needs: () => !has(/dakika|saat|gün|sürüyor|uzun|kısa/), tr: "Her önemli iş yaklaşık ne kadar sürüyor ve seni en çok yavaşlatan darboğaz ne?", en: "How long does each important task take, and what is the biggest bottleneck slowing you down?" },
+        { needs: () => !has(/ertele|devret|yardım|böl|başkası|eşim|ailem/), tr: "Hangilerini erteleyebilir, bölebilir veya başka birine devredebilirsin?", en: "Which tasks can be delayed, split up, or delegated?" },
+        { needs: () => !hasPriority, tr: "Son olarak neyi korumamız gerekiyor: teslim tarihleri, aile ihtiyacı, gelir, ev düzeni veya dinlenme?", en: "What must we protect: deadlines, family needs, income, home order, or rest?" },
       ],
       decision: [
-        { question: "Önce seçenekleri masaya koyalım. Gerçekte hangi seçenekler arasında karar veriyorsun?", patterns: [/a mı|b mi|seçenek|alternatif|arasında|birinci|ikinci|\bveya\b/] },
-        { question: "Bu seçeneklerin bildiğin farkları neler: fiyat, zaman, kalite, risk, kullanım kolaylığı veya başka bir şey?", patterns: [/fiyat|maliyet|zaman|kalite|risk|kolay|özellik|avantaj|dezavantaj/] },
-        { question: "Senin için vazgeçilmez olan ölçüt hangisi? Örneğin bütçe, hız, güvenlik veya uzun ömür.", patterns: [/bütçe|para|hız|güvenlik|kalite|uzun ömür|önemli|kriter|vazgeçilmez/] },
-        { question: "Her seçeneğin kötü gitmesi durumunda özellikle kaçınmak istediğin sonuç ne?", patterns: [/en kötü|risk|sonuç|kayb|zarar|pişman|sorun/] },
-        { question: "Son kararda neyi korumamız gerekiyor? Bunu netleştirince seçenekleri buna göre sıralayacağım.", patterns: [/koru|öncelik|önemli|son karar|kriter/] },
+        { needs: () => !has(/seçenek|alternatif|arasında|a mı|b mi|birinci|ikinci|veya|option|alternative/), tr: "Önce seçenekleri netleştirelim. Gerçekte hangi seçenekler arasında karar veriyorsun?", en: "First, let's define the real options. What choices are you actually deciding between?" },
+        { needs: () => !has(/fiyat|maliyet|zaman|kalite|risk|özellik|avantaj|dezavantaj|price|cost|quality|risk/), tr: "Bu seçeneklerin bildiğin farkları neler? Fiyat, süre, kalite, risk ve kullanım kolaylığını ayrı ayrı düşünelim.", en: "What differences do you know between the options? Let's separate price, time, quality, risk, and ease of use." },
+        { needs: () => !hasPriority, tr: "Senin için vazgeçilmez ölçüt hangisi? Bütçe, hız, güvenlik, kalite, uzun ömür veya başka bir şey mi?", en: "What is your non-negotiable criterion: budget, speed, safety, quality, longevity, or something else?" },
+        { needs: () => !has(/en kötü|zarar|kayıp|pişman|risk|worst|loss|damage|regret/), tr: "Hangi kötü sonucu özellikle yaşamak istemiyorsun? Bunu bilirsem riskleri ona göre tartabilirim.", en: "What bad outcome do you especially want to avoid? That will let me weigh the risks properly." },
       ],
       vehicle: [
-        { question: "Araçta tam olarak ne oldu? Şu anda güvenli şekilde kullanılabiliyor mu?", patterns: [/arıza|bozuk|çalışm|ses|ışık|lastik|akü|fren|motor|kaza|güvenli|kullan/] },
-        { question: "Şu an gerçek seçeneklerin neler: tamir, parça değişimi, servis, beklemek veya alternatif ulaşım?", patterns: [/tamir|değiş|servis|bekle|alternatif|otobüs|taksi|çekici/] },
-        { question: "Her seçeneğin yaklaşık maliyeti ve ne kadar süreceği hakkında ne biliyorsun?", patterns: [/\d+\s*(?:tl|₺|lira|bin|k)|maliyet|fiyat|saat|gün/] },
-        { question: "Aracı kullanmamak veya tamiri ertelemek iş, aile, gelir ya da güvenlik açısından neyi etkiler?", patterns: [/iş|aile|gelir|çocuk|güvenlik|acil|ulaşım/] },
-        { question: "Önceliği neye göre kuralım: güvenlik, hızlı ulaşım, düşük maliyet veya daha büyük hasarı önlemek?", patterns: [/güvenlik|hız|maliyet|hasar|öncelik/] },
+        { needs: () => !has(/arıza|bozuk|çalış|ses|ışık|lastik|akü|fren|motor|kaza|güvenli/), tr: "Araçta tam olarak ne oldu ve şu anda güvenli şekilde kullanılabiliyor mu?", en: "What exactly happened to the vehicle, and is it safe to drive right now?" },
+        { needs: () => !hasOptions, tr: "Gerçekte hangi yolların var: tamir, parça değişimi, servis, beklemek veya alternatif ulaşım?", en: "What options are actually available: repair, replacement, service, waiting, or alternative transport?" },
+        { needs: () => !hasAmount, tr: "Her seçeneğin yaklaşık maliyetini ve ne kadar süreceğini biliyor musun?", en: "Do you know the approximate cost and time for each option?" },
+        { needs: () => !has(/iş|aile|gelir|çocuk|ulaşım|güvenlik|acil/), tr: "Aracı kullanamamak veya tamiri ertelemek işini, gelirini, aileni ya da güvenliğini nasıl etkiler?", en: "How would not using the vehicle or delaying repair affect work, income, family, or safety?" },
+        { needs: () => !hasPriority, tr: "Öncelik hangisi: güvenlik, hızlı ulaşım, düşük maliyet veya daha büyük hasarı önlemek?", en: "Which comes first: safety, fast transport, low cost, or preventing further damage?" },
       ],
       travel: [
-        { question: "Nereye, hangi tarihte ve hangi amaçla gitmen gerekiyor?", patterns: [/gidece|gidiyorum|nereye|şehir|ülke|tarih|\d{1,2}[./]\d{1,2}/] },
-        { question: "Gerçekte hangi ulaşım ve konaklama seçeneklerini değerlendiriyorsun?", patterns: [/uçak|otobüs|tren|araba|otel|konak|bilet|seçenek/] },
-        { question: "Her seçeneğin toplam maliyeti hakkında ne biliyorsun? Bilet dışında bagaj, transfer ve konaklamayı da düşün.", patterns: [/\d+\s*(?:tl|₺|lira|bin|k)|maliyet|fiyat|bagaj|transfer|konak/] },
-        { question: "Tarih veya varış saati konusunda ne kadar esneksin? Değişmeyecek bir zorunluluk var mı?", patterns: [/saat|tarih|esnek|zorunlu|değişmez|değişemez/] },
-        { question: "Önceliği neye göre kuralım: en düşük toplam maliyet, zaman, güvenilirlik veya esneklik?", patterns: [/maliyet|zaman|güvenilir|esnek|öncelik/] },
+        { needs: () => !has(/gidece|gidiyorum|nereye|şehir|ülke|tarih|d{1,2}[./]d{1,2}/), tr: "Nereye, hangi tarihte ve hangi amaçla gitmen gerekiyor?", en: "Where do you need to go, on what date, and for what purpose?" },
+        { needs: () => !hasOptions, tr: "Gerçekte hangi ulaşım ve konaklama seçeneklerini değerlendirebiliyorsun?", en: "What transport and accommodation options are actually available to you?" },
+        { needs: () => !hasAmount, tr: "Her seçeneğin toplam maliyeti hakkında ne biliyorsun? Bilet dışında bagaj, transfer ve konaklamayı da ekleyelim.", en: "What do you know about the total cost of each option? Include baggage, transfers, and accommodation." },
+        { needs: () => !has(/esnek|zorunlu|değişemez|saat|varış/), tr: "Tarih veya varış saati konusunda ne kadar esneksin? Değişmeyecek bir zorunluluk var mı?", en: "How flexible are you on the date or arrival time? Is anything non-negotiable?" },
+        { needs: () => !hasPriority, tr: "Önceliği neye göre kuralım: toplam maliyet, zaman, güvenilirlik veya esneklik?", en: "What should drive priority: total cost, time, reliability, or flexibility?" },
       ],
       moving: [
-        { question: "Taşınman gereken tarih ne ve o tarihin değişme ihtimali var mı?", patterns: [/tarih|yarın|bugün|hafta|ayın|\d{1,2}[./]\d{1,2}/] },
-        { question: "Ev, nakliye, depozito ve eşyalar konusunda hangi gerçek seçeneklerin var?", patterns: [/ev|nakliye|depozito|eşya|taşıma|kamyon|araç|seçenek/] },
-        { question: "Toplam taşınma maliyetinde bildiğin rakamlar neler?", patterns: [/\d+\s*(?:tl|₺|lira|bin|k)|maliyet|fiyat|depozito/] },
-        { question: "Değişmeyecek kısıtların neler: tarih, bütçe, ev, iş veya aile düzeni?", patterns: [/tarih|bütçe|para|ev|iş|aile|zorunlu|değişmez/] },
-        { question: "Önce neyi güvenceye almalıyız: ev, taşınma tarihi, nakit veya aile düzeni?", patterns: [/ev|tarih|nakit|para|aile|öncelik/] },
+        { needs: () => !has(/tarih|yarın|bugün|hafta|ayın|d{1,2}[./]d{1,2}/), tr: "Taşınman gereken tarih ne ve değişme ihtimali var mı?", en: "What is the move date, and can it change?" },
+        { needs: () => !hasOptions, tr: "Ev, nakliye, depozito ve eşyalar konusunda hangi gerçek seçeneklerin var?", en: "What real options do you have for the home, movers, deposit, and belongings?" },
+        { needs: () => !hasAmount, tr: "Toplam taşınma maliyetinde bildiğin rakamlar neler?", en: "What costs do you already know for the move?" },
+        { needs: () => !has(/bütçe|para|ev|iş|aile|zorunlu|değişmez/), tr: "Değişmeyecek kısıtların neler: tarih, bütçe, ev, iş veya aile düzeni?", en: "What constraints cannot change: date, budget, housing, work, or family arrangements?" },
+        { needs: () => !hasPriority, tr: "Önce neyi güvenceye almalıyız: ev, taşınma tarihi, nakit veya aile düzeni?", en: "What should we secure first: housing, the move date, cash, or family stability?" },
       ],
       home: [
-        { question: "Evde tam olarak ne oldu ve şu anda hangi şeyler etkileniyor?", patterns: [/su|elektrik|gaz|tesisat|ısıtma|buzdolabı|çamaşır|kombi|kırık|bozuk|tamir/] },
-        { question: "Şu an düşündüğün çözüm yolları neler: tamir, değişim, servis veya geçici çözüm?", patterns: [/tamir|değiş|servis|geçici|usta|seçenek/] },
-        { question: "Her seçeneğin yaklaşık maliyeti ve ne kadar süreceği hakkında ne biliyorsun?", patterns: [/\d+\s*(?:tl|₺|lira|bin|k)|maliyet|fiyat|saat|gün/] },
-        { question: "Su, elektrik, gaz, yapısal hasar veya daha büyük zarara dönüşme riski var mı?", patterns: [/su|elektrik|gaz|hasar|tehlike|risk|güvenli|yok/] },
-        { question: "Önceliği neye göre kuralım: güvenlik, daha büyük hasarı önlemek, maliyet veya hız?", patterns: [/güvenlik|hasar|maliyet|hız|öncelik/] },
+        { needs: () => !has(/su|elektrik|gaz|tesisat|ısıtma|buzdolabı|çamaşır|kombi|kırık|bozuk|tamir/), tr: "Evde tam olarak ne oldu ve şu anda hangi şeyler etkileniyor?", en: "What exactly happened at home, and what is affected right now?" },
+        { needs: () => !hasOptions, tr: "Düşündüğün çözüm yolları neler: tamir, değişim, servis veya geçici çözüm?", en: "What solutions are you considering: repair, replacement, service, or a temporary fix?" },
+        { needs: () => !hasAmount, tr: "Her seçeneğin yaklaşık maliyeti ve süresi hakkında ne biliyorsun?", en: "What do you know about the approximate cost and time for each option?" },
+        { needs: () => !has(/su|elektrik|gaz|hasar|tehlike|risk|güvenli/), tr: "Su, elektrik, gaz, yapısal hasar veya daha büyük zarara dönüşme riski var mı?", en: "Is there a water, electrical, gas, structural, or further-damage risk?" },
+        { needs: () => !hasPriority, tr: "Öncelik hangisi: güvenlik, daha büyük hasarı önlemek, maliyet veya hız?", en: "Which comes first: safety, preventing further damage, cost, or speed?" },
       ],
       family: [
-        { question: "Aile içinde tam olarak hangi konuyu çözmeye çalışıyorsun ve kimler etkileniyor?", patterns: [/eş|çocuk|bebek|anne|baba|aile|ev|sorun|konu/] },
-        { question: "Şu ana kadar düşündüğün veya gerçekten uygulayabileceğin seçenekler neler?", patterns: [/seçenek|yapabilir|dened|düşün|yardım|bakım/] },
-        { question: "Bu seçeneklerin para, zaman, düzen ve aile üzerindeki etkileri neler?", patterns: [/para|zaman|düzen|ilişki|etki|maliyet/] },
-        { question: "Kesinlikle değişmeyecek bir ihtiyaç, sınır veya son tarih var mı?", patterns: [/ihtiyaç|sınır|son tarih|bugün|yarın|zorunlu|yok/] },
-        { question: "Önce neyi güvenceye almalıyız: temel ihtiyaç, güvenlik, aile düzeni veya zaman?", patterns: [/temel|güvenlik|düzen|zaman|öncelik/] },
-      ],
-      generic: [
-        { question: "Önce problemi biraz açalım: tam olarak ne oluyor ve seni en çok zorlayan kısım hangisi?", patterns: [/sorun|problem|mesele|ne oldu|zorlayan|zorlan/] },
-        { question: "Şu ana kadar düşündüğün, denediğin veya gerçekten uygulayabileceğin seçenekler neler?", patterns: [/seçenek|alternatif|dened|düşün|yapabil/] },
-        { question: "Bu seçenekler arasında sonucu değiştirecek farklar neler: para, zaman, risk, maliyet, kolaylık veya etki?", patterns: [/para|zaman|risk|maliyet|fiyat|kolay|sonuç|etki/] },
-        { question: "Seni sınırlayan kesin bir şey var mı: bütçe, son tarih, başka bir kişinin kararı veya mevcut kaynaklar?", patterns: [/bütçe|para|son tarih|tarih|başka|kaynak|zorunlu/] },
-        { question: "Son planın öncelikle hangi sonucu koruması gerekiyor?", patterns: [/öncelik|koru|önemli|sonuç/] },
+        { needs: () => !has(/eş|çocuk|bebek|anne|baba|aile|bakım/), tr: "Aile içinde tam olarak hangi konuyu çözmeye çalışıyorsun ve kimler etkileniyor?", en: "What exactly are you trying to solve in the family, and who is affected?" },
+        { needs: () => !hasOptions, tr: "Şu ana kadar düşündüğün veya gerçekten uygulayabileceğin seçenekler neler?", en: "What options have you considered or can actually use?" },
+        { needs: () => !has(/para|zaman|düzen|ilişki|etki|maliyet/), tr: "Bu seçeneklerin para, zaman, düzen ve aile üzerindeki etkileri neler?", en: "How do these options affect money, time, routines, and the family?" },
+        { needs: () => !has(/ihtiyaç|sınır|son tarih|bugün|yarın|zorunlu/), tr: "Kesinlikle değişmeyecek bir ihtiyaç, sınır veya son tarih var mı?", en: "Is there a non-negotiable need, boundary, or deadline?" },
+        { needs: () => !hasPriority, tr: "Önce neyi güvenceye almalıyız: temel ihtiyaç, güvenlik, aile düzeni veya zaman?", en: "What should we protect first: essential needs, safety, family stability, or time?" },
       ],
     };
 
-    const key = currentCategory === "bills" ? "bills" : flows[currentCategory] ? currentCategory : "generic";
-    const slots = flows[key];
+    const selected = plans[currentCategory] ?? [
+      { needs: () => !has(/ne oldu|sorun|problem|mesele/), tr: "Önce problemi kendi kelimelerinle biraz açar mısın? Tam olarak ne oluyor ve seni en çok zorlayan nokta hangisi?", en: "First, can you describe the problem in your own words? What is happening and what is the hardest part?" },
+      { needs: () => !hasOptions, tr: "Şu ana kadar düşündüğün, denediğin veya gerçekten uygulayabileceğin seçenekler neler?", en: "What options have you considered, tried, or can actually use?" },
+      { needs: () => !has(/para|zaman|risk|maliyet|fiyat|etki|sonuç/), tr: "Sonucu değiştirecek farklar neler: para, zaman, risk, maliyet veya etki?", en: "What differences could change the outcome: money, time, risk, cost, or impact?" },
+      { needs: () => !has(/bütçe|son tarih|tarih|kaynak|zorunlu|sınır/), tr: "Seni sınırlayan kesin bir şey var mı: bütçe, son tarih, başka bir kişinin kararı veya mevcut kaynaklar?", en: "Is there a hard constraint: budget, deadline, another person's decision, or available resources?" },
+      { needs: () => !hasPriority, tr: "Son planın öncelikle hangi sonucu koruması gerekiyor?", en: "What outcome does the final plan need to protect first?" },
+    ];
 
-    for (let i = Math.max(0, fromIndex); i < slots.length; i += 1) {
-      const slot = slots[i];
-      if (!slot.patterns.some((pattern) => pattern.test(normalized))) {
-        return q(slot.question);
-      }
+    for (const step of selected) {
+      if (step.needs()) return uiLanguage === "en" ? step.en : step.tr;
     }
-
     return null;
   }
+
   function conversationBridge(category: string, context: string, answerText: string) {
     const answer = answerText.trim();
-    const normalized = answer.toLocaleLowerCase("tr-TR");
-    const emptyAnswer = /^(hiç|yok|yoktu|bilmiyorum|emin değilim|none|nothing|don't know|not sure)$/i.test(normalized);
-    const amountMatches = answer.match(/(\d+(?:[.,]\d+)?)\s*(?:tl|₺|lira|bin|k)/gi) ?? [];
+    const amountMatches = answer.match(/(\d{1,3}(?:[. ]\d{3})*(?:,\d{1,2})?|\d+(?:,\d{1,2})?)\s*(?:tl|₺|lira|bin|k)/gi) ?? [];
+    const lower = answer.toLocaleLowerCase("tr-TR");
+    const short = answer.length > 90 ? answer.slice(0, 87) + "..." : answer;
 
-    if (emptyAnswer) {
-      if (language === "en") return "Got it. I'll treat that as a real constraint rather than asking you the same thing again. Let's move to the next missing piece.";
-      return "Anladım. Bunu gerçek bir bilgi olarak kabul ediyorum; aynı soruyu tekrar etmeyeceğim. Şimdi eksik kalan bir sonraki noktaya geçelim.";
-    }
-
-    if (category === "time") {
-      const short = answer.length > 100 ? answer.slice(0, 97) + "..." : answer;
-      if (/yok|hiçbiri/i.test(normalized)) {
-        return language === "en"
-          ? "Okay, so there is no hard deadline. That gives us room to prioritize by effort and impact instead."
-          : "Tamam, yani şu an belirli bir son tarih yok. Bu bize işleri son tarihten çok harcanan zaman ve etkisine göre sıralama alanı veriyor.";
-      }
+    if (/^(hiç|yok|yoktu|bilmiyorum|emin değilim|none|nothing|don't know|not sure)$/i.test(lower)) {
       return language === "en"
-        ? 'I noted: "' + short + '". I\'ll use that as part of the workload instead of treating every task as equally urgent.'
-        : '"' + short + '" bilgisini aldım. Her işi aynı derecede acil kabul etmek yerine bunu toplam iş yükünün bir parçası olarak değerlendireceğim.';
+        ? "I noted that as a real constraint. I won't ask the same thing again; I'll move to the next missing piece."
+        : "Bunu gerçek bir kısıt olarak not ettim. Aynı şeyi tekrar sormayacağım; eksik kalan bir sonraki parçaya geçeceğim.";
     }
 
     if (category === "money" || category === "bills") {
       if (amountMatches.length > 0) {
+        const amounts = amountMatches.slice(0, 4).join(", ");
         return language === "en"
-          ? "I captured the numbers. I won't rank them yet; first I'll separate mandatory payments, deadlines and consequences."
-          : "Rakamları aldım. Henüz öncelik sıralamıyorum; önce zorunlu ödemeleri, son tarihleri ve gecikme sonuçlarını birbirinden ayıracağım.";
+          ? `I captured ${amounts}. I'll separate available cash from obligations, then compare amount, deadline, and consequence instead of treating every payment equally.`
+          : `${amounts} tutarını not ettim. Kullanılabilir parayı zorunlu ödemelerden ayırıp tutar, son tarih ve sonuç açısından karşılaştıracağım; her ödemeyi aynı önemde kabul etmeyeceğim.`;
       }
-      if (/çok|bir sürü|birçok|fazla/i.test(normalized)) {
-        return language === "en"
-          ? "I understand. Several expenses are hitting at once. Let's turn that into a list before deciding what gets paid first."
-          : "Anladım. Birden fazla gider aynı anda üstüne geliyor. Önce bunu listeye dönüştürelim; neyin önce ödeneceğine ondan sonra karar vereceğiz.";
-      }
+      return language === "en"
+        ? `I noted "${short}". I'll use that detail to narrow the problem and only ask for what can change the priority.`
+        : `"${short}" bilgisini not ettim. Bunu tabloya ekleyip önceliği değiştirebilecek eksik noktaya geçeceğim.`;
     }
 
-    const short = answer.length > 100 ? answer.slice(0, 97) + "..." : answer;
+    if (category === "decision") {
+      return language === "en"
+        ? `I have "${short}" as part of the decision context. I'll compare the options against your constraints rather than choosing by a generic rule.`
+        : `"${short}" bilgisini karar tablosuna ekledim. Seçenekleri genel bir kuralla değil, senin kısıtların ve önceliklerin üzerinden karşılaştıracağım.`;
+    }
+
     return language === "en"
-      ? 'Got it. I captured "' + short + '". I\'ll use it to narrow the situation and ask only for information that can change the outcome.'
-      : 'Anladım. "' + short + '" bilgisini aldım. Bundan sonra sadece sonucu değiştirecek eksik bilgiyi soracağım.';
+      ? `Got it. I captured "${short}". I'll use it to remove assumptions and ask for the next piece that can actually change the outcome.`
+      : `Anladım. "${short}" bilgisini aldım. Varsayım yapmak yerine sonucu gerçekten değiştirecek bir sonraki bilgiyi soracağım.`;
   }
+
   function getOptions() {
     return {
       category: category || undefined,
@@ -579,8 +590,8 @@ export default function LifeRescue() {
 
   return (
     <main className="h-[100dvh] w-full overflow-y-auto overscroll-contain bg-background text-foreground">
-      <div className="mx-auto flex min-h-[100dvh] w-full max-w-3xl flex-col px-4 pb-28 pt-28 md:px-6">
-        <header className="fixed inset-x-0 top-6 z-50 border-b bg-background/95 px-4 pb-3 pt-2 shadow-sm backdrop-blur md:top-0 md:px-6">
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-3xl flex-col px-4 pb-28 pt-24 md:px-6">
+        <header className="fixed inset-x-0 top-0 z-50 border-b bg-background/95 px-4 pb-3 pt-2 shadow-sm backdrop-blur md:px-6">
           <div className="flex items-center gap-3">
             <button
               type="button"
