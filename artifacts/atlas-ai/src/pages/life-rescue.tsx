@@ -373,7 +373,7 @@ export default function LifeRescue() {
   }
 
   function runAnalysis(context: string) {
-    const localResult = analyzeOffline(context, getOptions(category, goal, urgency, budget, availableHours, language));
+    const localResult = analyzeOffline(context, getOptions());
     setResult(localResult);
     return localResult;
   }
