@@ -230,6 +230,26 @@ export default function LifeRescue() {
   const [questionIndex, setQuestionIndex] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
   const [showPlan, setShowPlan] = useState(false);
+  const [keyboardOffset, setKeyboardOffset] = useState(0);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const viewport = window.visualViewport;
+    if (!viewport) return;
+
+    const updateKeyboardOffset = () => {
+      const offset = Math.max(0, window.innerHeight - viewport.height - viewport.offsetTop);
+      setKeyboardOffset(offset);
+    };
+
+    updateKeyboardOffset();
+    viewport.addEventListener("resize", updateKeyboardOffset);
+    viewport.addEventListener("scroll", updateKeyboardOffset);
+    return () => {
+      viewport.removeEventListener("resize", updateKeyboardOffset);
+      viewport.removeEventListener("scroll", updateKeyboardOffset);
+    };
+  }, []);
   const [language, setLanguage] = useState<Language>(() => {
     if (typeof window === "undefined") return "tr";
     return window.localStorage.getItem("agt_life_rescue_language") === "en" ? "en" : "tr";
@@ -793,7 +813,8 @@ export default function LifeRescue() {
         )}
 
         {conversationStarted && (
-          <div className="fixed inset-x-0 bottom-0 z-50 border-t bg-background/95 px-4 pb-3 pt-3 backdrop-blur md:px-6">
+          <div className="fixed inset-x-0 z-50 border-t bg-background/95 px-4 pb-3 pt-3 backdrop-blur md:px-6"
+            style={{ bottom: keyboardOffset }}>
             <div className="mx-auto flex max-w-3xl items-end gap-2 rounded-3xl border bg-card p-2 shadow-lg">
               <textarea
                 value={answer}
@@ -806,6 +827,9 @@ export default function LifeRescue() {
                 }}
                 placeholder={copy.answer}
                 rows={1}
+                onFocus={(event) => {
+                  window.setTimeout(() => event.currentTarget.scrollIntoView({ block: "center", behavior: "smooth" }), 120);
+                }}
                 className="max-h-28 min-h-11 flex-1 resize-none bg-transparent px-3 py-2.5 text-sm leading-6 outline-none placeholder:text-muted-foreground"
               />
               <button type="button" onClick={sendFromComposer} disabled={!answer.trim()}
