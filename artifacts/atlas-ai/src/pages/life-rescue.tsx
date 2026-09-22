@@ -111,75 +111,107 @@ export default function LifeRescue() {
 
   function getQuestionSet(currentCategory: string, text: string) {
     const normalized = text.toLocaleLowerCase("tr-TR");
-    const categoryName = categoryLabels[currentCategory] ?? currentCategory;
 
-    if (currentCategory === "money" || /para|maaş|borç|ödeme|fatura/.test(normalized)) {
-      const hasPurpose = /kira|fatura|borç|borçlar|maaş|market|alışveriş|çocuk|çocuğ|ev|araba|araç|taksit|kredi|vergi|sigorta|ilaç|sağlık|okul|eğitim|seyahat|bilet|taşın|nakliye/.test(normalized);
-      const hasAvailableMoney = /elimde|elinde|cebimde|hesabımda|param var|para var|350 tl|600 tl|\\d+\\s*(?:tl|₺|lira)/.test(normalized);
+    // Önce durumu ve seçenekleri öğren; kısıtları çıkar; en son önceliklendir.
+    if (currentCategory === "money" || currentCategory === "bills" || /para|maaş|borç|ödeme|fatura/.test(normalized)) {
       const questions: string[] = [];
-
-      if (!hasPurpose) {
-        questions.push(
-          "Önce şunu anlayalım: Bu para tam olarak neye lazım? Kira, fatura, borç, market, çocuk masrafı veya başka bir şey mi?"
-        );
-      }
-      if (!hasAvailableMoney) {
-        questions.push("Şu an elinde veya hesabında gerçekten kullanabileceğin yaklaşık ne kadar para var?");
-      }
-      questions.push(
-        "Önümüzdeki birkaç gün içinde ödenmesi gereken neler var? Mümkünse tek tek yaz: örneğin kira 10.000 TL, elektrik 1.000 TL gibi."
-      );
-      questions.push(
-        "Bunların son ödeme tarihleri ne? Hangisi gecikirse senin için en ciddi sorun çıkar?"
-      );
-
+      const hasPurpose = /kira|fatura|borç|maaş|market|alışveriş|çocuk|çocuğ|ev|araba|araç|taksit|kredi|vergi|sigorta|ilaç|sağlık|okul|eğitim|seyahat|bilet|taşın|nakliye/.test(normalized);
+      const hasAvailableMoney = /elimde|elinde|cebimde|hesabımda|param var|para var|\\d+\\s*(?:tl|₺|lira)/.test(normalized);
+      if (!hasPurpose) questions.push("Önce şunu anlayalım: Bu para tam olarak neye lazım? Kira, fatura, borç, market, çocuk masrafı veya başka bir şey mi?");
+      if (!hasAvailableMoney) questions.push("Şu an elinde veya hesabında gerçekten kullanabileceğin yaklaşık ne kadar para var?");
+      questions.push("Önümüzdeki birkaç gün içinde ödenmesi gereken neler var? Mümkünse tek tek yaz: örneğin kira 10.000 TL, elektrik 1.000 TL gibi.");
+      questions.push("Bu ödemelerin hangileri gerçekten ertelenemez? Son tarihlerini de mümkün olduğunca yaz.");
+      questions.push("Tamam, şimdi seçenekleri değerlendirebiliriz: erteleme, taksitlendirme, masraf azaltma, mevcut parayı yeniden dağıtma veya ek para bulma gibi hangi seçenekleri uygulama şansın var?");
+      questions.push("Bu seçenekler arasında senin için en önemli ölçüt ne: gecikme riskini azaltmak, toplam maliyeti düşürmek, bugün nakit bulmak veya başka bir şey?");
       return questions;
     }
 
-    if (currentCategory === "time" || /zaman|yetiş|süre|yoğun/.test(normalized)) {
+    if (currentCategory === "decision" || /karar|seç|hangisi/.test(normalized)) {
       return [
-        "Bunu en geç ne zamana kadar çözmüş olman gerekiyor?",
-        "Bugün gerçekten ayırabileceğin kaç saat var?",
-        "Şu anda seni en çok yavaşlatan veya engelleyen şey ne?",
+        "Önce seçenekleri masaya koyalım. Şu anda gerçekten değerlendirdiğin seçenekler neler?",
+        "Bu seçeneklerin her biri için bildiğin önemli farklar neler: fiyat, zaman, risk, kolaylık veya başka bir şey?",
+        "Senin için kesinlikle vazgeçilmez olan şey ne? Örneğin bütçeyi aşmamak, hızlı çözmek veya riski düşük tutmak.",
+        "Her seçeneğin en kötü durumda doğurabileceği sonuç ne olur?",
+        "Şimdi bu bilgilerle seçenekleri senin önceliklerine göre sıralayabiliriz. En çok hangi sonucu korumak istiyorsun?",
       ];
     }
 
-    if (currentCategory === "decision" || /karar|seç|hangisini/.test(normalized)) {
+    if (currentCategory === "time" || /zaman|yetiş|süre|yoğun|vakit/.test(normalized)) {
       return [
-        "Şu anda hangi seçenekler arasında kalmış durumdasın?",
-        "Senin için en önemli ölçüt ne: para, zaman, risk, rahatlık veya başka bir şey?",
-        "Yanlış seçeneği seçersen ortaya çıkabilecek en ciddi sonuç ne olur?",
+        "Önce yetiştirmeye çalıştığın işleri çıkaralım. Şu anda önünde hangi işler veya sorumluluklar var?",
+        "Bunların hangileri gerçekten bugün veya belirli bir tarihe kadar yapılmak zorunda?",
+        "Her iş yaklaşık ne kadar zaman alıyor ve hangilerini erteleyebilir, bölebilir veya başka birine devredebilirsin?",
+        "Seni en çok zorlayan kısıt ne: toplam zaman, enerji, başka insanların beklemesi veya başka bir şey?",
+        "Şimdi işleri son tarih, sonuç ve harcanacak zamana göre önceliklendirebiliriz. Önceliğin neyi korumak?",
       ];
     }
 
-    if (currentCategory === "vehicle" || /araç|araba|motor/.test(normalized)) {
+    if (currentCategory === "work" || /iş|mesai|vardiya|patron|proje|görev/.test(normalized)) {
       return [
-        "Araçla ilgili tam olarak neyi çözmeye çalışıyoruz?",
-        "Bunun için ayırabileceğin yaklaşık bütçe nedir?",
-        "Bunu ne zamana kadar çözmen gerekiyor?",
+        "Önce mevcut yükü çıkaralım. Şu anda senden beklenen işler veya görevler neler?",
+        "Bunlardan hangilerinin kesin son tarihi var ve hangilerinin sonucu daha kritik?",
+        "Hangilerini erteleyebilir, bölebilir veya devredebilirsin?",
+        "İş yükünü etkileyen kısıtların neler: vardiya, süre, ekip, para veya başka bir şey?",
+        "Şimdi görevleri etkisi, aciliyeti ve maliyeti üzerinden önceliklendirelim. Senin için korunması gereken en önemli sonuç hangisi?",
       ];
     }
 
-    if (currentCategory === "travel" || /seyahat|uçak|bilet|yolculuk/.test(normalized)) {
+    if (currentCategory === "vehicle" || /araç|araba|motor|lastik|akü|servis/.test(normalized)) {
       return [
-        "Nereye gitmen gerekiyor ve hedef tarih nedir?",
-        "Bu yolculuk için yaklaşık bütçen ne kadar?",
-        "Tarih konusunda esnek misin, yoksa değişmeyecek bir son tarih var mı?",
+        "Önce sorunun tamamını anlayalım. Araçta tam olarak ne oluyor ve şu anda araç kullanılabiliyor mu?",
+        "Şu ana kadar bildiğin çözüm seçenekleri neler: tamir, parça değişimi, servis, beklemek veya geçici başka bir ulaşım çözümü?",
+        "Her seçeneğin yaklaşık maliyeti ve ne kadar süreceği hakkında ne biliyorsun?",
+        "Aracı kullanmaya devam etmek güvenlik veya daha büyük hasar açısından bir risk oluşturuyor mu?",
+        "Şimdi seçenekleri güvenlik, maliyet, süre ve zorunluluk açısından önceliklendirebiliriz. Hangisini korumamız gerekiyor?",
       ];
     }
 
-    if (currentCategory === "moving" || /taşın|ev değiş/.test(normalized)) {
+    if (currentCategory === "travel" || /seyahat|uçuş|uçak|bilet|yolculuk|otel/.test(normalized)) {
       return [
-        "Taşınman gereken kesin tarih var mı?",
-        "Taşınma için yaklaşık ne kadar bütçe ayırabiliyorsun?",
-        "Şu anda seni en çok zorlayan kısım hangisi: ev, nakliye, para veya zaman?",
+        "Önce yolculuğun seçeneklerini çıkaralım. Nereye, hangi tarihte ve hangi amaçla gitmen gerekiyor?",
+        "Hangi ulaşım veya konaklama seçeneklerini değerlendiriyorsun?",
+        "Her seçeneğin yaklaşık toplam maliyeti ve zaman farkı ne kadar?",
+        "Tarih veya saat konusunda ne kadar esneksin? Değiştirilemeyecek bir zorunluluk var mı?",
+        "Şimdi seçenekleri toplam maliyet, süre, risk ve esneklik açısından önceliklendirebiliriz. Senin için hangisi daha önemli?",
+      ];
+    }
+
+    if (currentCategory === "moving" || /taşın|ev değiş|nakliye|depozito/.test(normalized)) {
+      return [
+        "Önce taşınma tablosunu çıkaralım. Taşınman gereken tarih ve şu an değerlendirdiğin seçenekler neler?",
+        "Ev, nakliye, depozito, eşya ve ulaşım tarafında hangi seçeneklerin var?",
+        "Her seçeneğin yaklaşık maliyeti ve ne kadar zaman istediği hakkında ne biliyorsun?",
+        "Kesin olarak değişmeyecek kısıtların neler: tarih, bütçe, ev, iş veya aile durumu?",
+        "Şimdi seçenekleri zorunluluk, maliyet, süre ve risk açısından önceliklendirebiliriz. Öncelikle neyi güvenceye almalıyız?",
+      ];
+    }
+
+    if (currentCategory === "home" || /ev|tamir|bozuk|eşya|temizlik|tesisat/.test(normalized)) {
+      return [
+        "Önce sorunun kapsamını çıkaralım. Evde tam olarak ne oldu ve hangi şeyler etkileniyor?",
+        "Şu anda düşündüğün çözüm seçenekleri neler: tamir, değiştirme, geçici çözüm, servis çağırma veya başka bir şey?",
+        "Bu seçeneklerin yaklaşık maliyeti, süresi ve varsa ek riskleri hakkında ne biliyorsun?",
+        "Su, elektrik, gaz, yapısal hasar veya daha büyük bir zarara dönüşme riski var mı?",
+        "Şimdi seçenekleri güvenlik, aciliyet, maliyet ve kalıcılık açısından önceliklendirebiliriz. Önce hangi sonucu korumalıyız?",
+      ];
+    }
+
+    if (currentCategory === "family" || /aile|eş|çocuk|çocuğ|bebek/.test(normalized)) {
+      return [
+        "Önce durumu anlayalım. Şu anda aile içinde çözmeye çalıştığın konu tam olarak ne?",
+        "Şu ana kadar düşündüğün veya uygulayabileceğin seçenekler neler?",
+        "Her seçeneğin aile üzerindeki zaman, para, düzen veya ilişki açısından etkisi ne olur?",
+        "Kesinlikle korunması gereken bir ihtiyaç, sınır veya son tarih var mı?",
+        "Şimdi seçenekleri etkilerine ve aciliyetlerine göre önceliklendirebiliriz. Önce neyi güvenceye almalıyız?",
       ];
     }
 
     return [
-      `${categoryName || "Bu problem"} için önce sonucu gerçekten değiştirecek bilgiyi bulalım. Şu anda seni en çok sıkıştıran şey ne?`,
-      "Bunu çözmemizi zorlaştıran en büyük kısıt ne: para, zaman, son tarih, başka bir kişinin kararı veya başka bir şey?",
-      "Bunu çözmezsek önümüzdeki birkaç gün içinde ne olması gerekiyor veya ne olabilir?",
+      "Önce durumu tam olarak anlayalım. Şu anda çözmeye çalıştığın problem nedir ve seni en çok zorlayan kısmı hangisi?",
+      "Şu ana kadar düşündüğün, denediğin veya kullanabileceğin seçenekler neler?",
+      "Bu seçeneklerin her biri için bildiğin önemli farklar neler: para, zaman, risk, kolaylık veya başka bir şey?",
+      "Seni sınırlayan kesin bir şey var mı: bütçe, son tarih, başka bir kişinin kararı, mevcut kaynaklar veya başka bir kısıt?",
+      "Şimdi seçenekleri sonuç, aciliyet, maliyet ve risk açısından karşılaştırabiliriz. Senin için en önemli kriter hangisi?",
     ];
   }
 
