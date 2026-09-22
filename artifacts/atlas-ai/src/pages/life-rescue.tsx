@@ -699,15 +699,7 @@ export default function LifeRescue() {
           </div>
         )}
       </div>
-        <button
-          type="button"
-          onClick={toggleSidebar}
-          aria-label={copy.menu}
-          className="fixed bottom-24 left-4 z-50 flex h-11 w-11 items-center justify-center rounded-full border bg-card/95 shadow-lg backdrop-blur md:hidden"
-        >
-          <Menu className="h-5 w-5" />
-        </button>
-
     </main>
   );
 }
+
