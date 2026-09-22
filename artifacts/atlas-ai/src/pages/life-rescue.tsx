@@ -365,6 +365,7 @@ export default function LifeRescue() {
       urgency,
       budget: budget === "" ? undefined : Number(budget),
       availableHours: availableHours === "" ? undefined : Number(availableHours),
+      language,
     };
   }
 
