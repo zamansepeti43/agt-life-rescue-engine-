@@ -393,8 +393,8 @@ export default function LifeRescue() {
           : "Tamam, yani şu an belirli bir son tarih yok. Bu bize işleri son tarihten çok harcanan zaman ve etkisine göre sıralama alanı veriyor.";
       }
       return language === "en"
-        ? "I noted: "" + short + "". I'll use that as part of the workload instead of treating every task as equally urgent."
-        : """ + short + "" bilgisini aldım. Her işi aynı derecede acil kabul etmek yerine bunu toplam iş yükünün bir parçası olarak değerlendireceğim.";
+        ? 'I noted: "' + short + '". I\'ll use that as part of the workload instead of treating every task as equally urgent.'
+        : '"' + short + '" bilgisini aldım. Her işi aynı derecede acil kabul etmek yerine bunu toplam iş yükünün bir parçası olarak değerlendireceğim.';
     }
 
     if (category === "money" || category === "bills") {
@@ -412,8 +412,8 @@ export default function LifeRescue() {
 
     const short = answer.length > 100 ? answer.slice(0, 97) + "..." : answer;
     return language === "en"
-      ? "Got it. I captured "" + short + "". I'll use it to narrow the situation and ask only for information that can change the outcome."
-      : "Anladım. "" + short + "" bilgisini aldım. Bundan sonra sadece sonucu değiştirecek eksik bilgiyi soracağım.";
+      ? 'Got it. I captured "' + short + '". I\'ll use it to narrow the situation and ask only for information that can change the outcome.'
+      : 'Anladım. "' + short + '" bilgisini aldım. Bundan sonra sadece sonucu değiştirecek eksik bilgiyi soracağım.';
   }
   function getOptions() {
     return {
