@@ -660,8 +660,8 @@ export default function LifeRescue() {
 
   return (
     <main className="h-[100dvh] w-full overflow-y-auto overscroll-contain bg-background text-foreground">
-      <div className="mx-auto flex min-h-[100dvh] w-full max-w-3xl flex-col px-4 pb-28 pt-[calc(env(safe-area-inset-top)+5.2rem)] md:px-6">
-        <header className="fixed inset-x-0 top-0 z-50 border-b bg-background/95 px-4 pb-3 pt-[calc(env(safe-area-inset-top)+0.65rem)] shadow-sm backdrop-blur md:px-6">
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-3xl flex-col px-4 pb-28 pt-20 md:px-6">
+        <header className="fixed inset-x-0 top-0 z-50 border-b bg-background/95 px-4 pb-3 pt-3 shadow-sm backdrop-blur md:px-6">
           <div className="flex items-center gap-3">
             <button
               type="button"
@@ -863,7 +863,7 @@ export default function LifeRescue() {
         )}
 
         {conversationStarted && (
-          <div className="fixed inset-x-0 bottom-0 z-50 border-t bg-background/95 px-4 pb-[calc(env(safe-area-inset-bottom)+0.7rem)] pt-3 backdrop-blur md:px-6">
+          <div className="fixed inset-x-0 bottom-0 z-50 border-t bg-background/95 px-4 pb-3 pt-3 backdrop-blur md:px-6">
             <div className="mx-auto flex max-w-3xl items-end gap-2 rounded-3xl border bg-card p-2 shadow-lg">
               <textarea
                 value={answer}
