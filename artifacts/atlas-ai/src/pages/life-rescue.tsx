@@ -666,7 +666,7 @@ export default function LifeRescue() {
 
                   {showPlan && (
                     <div className="mt-3 space-y-2">
-                      {result.plan.steps.filter((step) => step.label !== "Hedef" && step.label !== "Goal").map((step, index) => (
+                      {result.plan.steps.filter((step) => (step.label as string) !== "Hedef" && (step.label as string) !== "Goal").map((step, index) => (
                         <div key={step.label} className="flex gap-3 rounded-2xl bg-muted/60 p-3.5">
                           <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-background text-xs font-bold text-primary">
                             {index + 1}
