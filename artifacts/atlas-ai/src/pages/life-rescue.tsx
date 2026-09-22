@@ -232,12 +232,6 @@ export default function LifeRescue() {
     }
     return values;
   }
-
-  function lastUserAnswer(context: string) {
-    const parts = context.split(/\nKullanıcı:\s*/).filter(Boolean);
-    return parts[parts.length - 1]?.trim() ?? "";
-  }
-
   function extractPaymentLabels(answerText: string) {
     return answerText
       .split(/[,;\n]|\s+ve\s+|\s+ile\s+/i)
