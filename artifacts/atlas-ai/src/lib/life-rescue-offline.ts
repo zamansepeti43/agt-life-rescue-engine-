@@ -79,6 +79,10 @@ function buildPlan(category: string, actions: OfflineAction[], phase: OfflineRes
     category === "bills" ? "Ödemeleri son tarih ve sonuçlarına göre sadeleştirmek." :
     category === "time" ? "Kısıtlı zamanı en önemli sonuca yönlendirmek." :
     category === "decision" ? "Belirsizliği azaltıp uygulanabilir bir karar vermek." :
+    category === "vehicle" ? "Güvenliği koruyup araç kaynaklı toplam maliyeti kontrol etmek." :
+    category === "travel" ? "Seyahati tarih, maliyet ve risk açısından kontrol altına almak." :
+    category === "moving" ? "Taşınmayı zaman, nakit ve zorunluluk sırasına göre yönetmek." :
+    category === "home" ? "Evdeki baskıyı önce güvenli şekilde azaltıp kalıcı çözümü netleştirmek." :
     "Sorunun ana baskısını azaltıp kontrolü geri kazanmak.";
   return {
     objective,
@@ -203,11 +207,30 @@ export function analyzeOffline(problem: string, options?: OfflineAnalysisOptions
       ...(constraints.some((item) => item.startsWith("Son tarih")) ? ["Yakın son tarih"] : []),
     ] : ["Sorunun hedefi ve mevcut kısıtlar"],
     plan: buildPlan(selected.rule.category, actions, phase),
-    diagnosis: "Önce tabloyu sadeleştirelim. Şu an anlattığın problem içinde sonucu en çok değiştirecek noktayı bulacağım; verdiğin yeni bilgilere göre planı yeniden şekillendireceğim.",
+    diagnosis:
+      selected.rule.category === "vehicle"
+        ? "Önce güvenlik riskini ayıracağız; ardından tamir ve alternatif ulaşım maliyetini birlikte değerlendireceğiz."
+        : selected.rule.category === "travel"
+          ? "Önce tarih ve zorunlu varış saatini sabitleyeceğiz; sonra toplam seyahat maliyetini ve B planını çıkaracağız."
+          : selected.rule.category === "moving"
+            ? "Önce taşınma tarihini ve zorunlu ödemeleri sabitleyeceğiz; sonra nakit ve zaman baskısını azaltacağız."
+            : selected.rule.category === "home"
+              ? "Önce güvenlik ve daha büyük hasar riskini kontrol edeceğiz; sonra tamir, değişim veya geçici çözümü karşılaştıracağız."
+              : selected.rule.category === "money"
+                ? "Burada önce gelir, zorunlu gider ve yaklaşan ödemeyi aynı tabloya koyup gerçek açığı bulacağız."
+                : "Önce tabloyu sadeleştirelim. Sonucu en çok değiştirecek noktayı bulup planı buna göre şekillendireceğim.",
     actions,
     constraints,
     nextQuestion: selected.rule.category === "money"
       ? "Şu an elinde kullanılabilir ne kadar para var ve en yakın zorunlu ödeme yaklaşık ne kadar?"
-      : "Bunu doğru yönlendirebilmem için sonucu en çok değiştiren kısıt ne: para, zaman, son tarih veya başka bir şey mi?",
+      : selected.rule.category === "vehicle"
+        ? "Araç şu an güvenli şekilde kullanılabiliyor mu ve tahmini masraf ne kadar?"
+        : selected.rule.category === "travel"
+          ? "Seyahatin kesin tarihi ve mutlaka yetişmen gereken saat nedir?"
+          : selected.rule.category === "moving"
+            ? "Taşınma tarihi ne ve kira, depozito, nakliye için ayırdığın toplam bütçe ne kadar?"
+            : selected.rule.category === "home"
+              ? "Sorun güvenlik, su/elektrik veya daha büyük hasar riski oluşturuyor mu?"
+              : "Bunu doğru yönlendirebilmem için sonucu en çok değiştiren kısıt ne: para, zaman, son tarih veya başka bir şey mi?",
   };
 }
