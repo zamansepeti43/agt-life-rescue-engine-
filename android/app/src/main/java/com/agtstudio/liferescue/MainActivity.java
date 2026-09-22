@@ -5,7 +5,6 @@ import android.app.Activity;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
-import android.view.WindowInsets;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
@@ -25,12 +24,6 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
 
         WebView webView = new WebView(this);
-        webView.setFitsSystemWindows(true);
-        webView.setOnApplyWindowInsetsListener((view, insets) -> {
-            android.graphics.Insets systemBars = insets.getInsets(WindowInsets.Type.systemBars());
-            view.setPadding(0, systemBars.top, 0, systemBars.bottom);
-            return insets;
-        });
         WebSettings settings = webView.getSettings();
         settings.setJavaScriptEnabled(true);
         settings.setDomStorageEnabled(true);
