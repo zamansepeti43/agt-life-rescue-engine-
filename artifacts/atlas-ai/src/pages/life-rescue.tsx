@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { AlertTriangle, ArrowRight, CheckCircle2, Loader2, Sparkles, WifiOff, RotateCcw, MessageCircle, Menu } from "lucide-react";
 import { analyzeOffline, type OfflineResult } from "@/lib/life-rescue-offline";
 import { addTask } from "@/lib/assistant-store";
+import { saveLifeRescueHistory } from "@/lib/life-rescue-history";
 import { useSidebar } from "@/components/ui/sidebar";
 
 type Result = {
@@ -50,6 +51,12 @@ export default function LifeRescue() {
     if (!result) return;
     window.setTimeout(() => resultRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
   }, [result]);
+
+  useEffect(() => {
+    const resetFromMenu = () => reset();
+    window.addEventListener("life-rescue-new-problem", resetFromMenu);
+    return () => window.removeEventListener("life-rescue-new-problem", resetFromMenu);
+  }, []);
 
   async function analyze(context?: string) {
     const base=problem.trim();
@@ -116,6 +123,13 @@ export default function LifeRescue() {
       setConversationContext(text);
       setResult(localResult);
       setOffline(true);
+      saveLifeRescueHistory({
+        problem: text,
+        category: localResult.category,
+        goal: localResult.goal,
+        diagnosis: localResult.diagnosis,
+        objective: localResult.plan.objective,
+      });
       setLoading(false);
     } catch {
       // Never leave the user on the input screen if the local engine fails.
