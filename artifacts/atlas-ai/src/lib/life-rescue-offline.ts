@@ -16,6 +16,14 @@ export interface OfflinePlan {
   steps: OfflinePlanStep[];
 }
 
+export interface OfflineAnalysisOptions {
+  category?: string;
+  goal?: string;
+  urgency?: number;
+  budget?: number;
+  availableHours?: number;
+}
+
 export interface OfflineResult {
   problem: string;
   category: string;
@@ -36,9 +44,17 @@ const rules = [
   { category: "decision", goal: "make_decision", words: ["hangisi", "karar", "seç", "almalı"] },
   { category: "family", goal: "organize", words: ["çocuk", "aile", "eş", "bebek"] },
   { category: "work", goal: "prioritize", words: ["iş", "mesai", "vardiya", "patron"] },
+  { category: "vehicle", goal: "reduce_cost", words: ["araba", "araç", "motor", "lastik", "akü", "servis", "yakıt"] },
+  { category: "travel", goal: "organize", words: ["seyahat", "uçuş", "uçak", "otobüs", "otel", "bilet", "yolculuk"] },
+  { category: "moving", goal: "organize", words: ["taşınma", "taşınıyorum", "ev taşı", "nakliye", "depozito"] },
+  { category: "home", goal: "solve", words: ["ev", "tamir", "bozuk", "eşya", "temizlik", "tesisat"] },
 ];
 
-function pick(text: string) {
+function pick(text: string, options?: OfflineAnalysisOptions) {
+  if (options?.category) {
+    const forced = rules.find((rule) => rule.category === options.category);
+    if (forced) return { score: 100, rule: forced };
+  }
   const t = text.toLocaleLowerCase("tr-TR");
   return rules.reduce((best, rule) => {
     const score = rule.words.reduce((n, word) => n + (t.includes(word) ? 1 : 0), 0);
@@ -99,10 +115,20 @@ function buildPlan(category: string, actions: OfflineAction[], phase: OfflineRes
   };
 }
 
-export function analyzeOffline(problem: string): OfflineResult {
-  const selected = pick(problem);
+export function analyzeOffline(problem: string, options?: OfflineAnalysisOptions): OfflineResult {
+  const selected = pick(problem, options);
+  const constraints: string[] = [];
+  const moneyMatches = problem.toLocaleLowerCase("tr-TR").matchAll(/(\d{1,3}(?:[. ]\d{3})*(?:,\d{1,2})?|\d+(?:,\d{1,2})?)\s*(?:tl|₺|lira)/gi);
+  const amounts = Array.from(moneyMatches, (m) => Number(m[1].replace(/\s/g, "").replace(/\./g, "").replace(",", "."))).filter(Number.isFinite);
+  if (amounts.length) constraints.push("Konuşmada geçen tutarlar: " + amounts.slice(0, 3).map((n) => n.toLocaleString("tr-TR") + " TL").join(" / "));
+  if (options?.budget !== undefined) constraints.push("Bütçe: " + options.budget.toLocaleString("tr-TR") + " TL");
+  if (options?.availableHours !== undefined) constraints.push("Bugün ayrılabilecek zaman: " + options.availableHours + " saat");
+  if (/bugün/i.test(problem)) constraints.push("Son tarih: bugün");
+  else if (/yarın/i.test(problem)) constraints.push("Son tarih: yarın");
+  if (options?.urgency !== undefined) constraints.push("Aciliyet: " + options.urgency + "/10");
+  const urgent = options?.urgency !== undefined ? options.urgency >= 8 : /(acil|hemen|bugün|yarın|son gün)/i.test(problem);
   const urgent = /(acil|hemen|bugün|yarın|son gün)/i.test(problem);
-  const priority = urgent ? "high" : "normal";
+  const priority = urgent ? "critical" : options?.urgency !== undefined && options.urgency >= 6 ? "high" : "normal";
   const phase = phaseFrom(problem);
   const common: Record<string, OfflineAction[]> = {
     money: [
@@ -135,18 +161,51 @@ export function analyzeOffline(problem: string): OfflineResult {
       { title: "Devredilebilir işi ayır", reason: "Kapasiteyi koru.", priority: 2 },
       { title: "Son tarihleri sırala", reason: "Gecikme riskini azalt.", priority: 3 },
     ],
+    vehicle: [
+      { title: "Güvenlik riskini ayır", reason: "Fren, lastik, direksiyon veya ciddi uyarıları masraf optimizasyonundan önce değerlendir.", priority: 1 },
+      { title: "Toplam araç maliyetini çıkar", reason: "Parça, işçilik, çekici ve tekrar masrafını birlikte düşün.", priority: 2 },
+      { title: "Alternatif ulaşımı karşılaştır", reason: "Aracı kullanmamanın geçici ulaşım maliyetini de hesaba kat.", priority: 3 },
+    ],
+    travel: [
+      { title: "Tarihi ve zorunlu varış saatini sabitle", reason: "Esnek ve zorunlu parçaları ayırmadan seçim yapma.", priority: 1 },
+      { title: "Toplam yol maliyetini hesapla", reason: "Biletin yanında bagaj, transfer ve konaklama giderlerini de hesaba kat.", priority: 2 },
+      { title: "B planını hazırla", reason: "İptal veya gecikme halinde kullanabileceğin alternatifi belirle.", priority: 3 },
+    ],
+    moving: [
+      { title: "Taşınma tarihini ve zorunlu ödemeleri çıkar", reason: "Kira, depozito, nakliye ve abonelikleri aynı zaman çizelgesine koy.", priority: 1 },
+      { title: "Taşınma maliyetini kalemlere böl", reason: "Nakit baskısını hangi kalemin oluşturduğunu görünür yap.", priority: 2 },
+      { title: "Ertelenebilir işleri ayır", reason: "İlk gün gerekli olmayan masraf ve işleri sonraya bırak.", priority: 3 },
+    ],
+    home: [
+      { title: "Güvenlik ve hasar riskini kontrol et", reason: "Su, elektrik veya daha büyük hasar riskini önce durdur.", priority: 1 },
+      { title: "Tamir mi değişim mi karşılaştır", reason: "Parça, işçilik ve kullanım ömrünü birlikte değerlendir.", priority: 2 },
+      { title: "Geçici çözümü belirle", reason: "Kalıcı çözüm zaman alıyorsa güvenli geçici seçeneği ayır.", priority: 3 },
+    ],
   };
   const actions = common[selected.rule.category] ?? common.decision;
   return {
     problem,
     category: selected.rule.category,
-    goal: selected.rule.goal,
+    goal: options?.goal ?? selected.rule.goal,
     priority,
     phase,
-    decisionBasis: ["Sorunun hedefi ve mevcut kısıtlar"],
+    decisionBasis: [
+      ...(amounts.length ? ["Konuşmada geçen parasal tutarlar"] : []),
+      ...(options?.budget !== undefined ? ["Belirtilen bütçe"] : []),
+      ...(options?.availableHours !== undefined ? ["Belirtilen zaman kapasitesi"] : []),
+      ...(urgent ? ["Yüksek aciliyet"] : []),
+      ...(constraints.some((item) => item.startsWith("Son tarih")) ? ["Yakın son tarih"] : []),
+    ].length ? [
+      ...(amounts.length ? ["Konuşmada geçen parasal tutarlar"] : []),
+      ...(options?.budget !== undefined ? ["Belirtilen bütçe"] : []),
+      ...(options?.availableHours !== undefined ? ["Belirtilen zaman kapasitesi"] : []),
+      ...(urgent ? ["Yüksek aciliyet"] : []),
+      ...(constraints.some((item) => item.startsWith("Son tarih")) ? ["Yakın son tarih"] : []),
+    ] : ["Sorunun hedefi ve mevcut kısıtlar"],
     plan: buildPlan(selected.rule.category, actions, phase),
     diagnosis: "Önce tabloyu sadeleştirelim. Şu an anlattığın problem içinde sonucu en çok değiştirecek noktayı bulacağım; verdiğin yeni bilgilere göre planı yeniden şekillendireceğim.",
     actions,
+    constraints,
     nextQuestion: selected.rule.category === "money"
       ? "Şu an elinde kullanılabilir ne kadar para var ve en yakın zorunlu ödeme yaklaşık ne kadar?"
       : "Bunu doğru yönlendirebilmem için sonucu en çok değiştiren kısıt ne: para, zaman, son tarih veya başka bir şey mi?",
