@@ -29,6 +29,7 @@ function Router() {
       <Route path="/atlas-os" component={AtlasOS} />
       <Route path="/izci" component={Izci} />
       <Route path="/life-rescue" component={LifeRescue} />
+        <Route path="/life-rescue-history" component={LifeRescueHistory} />
       <Route component={NotFound} />
     </Switch>
   );
