@@ -1,5 +1,5 @@
 import { BellRing, Download, Languages, RotateCcw, ShieldCheck } from "lucide-react";
-import { useLocation } from "wouter";
+import { LifeAppHeader } from "@/components/LifeAppHeader";
 import { notificationPermission, requestNotificationPermission } from "@/lib/notifications";
 import { subscribeToPush } from "@/lib/push-notifications";
 import { useState } from "react";
@@ -8,8 +8,7 @@ const STATE_KEY = "atlas_assistant_state_v1";
 const HISTORY_KEY = "agt_life_rescue_history_v1";
 
 export default function Settings() {
-  const [, navigate] = useLocation();
-  const [language, setLanguage] = useState<"tr" | "en">(() => localStorage.getItem("agt_life_language") === "en" ? "en" : "tr");
+  const [language, setLanguage] = useState<"tr" | "en">(() => ((localStorage.getItem("agt_life_rescue_language") || localStorage.getItem("agt_life_language")) === "en" ? "en" : "tr"));
   const [permission, setPermission] = useState(notificationPermission());
   const t = language === "en" ? {
     home: "← Home", title: "Settings", desc: "Manage language, notifications, and your device data here.",
@@ -69,12 +68,10 @@ export default function Settings() {
     <div className="mx-auto w-full max-w-3xl px-4 py-8 md:px-8">
       <button type="button" onClick={() => navigate("/")} className="mb-6 rounded-xl border px-4 py-2 text-sm">{t.home}</button>
       <div className="mb-8"><p className="text-sm font-semibold text-primary">AGT LIFE</p><h1 className="mt-1 text-3xl font-bold">{t.title}</h1><p className="mt-2 text-sm text-muted-foreground">{t.desc}</p></div>
-      <div className="space-y-4">
+      <div className="space-y-4 pb-12">
         <section className="rounded-3xl border bg-card p-5"><div className="flex items-center gap-3"><Languages className="h-5 w-5 text-primary"/><div><h2 className="font-semibold">{t.lang}</h2><p className="text-xs text-muted-foreground">{t.langDesc}</p></div></div><div className="mt-4 grid grid-cols-2 gap-2"><button onClick={()=>changeLanguage("tr")} className={`rounded-xl border px-4 py-3 text-sm font-semibold ${language==="tr"?"border-primary bg-primary/10":""}`}>Türkçe</button><button onClick={()=>changeLanguage("en")} className={`rounded-xl border px-4 py-3 text-sm font-semibold ${language==="en"?"border-primary bg-primary/10":""}`}>English (İngilizce)</button></div></section>
         <section className="rounded-3xl border bg-card p-5"><div className="flex items-center gap-3"><BellRing className="h-5 w-5 text-primary"/><div><h2 className="font-semibold">{t.notifications}</h2><p className="text-xs text-muted-foreground">{t.notificationsDesc}</p></div></div><div className="mt-4 flex items-center justify-between gap-3 rounded-2xl border p-4"><div className="text-sm"><span className="font-semibold">{t.status}</span> {permission === "granted" ? t.on : permission === "denied" ? t.denied : permission === "unsupported" ? t.unsupported : t.pending}</div>{permission !== "granted" && permission !== "denied" && permission !== "unsupported" && <button onClick={enableNotifications} className="rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground">{t.enable}</button>}</div>{permission==="denied" && <p className="mt-3 text-xs text-muted-foreground">{t.deniedHelp}</p>}</section>
         <section className="rounded-3xl border bg-card p-5"><div className="flex items-center gap-3"><Download className="h-5 w-5 text-primary"/><div><h2 className="font-semibold">{t.data}</h2><p className="text-xs text-muted-foreground">{t.dataDesc}</p></div></div><div className="mt-4 flex flex-wrap gap-2"><button onClick={exportData} className="rounded-xl border px-4 py-2.5 text-sm font-semibold">{t.export}</button><button onClick={resetData} className="inline-flex items-center gap-2 rounded-xl border border-red-500/30 px-4 py-2.5 text-sm font-semibold text-red-600"><RotateCcw className="h-4 w-4"/>{t.reset}</button></div></section>
         <section className="rounded-3xl border bg-card p-5"><div className="flex items-center gap-3"><ShieldCheck className="h-5 w-5 text-primary"/><div><h2 className="font-semibold">{t.privacy}</h2><p className="text-xs leading-5 text-muted-foreground">{t.privacyDesc}</p></div></div></section>
-      </div>
-    </div>
-  </main>;
+      </div>\n    </div>\n    </div>\n  </main>;
 }
