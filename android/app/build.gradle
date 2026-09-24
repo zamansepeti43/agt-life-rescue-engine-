@@ -14,13 +14,12 @@ android {
     sourceSets {
         main {
             assets.srcDirs = ["src/main/assets"]
-            res.exclude("raw/agt_life_icon.webp.b64")
             res.srcDirs += ["${buildDir}/generated/res/agtLifeIcon"]
         }
     }
 
     tasks.register("generateAgtLifeIcon") {
-        def source = file("${projectDir}/src/main/res/raw/agt_life_icon.webp.b64")
+        def source = file("${projectDir}/agt_life_icon.webp.b64")
         def output = file("${buildDir}/generated/res/agtLifeIcon/drawable/agt_life_icon.webp")
         inputs.file(source)
         outputs.file(output)
