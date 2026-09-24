@@ -36,7 +36,7 @@ export default function Home() {
   const endRef = useRef<HTMLDivElement>(null);
   const conversation = useConversation();
   useEffect(() => { const onLanguage = () => setLanguage(localStorage.getItem('agt_life_language') === 'en' ? 'en' : 'tr'); window.addEventListener('agt-life-language-change', onLanguage); return () => window.removeEventListener('agt-life-language-change', onLanguage); }, []);
-  const t = language === 'en' ? { menu: 'Open menu', tagline: 'A decision assistant that thinks with you', memoryOn: 'Disable memory', memoryOff: 'Enable memory', clearMemory: 'Clear long-term memory', reset: 'Reset chat', memory: 'Atlas memory', chat: 'Chat', you: 'You', atlas: 'Atlas', thinking: 'Atlas is preparing a response', input: 'Write a message to Atlas', send: 'Send message', memoryTitle: 'Atlas memory' } : { menu: 'Menüyü aç', tagline: '{t.tagline}', memoryOn: 'Hafızayı devre dışı bırak', memoryOff: 'Hafızayı etkinleştir', clearMemory: 'Uzun süreli hafızayı temizle', reset: 'Sohbeti sıfırla', memory: 'Atlas hafızası', chat: 'Sohbet', you: 'Sen', atlas: 'Atlas', thinking: '{t.thinking}', input: "{t.input}", send: 'Mesajı gönder', memoryTitle: 'Atlas hafızası' };
+  const t = language === 'en' ? { menu: 'Open menu', tagline: 'A decision assistant that thinks with you', memoryOn: 'Disable memory', memoryOff: 'Enable memory', clearMemory: 'Clear long-term memory', reset: 'Reset chat', memory: 'Atlas memory', chat: 'Chat', you: 'You', atlas: 'Atlas', thinking: 'Atlas is preparing a response', input: 'Write a message to Atlas', send: 'Send message', memoryTitle: 'Atlas memory' } : { menu: 'Menüyü aç', tagline: 'Birlikte düşünen karar asistanı', memoryOn: 'Hafızayı devre dışı bırak', memoryOff: 'Hafızayı etkinleştir', clearMemory: 'Uzun süreli hafızayı temizle', reset: 'Sohbeti sıfırla', memory: 'Atlas hafızası', chat: 'Sohbet', you: 'Sen', atlas: 'Atlas', thinking: '{t.thinking}', input: "Atlas'a mesaj yaz", send: 'Mesajı gönder', memoryTitle: 'Atlas hafızası' };
 
   useEffect(() => {
     const timer = window.setInterval(() => setPlaceholderIndex((index) => (index + 1) % PLACEHOLDERS.length), 3500);
@@ -98,12 +98,12 @@ export default function Home() {
           <div className="flex min-w-0 items-center gap-2 md:gap-3">
             <SidebarTrigger aria-label={t.menu} />
             <img src="/favicon.svg" alt="Atlas" className="h-9 w-9 shrink-0 rounded-lg object-contain md:h-10 md:w-10" />
-            <div className="min-w-0"><h1 className="whitespace-nowrap font-serif text-xl font-bold md:text-2xl">Atlas <span className="text-primary">AI</span></h1><p className="hidden text-xs text-muted-foreground sm:block">Birlikte düşünen karar asistanı</p></div>
+            <div className="min-w-0"><h1 className="whitespace-nowrap font-serif text-xl font-bold md:text-2xl">Atlas <span className="text-primary">AI</span></h1><p className="hidden text-xs text-muted-foreground sm:block">{t.tagline}</p></div>
           </div>
           <div className="flex shrink-0 items-center justify-end gap-1.5 md:gap-2">
             <button type="button" onClick={conversation.memory.permissionGranted ? conversation.revokeMemory : conversation.grantMemory} aria-pressed={conversation.memory.permissionGranted} aria-label={conversation.memory.permissionGranted ? t.memoryOn : t.memoryOff} title={conversation.memory.permissionGranted ? t.memoryOn : t.memoryOff} className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card text-xs text-muted-foreground hover:border-primary/40 hover:text-foreground md:h-auto md:w-auto md:gap-2 md:px-3 md:py-2">
               <MemoryStick className="h-3.5 w-3.5" aria-hidden="true" />
-              <span className="hidden md:inline">{conversation.memory.permissionGranted ? 'Hafızayı devre dışı bırak' : 'Hafızayı etkinleştir'}</span>
+              <span className="hidden md:inline">{conversation.memory.permissionGranted ? t.memoryOn : t.memoryOff}</span>
             </button>
             <button type="button" onClick={conversation.clearMemory} aria-label={t.clearMemory} title={t.clearMemory} className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" aria-hidden="true" /></button>
             <button type="button" onClick={conversation.reset} aria-label={t.reset} title={t.reset} className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground hover:text-primary"><RotateCcw className="h-4 w-4" aria-hidden="true" /></button>
