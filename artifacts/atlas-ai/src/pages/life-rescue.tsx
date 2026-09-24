@@ -34,6 +34,7 @@ const uiText = {
     intro: "Tell me what's going on. I'll understand the situation first, then we'll work out a practical way forward.",
     placeholder: "What are you trying to solve right now?", details: "Details", send: "Send",
     topic: "Topic", goal: "Goal", auto: "Auto-detect", urgency: "Urgency",
+    capabilitiesTitle: "What I can help with", capabilitiesAll: "See all topics →",
     budget: "Budget", timeToday: "Time available today", optional: "Optional",
     hours: "Hours", offline: "The core decision engine runs on your device.",
     answer: "Type your answer...", you: "You", engine: "Life Rescue",
