@@ -1,6 +1,8 @@
+type IzciSource = { sourceHistoryId?: string };
+
 export type IzciCandidate =
-  | { kind: "task"; title: string; dueAt?: string; reason: string }
-  | { kind: "goal"; title: string; targetAmount?: number; targetDate?: string; reason: string };
+  | ({ kind: "task"; title: string; dueAt?: string; reason: string } & IzciSource)
+  | ({ kind: "goal"; title: string; targetAmount?: number; targetDate?: string; reason: string } & IzciSource);
 
 function parseAmount(text: string): number | undefined {
   const match = text.match(/(\d{1,3}(?:[. ]\d{3})*(?:,\d{1,2})?|\d+(?:,\d{1,2})?)\s*(?:tl|₺|lira|try)\b/i);
