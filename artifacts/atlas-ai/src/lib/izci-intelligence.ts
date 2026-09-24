@@ -2,15 +2,19 @@ export type IzciCandidate =
   | { kind: "task"; title: string; dueAt?: string; reason: string }
   | { kind: "goal"; title: string; targetAmount?: number; targetDate?: string; reason: string };
 
+function parseAmount(text: string): number | undefined {
+  const match = text.match(/(\\d{1,3}(?:[. ]\\d{3})*(?:,\\d{1,2})?|\\d+(?:,\\d{1,2})?)\\s*(?:tl|₺|lira|try)\\b/i);
+  if (!match) return undefined;
+  const value = Number(match[1].replace(/\\s/g, "").replace(/\\./g, "").replace(",", "."));
+  return Number.isFinite(value) ? value : undefined;
+}
+
 function normalize(text: string) {
   return text.toLocaleLowerCase("tr-TR").replace(/\s+/g, " ").trim();
 }
 
 function amount(text: string): number | undefined {
-  const match = text.match(/(\d{1,3}(?:[. ]\d{3})*(?:,\d{1,2})?|\d+(?:,\d{1,2})?)\s*(?:tl|₺|lira)/i);
-  if (!match) return undefined;
-  const value = Number(match[1].replace(/\s/g, "").replace(/\./g, "").replace(",", "."));
-  return Number.isFinite(value) ? value : undefined;
+  return parseAmount(text);
 }
 
 function dueDate(text: string): string | undefined {
@@ -35,7 +39,10 @@ export function extractIzciCandidates(context: string): IzciCandidate[] {
   const text = lines.join(" ");
   const lower = normalize(text);
   const candidates: IzciCandidate[] = [];
-  const money = amount(text);
+  const paymentLine = lines.find((line) => /(öde|ödeme|fatura|kira|borç|taksit|son gün|vadesi)/i.test(line));
+  const money = amount(paymentLine ?? text);
+  const goalLine = lines.find((line) => /(biriktir|birikim|hedefim|hedef.*tl|tl.*hedef)/i.test(line));
+  const goalMoney = amount(goalLine ?? "");
   const hasPayment = /(öde|ödeme|fatura|kira|borç|taksit|son gün|vadesi)/.test(lower);
   const dueAt = dueDate(text);
 
@@ -45,7 +52,7 @@ export function extractIzciCandidates(context: string): IzciCandidate[] {
   }
 
   if (/(biriktir|birikim|hedefim|hedef.*tl|tl.*hedef)/.test(lower)) {
-    candidates.push({ kind: "goal", title: "Birikim hedefi", ...(money !== undefined ? { targetAmount: money } : {}), ...(dueAt ? { targetDate: dueAt } : {}), reason: "Konuşmada takip edilebilir bir hedef olduğunu gördüm." });
+    candidates.push({ kind: "goal", title: "Birikim hedefi", ...(goalMoney !== undefined ? { targetAmount: goalMoney } : {}), ...(goalLine ? (() => { const goalDue = dueDate(goalLine); return goalDue ? { targetDate: goalDue } : {}; })() : {}), reason: "Konuşmada takip edilebilir bir hedef olduğunu gördüm." });
   }
 
   const hasTaskLanguage = /(yapmam gerekiyor|halletmem gerekiyor|kontrol etmem gerekiyor|sonra yapacağım|unutmayayım|takip et)/.test(lower);
