@@ -1,4 +1,5 @@
 import { AlertTriangle, ExternalLink, Search, ShieldCheck } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import type { AtlasResponseMetadata } from '@/lib/intent-router';
 
 interface Props {
@@ -27,6 +28,8 @@ function formatRetrievedAt(value?: string): string | null {
 }
 
 export function GroundedResults({ metadata }: Props) {
+  const [language, setLanguage] = useState<'tr' | 'en'>(() => localStorage.getItem('agt_life_language') === 'en' ? 'en' : 'tr');
+  useEffect(() => { const onLanguage = () => setLanguage(localStorage.getItem('agt_life_language') === 'en' ? 'en' : 'tr'); window.addEventListener('agt-life-language-change', onLanguage); return () => window.removeEventListener('agt-life-language-change', onLanguage); }, []);
   const showResearchWarning = metadata.research.status === 'unavailable' || metadata.research.status === 'failed';
   const hasEvidence = metadata.sources.length > 0 || metadata.products.length > 0 || metadata.decision || metadata.research.requested;
   if (!hasEvidence) return null;
@@ -38,24 +41,24 @@ export function GroundedResults({ metadata }: Props) {
           <AlertTriangle className="mt-0.5 h-4 w-4 flex-shrink-0" aria-hidden="true" />
           <p>
             {metadata.research.status === 'unavailable'
-              ? 'Web araştırması şu anda kullanılamıyor. Yanıt güncel arama sonuçlarıyla doğrulanamadı.'
-              : 'Web araştırması tamamlanamadı. Yanıt mevcut bilgilerle oluşturuldu.'}
+              ? (language === 'en' ? 'Web research is currently unavailable. The answer could not be verified with current search results.' : 'Web araştırması şu anda kullanılamıyor. Yanıt güncel arama sonuçlarıyla doğrulanamadı.')
+              : (language === 'en' ? 'Web research could not be completed. The answer was created from the available information.' : 'Web araştırması tamamlanamadı. Yanıt mevcut bilgilerle oluşturuldu.')}
           </p>
         </div>
       )}
 
       {metadata.decision?.summary && (
         <section aria-labelledby="decision-summary" className="rounded-xl border border-primary/25 bg-primary/5 p-4">
-          <h3 id="decision-summary" className="mb-2 text-xs font-semibold uppercase tracking-widest text-primary">Karar özeti</h3>
+          <h3 id="decision-summary" className="mb-2 text-xs font-semibold uppercase tracking-widest text-primary">{language === 'en' ? 'Decision summary' : 'Karar özeti'}</h3>
           <p className="text-sm leading-relaxed text-foreground">{metadata.decision.summary}</p>
           {metadata.decision.reasons?.length > 0 && <ul className="mt-3 space-y-1 text-xs text-muted-foreground">{metadata.decision.reasons.map((reason) => <li key={reason}>• {reason}</li>)}</ul>}
-          {metadata.decision.tradeoffs?.length > 0 && <div className="mt-3"><p className="text-xs font-semibold text-foreground">Ödünler</p><ul className="mt-1 space-y-1 text-xs text-muted-foreground">{metadata.decision.tradeoffs.map((tradeoff) => <li key={tradeoff}>• {tradeoff}</li>)}</ul></div>}
+          {metadata.decision.tradeoffs?.length > 0 && <div className="mt-3"><p className="text-xs font-semibold text-foreground">{language === 'en' ? 'Trade-offs' : 'Ödünler'}</p><ul className="mt-1 space-y-1 text-xs text-muted-foreground">{metadata.decision.tradeoffs.map((tradeoff) => <li key={tradeoff}>• {tradeoff}</li>)}</ul></div>}
         </section>
       )}
 
       {metadata.products.length > 0 && (
         <section aria-labelledby="product-results">
-          <h3 id="product-results" className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">Bulunan ürünler</h3>
+          <h3 id="product-results" className="mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground">{language === 'en' ? 'Found products' : 'Bulunan ürünler'}</h3>
           <div className="grid gap-3 md:grid-cols-2">
             {metadata.products.map((product, index) => {
               const url = safeExternalUrl(product.url);
@@ -65,7 +68,7 @@ export function GroundedResults({ metadata }: Props) {
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-sm font-semibold text-foreground">{product.title}</p>
-                      <p className="mt-1 text-xs text-muted-foreground">{product.seller ? `Satıcı: ${product.seller}` : `Kaynak: ${product.source.domain}`}</p>
+                      <p className="mt-1 text-xs text-muted-foreground">{language === 'en' ? (product.seller ? `Seller: ${product.seller}` : `Source: ${product.source.domain}`) : (product.seller ? `Satıcı: ${product.seller}` : `Kaynak: ${product.source.domain}`)}</p>
                     </div>
                     {url && (
                       <a href={url} target="_blank" rel="noopener noreferrer" aria-label={`${product.title} kaynağını yeni sekmede aç`} className="text-primary hover:text-primary/80">
@@ -73,8 +76,8 @@ export function GroundedResults({ metadata }: Props) {
                       </a>
                     )}
                   </div>
-                  <div className="mt-3 flex flex-wrap items-center gap-2"><p className="text-sm font-medium text-primary">{formatPrice(product.priceTRY)}</p>{product.priceVerification === 'merchant_page' && <span className="rounded-md border border-emerald-500/30 px-2 py-0.5 text-xs text-emerald-400">Mağaza sayfasından doğrulandı</span>}{product.priceVerification === 'search_snapshot' && <span className="rounded-md border border-amber-500/30 px-2 py-0.5 text-xs text-amber-400">Arama sonucu fiyatı, mağazada kontrol et</span>}{product.score !== undefined && <span className="rounded-md border border-border px-2 py-0.5 text-xs text-muted-foreground">Puan {product.score}/100</span>}</div>
-                  {product.availability && <p className="mt-2 text-xs text-muted-foreground">{product.availability === 'in_stock' ? 'Kaynakta stokta' : 'Kaynakta stokta değil'}</p>}
+                  <div className="mt-3 flex flex-wrap items-center gap-2"><p className="text-sm font-medium text-primary">{formatPrice(product.priceTRY)}</p>{product.priceVerification === 'merchant_page' && <span className="rounded-md border border-emerald-500/30 px-2 py-0.5 text-xs text-emerald-400">{language === 'en' ? 'Verified on merchant page' : 'Mağaza sayfasından doğrulandı'}</span>}{product.priceVerification === 'search_snapshot' && <span className="rounded-md border border-amber-500/30 px-2 py-0.5 text-xs text-amber-400">{language === 'en' ? 'Search-result price; check the store' : 'Arama sonucu fiyatı, mağazada kontrol et'}</span>}{product.score !== undefined && <span className="rounded-md border border-border px-2 py-0.5 text-xs text-muted-foreground">Puan {product.score}/100</span>}</div>
+                  {product.availability && <p className="mt-2 text-xs text-muted-foreground">{product.availability === 'in_stock' ? (language === 'en' ? 'In stock at source' : 'Kaynakta stokta') : (language === 'en' ? 'Out of stock at source' : 'Kaynakta stokta değil')}</p>}
                   {product.features.length > 0 && <p className="mt-2 text-xs text-muted-foreground">Özellikler: {product.features.join(', ')}</p>}
                   {retrievedAt && <p className="mt-2 text-[11px] text-muted-foreground/70">{product.priceVerification === 'merchant_page' ? 'Fiyat doğrulama zamanı' : 'Alınma zamanı'}: {retrievedAt}</p>}
                 </article>
