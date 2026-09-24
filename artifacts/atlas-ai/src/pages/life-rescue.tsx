@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowUp, CheckCircle2, Menu, MoreVertical, PencilLine, Settings2, Sparkles, WifiOff } from "lucide-react";
+import { ArrowUp, CheckCircle2, Menu, PencilLine, Sparkles, WifiOff } from "lucide-react";
 import { analyzeOffline, type OfflineResult } from "@/lib/life-rescue-offline";
 import { saveLifeRescueHistory } from "@/lib/life-rescue-history";
 import { addGoal, addTask } from "@/lib/assistant-store";
@@ -545,6 +545,9 @@ export default function LifeRescue() {
 
   function changeLanguage(nextLanguage: Language) {
     setLanguage(nextLanguage);
+    window.localStorage.setItem("agt_life_language", nextLanguage);
+    window.localStorage.setItem("agt_life_rescue_language", nextLanguage);
+    window.dispatchEvent(new Event("agt-life-language-change"));
     if (!messages.length) return;
 
     const userMessages = messages.filter((message) => message.role === "user").map((message) => message.text);
@@ -773,15 +776,6 @@ export default function LifeRescue() {
                 <PencilLine className="h-5 w-5" />
               </button>
 
-              <button
-                type="button"
-                aria-label={copy.details}
-                title={copy.details}
-                onClick={() => setShowSettings((value) => !value)}
-                className="flex h-9 w-9 items-center justify-center rounded-full border bg-card sm:h-10 sm:w-10"
-              >
-                <MoreVertical className="h-5 w-5" />
-              </button>
             </div>
           </div>
         </header>
