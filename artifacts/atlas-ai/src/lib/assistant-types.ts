@@ -20,8 +20,10 @@ export interface Task {
   dueAt?: string;
   recurrence?: 'daily' | 'weekly' | 'monthly';
   goalId?: string;
+  sourceHistoryId?: string;
   createdAt: string;
   updatedAt: string;
+  sourceHistoryId?: string;
 }
 
 export interface Reminder {
