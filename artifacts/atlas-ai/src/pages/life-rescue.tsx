@@ -28,7 +28,7 @@ const uiText = {
     understand: "Önce seni anlayacağım, sonra çözüm çıkaracağım.",
     tableClear: "Tamam, tablo netleşti.", plan: "Kurtarma planı", hide: "Gizle", show: "Göster",
     thinking: "Şimdi verdiğin bilgileri bir araya getirip sana uygulanabilir, öncelik sırasına konmuş bir çıkış yolu çıkarıyorum.",
-    minutes: "dk", greeting: "Merhaba. Buradayım. Önce neyi çözmeye çalıştığını anlat; hemen sonuca atlamadan durumu birlikte netleştirelim.",
+    minutes: "dk", capabilitiesDesc: "Günlük hayattaki problemleri birlikte anlamlandırıp uygulanabilir bir plan çıkarmana yardımcı olurum.", scopeHint: "Başka bir konuda yardım istediğinde, bunu açıkça söyle; uygun değilse kapsamımı kısaca açıklayacağım.", composerHint: "{copy.composerHint}", izciFound: "İZCİ için bir şey yakaladım", izciDesc: "Konuşmada takip edilebilecek bir bilgi gördüm. Sen onaylamadan hiçbir şeyi takibe almıyorum.", goalItem: "Hedef", datedTask: "Tarihli görev", trackTask: "Takip edilecek görev", inIzci: "İZCİ'de", track: "Takibe al", minutes: "dk", greeting: "Merhaba. Buradayım. Önce neyi çözmeye çalıştığını anlat; hemen sonuca atlamadan durumu birlikte netleştirelim.",
     suggestions: ["Param yetmiyor", "Faturaları yetiştiremiyorum", "Bir karar veremiyorum", "Zamanım yetmiyor"],
   },
   en: {
@@ -43,7 +43,7 @@ const uiText = {
     understand: "I'll understand the situation first, then work out a solution.",
     tableClear: "Okay, I have enough of the picture.", plan: "Rescue plan", hide: "Hide", show: "Show",
     thinking: "Okay. I have enough context now. I'm putting it together into a practical, prioritized way forward.",
-    minutes: "min", greeting: "Hello. I'm here. Tell me what you're trying to solve, and we'll understand the situation before jumping to a solution.",
+    minutes: "min", capabilitiesDesc: "I help you make sense of everyday problems and turn them into a practical plan.", scopeHint: "If you need help with another topic, say so clearly; if it is outside my scope, I will explain briefly.", composerHint: "Tell me the problem in your own words.", izciFound: "I found something for İZCİ", izciDesc: "I found information in the conversation that could be tracked. Nothing is tracked until you approve it.", goalItem: "Goal", datedTask: "Dated task", trackTask: "Task to track", inIzci: "In İZCİ", track: "Track", minutes: "min", greeting: "Hello. I'm here. Tell me what you're trying to solve, and we'll understand the situation before jumping to a solution.",
     suggestions: ["I don't have enough money", "I can't keep up with my bills", "I can't decide", "I don't have enough time"],
   },
 } as const;
@@ -790,7 +790,7 @@ export default function LifeRescue() {
                   className="inline-flex h-11 items-center gap-2 rounded-full bg-primary px-5 font-semibold text-primary-foreground disabled:opacity-40"
                 >
                   <ArrowUp className="h-4 w-4" />
-                  Gönder
+                  {copy.send}
                 </button>
               </div>
             </div>
@@ -812,7 +812,7 @@ export default function LifeRescue() {
                 <h2 className="text-base font-semibold">{copy.capabilitiesTitle}</h2>
               </div>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                Günlük hayattaki problemleri birlikte anlamlandırıp uygulanabilir bir plan çıkarmana yardımcı olurum.
+                {copy.capabilitiesDesc}
               </p>
               <div className="mt-4 grid grid-cols-2 gap-2">
                 {[
@@ -839,7 +839,7 @@ export default function LifeRescue() {
                 ))}
               </div>
               <p className="mt-3 text-xs leading-5 text-muted-foreground">
-                Başka bir konuda yardım istediğinde, bunu açıkça söyle; uygun değilse kapsamımı kısaca açıklayacağım.
+                {copy.scopeHint}
               </p>
             </div>
 
@@ -881,7 +881,7 @@ export default function LifeRescue() {
 
             <div className="mt-6 flex items-center justify-center gap-2 text-xs text-muted-foreground">
               <WifiOff className="h-3.5 w-3.5" />
-              Temel karar motoru cihazında çalışır.
+              {copy.offline}
             </div>
           </section>
         ) : (
@@ -946,8 +946,8 @@ export default function LifeRescue() {
                       <div className="flex items-start gap-3">
                         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">🔎</div>
                         <div>
-                          <p className="text-sm font-semibold">İZCİ için bir şey yakaladım</p>
-                          <p className="mt-1 text-xs leading-5 text-muted-foreground">Konuşmada takip edilebilecek bir bilgi gördüm. Sen onaylamadan hiçbir şeyi takibe almıyorum.</p>
+                          <p className="text-sm font-semibold">{copy.izciFound}</p>
+                          <p className="mt-1 text-xs leading-5 text-muted-foreground">{copy.izciDesc}</p>
                         </div>
                       </div>
                       <div className="mt-3 space-y-2">
@@ -958,7 +958,7 @@ export default function LifeRescue() {
                             <div key={candidateId} className="flex items-center gap-3 rounded-xl border bg-background/80 p-3">
                               <div className="min-w-0 flex-1">
                                 <p className="text-sm font-medium">{candidate.title}</p>
-                                <p className="mt-0.5 text-xs text-muted-foreground">{candidate.kind === "goal" ? "Hedef" : candidate.dueAt ? "Tarihli görev" : "Takip edilecek görev"} · {candidate.reason}</p>
+                                <p className="mt-0.5 text-xs text-muted-foreground">{candidate.kind === "goal" ? copy.goalItem : candidate.dueAt ? copy.datedTask : copy.trackTask} · {candidate.reason}</p>
                               </div>
                               <button type="button" disabled={tracked} onClick={() => {
                                 if (candidate.kind === "goal") {
@@ -968,7 +968,7 @@ export default function LifeRescue() {
                                 }
                                 setTrackedCandidateIds((ids) => [...ids, candidateId]);
                               }} className="shrink-0 rounded-xl bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground disabled:opacity-60">
-                                {tracked ? "İZCİ'de" : "Takibe al"}
+                                {tracked ? copy.inIzci : copy.track}
                               </button>
                             </div>
                           );
