@@ -607,7 +607,7 @@ export default function LifeRescue() {
       diagnosis: localResult.diagnosis,
       objective: localResult.plan.objective,
     });
-    setIzciCandidates(extractIzciCandidates(context).map((candidate) => ({ ...candidate, sourceHistoryId: history.id } as IzciCandidate & { sourceHistoryId: string })));
+    setIzciCandidates(extractIzciCandidates(context).map((candidate) => ({ ...candidate, sourceHistoryId: history.id })));
     setTrackedCandidateIds([]);
   }
 
