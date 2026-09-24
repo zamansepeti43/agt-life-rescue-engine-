@@ -413,39 +413,37 @@ export default function LifeRescue() {
     return null;
   }
 
-  function conversationBridge(category: string, context: string, answerText: string) {
+  function conversationBridge(category: string, context: string, answerText: string, repeatedQuestion = false) {
     const answer = answerText.trim();
-    const amountMatches = answer.match(/(\d{1,3}(?:[. ]\d{3})*(?:,\d{1,2})?|\d+(?:,\d{1,2})?)\s*(?:tl|₺|lira|bin|k)/gi) ?? [];
-    const lower = answer.toLocaleLowerCase("tr-TR");
-    const short = answer.length > 90 ? answer.slice(0, 87) + "..." : answer;
+    const short = answer.length > 70 ? answer.slice(0, 67) + "..." : answer;
 
-    if (/^(hiç|yok|yoktu|bilmiyorum|emin değilim|none|nothing|don't know|not sure)$/i.test(lower)) {
+    if (repeatedQuestion) {
       return language === "en"
-        ? "I noted that as a real constraint. I won't ask the same thing again; I'll move to the next missing piece."
-        : "Bunu gerçek bir kısıt olarak not ettim. Aynı şeyi tekrar sormayacağım; eksik kalan bir sonraki parçaya geçeceğim.";
+        ? "I may not have understood your last answer clearly. Let me ask that again more simply:"
+        : "Son cevabını tam anlayamamış olabilirim. Aynı şeyi daha basit sorayım:";
+    }
+
+    if (/^(hiç|yok|yoktu|bilmiyorum|emin değilim|none|nothing|don't know|not sure)$/i.test(answer.toLocaleLowerCase("tr-TR"))) {
+      return language === "en"
+        ? "Got it. I'll treat that as a constraint and move on."
+        : "Tamam, bunu bir kısıt olarak kabul edip devam ediyorum.";
     }
 
     if (category === "money" || category === "bills") {
-      if (amountMatches.length > 0) {
-        const amounts = amountMatches.slice(0, 4).join(", ");
-        return language === "en"
-          ? `I captured ${amounts}. I'll separate available cash from obligations, then compare amount, deadline, and consequence instead of treating every payment equally.`
-          : `${amounts} tutarını not ettim. Kullanılabilir parayı zorunlu ödemelerden ayırıp tutar, son tarih ve sonuç açısından karşılaştıracağım; her ödemeyi aynı önemde kabul etmeyeceğim.`;
-      }
       return language === "en"
-        ? `I noted "${short}". I'll use that detail to narrow the problem and only ask for what can change the priority.`
-        : `"${short}" bilgisini not ettim. Bunu tabloya ekleyip önceliği değiştirebilecek eksik noktaya geçeceğim.`;
+        ? "Got it. I'll use that in the picture."
+        : "Tamam, bunu tabloya ekledim.";
     }
 
     if (category === "decision") {
       return language === "en"
-        ? `I have "${short}" as part of the decision context. I'll compare the options against your constraints rather than choosing by a generic rule.`
-        : `"${short}" bilgisini karar tablosuna ekledim. Seçenekleri genel bir kuralla değil, senin kısıtların ve önceliklerin üzerinden karşılaştıracağım.`;
+        ? "Got it. I'll compare the options using that detail."
+        : "Tamam, bunu seçenekleri karşılaştırırken dikkate alacağım.";
     }
 
     return language === "en"
-      ? `Got it. I captured "${short}". I'll use it to remove assumptions and ask for the next piece that can actually change the outcome.`
-      : `Anladım. "${short}" bilgisini aldım. Varsayım yapmak yerine sonucu gerçekten değiştirecek bir sonraki bilgiyi soracağım.`;
+      ? "Got it. I'll use that detail for the next step."
+      : "Anladım, bunu sonraki adımda dikkate alacağım.";
   }
 
   function getOptions() {
@@ -540,6 +538,14 @@ export default function LifeRescue() {
     });
   }
 
+  function normalizeQuestion(value: string) {
+    return value
+      .toLocaleLowerCase("tr-TR")
+      .replace(/[“”"'’.,!?():;]/g, "")
+      .replace(/\\s+/g, " ")
+      .trim();
+  }
+
   function continueConversation() {
     const text = answer.trim();
     if (!text || !result) return;
@@ -556,7 +562,16 @@ export default function LifeRescue() {
 
     if (nextQuestion) {
       setQuestionIndex(nextIndex);
-      const bridge = conversationBridge(result.category, nextContext, text);
+
+      const previousEngineMessages = messages
+        .filter((message) => message.role === "engine")
+        .map((message) => message.text);
+      const previousQuestion = previousEngineMessages.length
+        ? previousEngineMessages[previousEngineMessages.length - 1].split("\n\n").pop() ?? ""
+        : "";
+      const repeatedQuestion = normalizeQuestion(previousQuestion) === normalizeQuestion(nextQuestion);
+
+      const bridge = conversationBridge(result.category, nextContext, text, repeatedQuestion);
 
       setMessages((prev) => [
         ...prev,
@@ -571,7 +586,7 @@ export default function LifeRescue() {
       { role: "user", text },
       {
         role: "engine",
-        text: copy.thinking,
+        text: language === "en" ? "I have enough information. Here is the practical plan." : "Yeterli bilgi var. Şimdi uygulanabilir planı çıkarıyorum.",
       },
     ]);
     finishConversation(nextContext, localResult);
@@ -740,7 +755,7 @@ export default function LifeRescue() {
                 ))}
               </div>
               <p className="mt-3 text-xs leading-5 text-muted-foreground">
-                Başka bir konuda yardım istediğinde, bunu açıkça söyleyip çözebildiğim konuları göstereceğim.
+                Başka bir konuda yardım istediğinde, bunu açıkça söyle; uygun değilse kapsamımı kısaca açıklayacağım.
               </p>
             </div>
 
