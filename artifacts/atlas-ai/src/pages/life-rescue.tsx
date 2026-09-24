@@ -15,8 +15,8 @@ type Language = "tr" | "en";
 
 const uiText = {
   tr: {
-    newProblem: "Yeni problem", menu: "Menüyü aç", whatHappened: "Ne oldu?",
-    intro: "Anlat derdini. Önce seni anlayacağım, sonra birlikte en mantıklı çıkış yolunu bulacağız.",
+    newProblem: "Yeni problem", menu: "Menüyü aç", whatHappened: "Bugün neyi çözmek istiyorsun?",
+    intro: "Derdini kendi cümlelerinle anlat. Önce seni anlayacağım, sonra birlikte uygulanabilir bir yol çıkaracağız.",
     placeholder: "Şu an neyi çözmeye çalışıyorsun?", details: "Ayrıntılar", send: "Gönder",
     topic: "Konu", goal: "Hedef", auto: "Otomatik belirle", urgency: "Aciliyet",
     capabilitiesTitle: "Çözebildiğim konular", capabilitiesAll: "Tüm konuları gör →",
@@ -30,8 +30,8 @@ const uiText = {
     suggestions: ["Param yetmiyor", "Faturaları yetiştiremiyorum", "Bir karar veremiyorum", "Zamanım yetmiyor"],
   },
   en: {
-    newProblem: "New problem", menu: "Open menu", whatHappened: "What happened?",
-    intro: "Tell me what's going on. I'll understand the situation first, then we'll work out a practical way forward.",
+    newProblem: "New problem", menu: "Open menu", whatHappened: "What do you want to solve today?",
+    intro: "Tell me what is going on in your own words. I'll understand it first, then we'll build a practical way forward.",
     placeholder: "What are you trying to solve right now?", details: "Details", send: "Send",
     topic: "Topic", goal: "Goal", auto: "Auto-detect", urgency: "Urgency",
     capabilitiesTitle: "What I can help with", capabilitiesAll: "See all topics →",
@@ -725,6 +725,8 @@ export default function LifeRescue() {
                   ["🎯", "Hedefler"],
                   ["🏠", "Ev & günlük yaşam"],
                   ["💼", "İş & çalışma düzeni"],
+                  ["👨‍👩‍👧", "Aile & günlük düzen"],
+                  ["✈️", "Seyahat & taşınma"],
                 ].map(([icon, label]) => (
                   <button
                     key={label}
