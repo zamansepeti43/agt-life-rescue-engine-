@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { ArrowLeft, Clock3, Trash2 } from "lucide-react";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import { clearLifeRescueHistory, listLifeRescueHistory, type LifeRescueHistoryItem } from "@/lib/life-rescue-history";
 
 export default function LifeRescueHistory() {
   const [, navigate] = useLocation();
+  const search = useSearch();
+  const sourceId = new URLSearchParams(search).get("id");
   const [items, setItems] = useState<LifeRescueHistoryItem[]>(() => listLifeRescueHistory());
 
   useEffect(() => {
@@ -39,13 +41,14 @@ export default function LifeRescueHistory() {
         ) : (
           <div className="space-y-3">
             {items.map((item) => (
-              <article key={item.id} className="rounded-2xl border bg-card p-5">
+              <article key={item.id} className={`rounded-2xl border bg-card p-5 transition ${sourceId === item.id ? "border-primary ring-2 ring-primary/20" : ""}`} id={item.id}>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Clock3 className="h-3.5 w-3.5" />
                   {new Date(item.createdAt).toLocaleString("tr-TR")}
                   <span>·</span><span>{item.category}</span>
                 </div>
                 <h2 className="mt-3 font-semibold">{item.problem}</h2>
+                {sourceId === item.id && <p className="mt-2 text-xs font-semibold text-primary">İZCİ bu takibi bu problem konuşmasından oluşturdu.</p>}
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.diagnosis}</p>
                 <div className="mt-3 rounded-xl bg-muted p-3 text-sm">
                   <span className="font-semibold">Hedef:</span> {item.objective}
