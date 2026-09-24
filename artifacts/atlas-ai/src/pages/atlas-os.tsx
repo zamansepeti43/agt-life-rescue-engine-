@@ -20,7 +20,7 @@ export default function AtlasOS() {
     budget: 'Local Budget Summary', budgetDesc: 'Calculate saved income, expenses, debt, and savings without an API.', income: 'Income', expenses: 'Expenses', debt: 'Debt', saving: 'Savings',
     balance: 'Net balance', savingRate: 'Savings rate', financeNote: 'This is not financial advice; it summarizes your saved data.',
     tracker: 'İZCİ & Automation', trackerDesc: 'Connect decisions to tasks, reminders, goals, and price tracking.', tasks: 'Tasks', prices: 'Price tracking', alerts: 'Alerts', active: 'active', openIzci: 'Open İZCİ',
-    capabilities: 'Atlas capabilities', capabilitiesDesc: 'All in one personal decision center.'
+    capabilities: 'Atlas capabilities', capabilitiesDesc: 'All in one personal decision center.', risk: 'Risk'
   } : {
     title: 'Sen sor. Atlas araştırır, düşünür, takip eder.', desc: 'Yerel karar araçları, görsel OCR, güvenlik kontrolleri, bütçe ve İZCİ tek merkezde.', ask: "Atlas'a sor",
     activeTasks: 'Aktif görev', tracked: 'İzlenen', unread: 'Okunmamış İZCİ', scam: 'Dolandırıcılık Kalkanı', scamDesc: 'Metin veya ekran görüntüsünü yerel OCR ile çıkar, ardından risk sinyallerini analiz et.',
@@ -28,7 +28,7 @@ export default function AtlasOS() {
     budget: 'Yerel Bütçe Özeti', budgetDesc: 'Kayıtlı gelir/gider/borç/tasarruf verilerini API olmadan hesaplar.', income: 'Gelir', expenses: 'Gider', debt: 'Borç', saving: 'Tasarruf',
     balance: 'Net bakiye', savingRate: 'Tasarruf oranı', financeNote: 'Bu hesap finansal tavsiye değil, kayıtlı verilerin özetidir.',
     tracker: 'İZCİ & Otomasyon', trackerDesc: 'Kararları görev, hatırlatıcı, hedef ve fiyat takibine bağlar.', tasks: 'Görevler', prices: 'Fiyat takipleri', alerts: 'Uyarılar', active: 'aktif', openIzci: "İZCİ'yi aç",
-    capabilities: 'Atlas yetenekleri', capabilitiesDesc: 'Hepsi tek bir kişisel karar merkezinde.'
+    capabilities: 'Atlas yetenekleri', capabilitiesDesc: 'Hepsi tek bir kişisel karar merkezinde.', risk: 'Risk'
   };
   const [scamText, setScamText] = useState('');
   const [urlText, setUrlText] = useState('');
@@ -57,7 +57,7 @@ export default function AtlasOS() {
       setScamText(result.text);
       setOcrConfidence(result.confidence);
     } catch (error) {
-      setOcrError(error instanceof Error ? error.message : 'OCR çalıştırılamadı.');
+      setOcrError(error instanceof Error ? error.message : (language === 'en' ? 'OCR could not be completed.' : 'OCR çalıştırılamadı.'));
       setOcrConfidence(null);
     } finally {
       setOcrBusy(false);
@@ -78,7 +78,7 @@ export default function AtlasOS() {
 
         <section className="grid gap-4 lg:grid-cols-2">
           <ToolCard icon={ShieldCheck} title={t.scam} description={t.scamDesc}>
-            <textarea value={scamText} onChange={(e) => setScamText(e.target.value)} placeholder="Örn. Tebrikler, 50.000 TL kazandınız..." className="min-h-28 w-full rounded-xl border border-border bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-primary/30" />
+            <textarea value={scamText} onChange={(e) => setScamText(e.target.value)} placeholder={language === 'en' ? 'E.g. Congratulations, you won 50,000 TL...' : 'Örn. Tebrikler, 50.000 TL kazandınız...'} className="min-h-28 w-full rounded-xl border border-border bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-primary/30" />
             <div className="mt-3 flex flex-wrap gap-2">
               <button onClick={() => fileInput.current?.click()} disabled={ocrBusy} className="inline-flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm font-medium hover:bg-muted disabled:opacity-50"><ImageIcon className="h-4 w-4" />{ocrBusy ? t.reading : t.ocr}</button>
               <input ref={fileInput} type="file" accept="image/*" className="hidden" onChange={(e) => void runOcr(e.target.files?.[0])} />
@@ -86,7 +86,7 @@ export default function AtlasOS() {
               {ocrConfidence !== null && <span className="rounded-xl bg-muted/40 px-3 py-2 text-xs">{t.confidence}: %{Math.round(ocrConfidence)}</span>}
             </div>
             {ocrError && <p className="mt-2 text-sm text-destructive">{ocrError}</p>}
-            {scamText && <div className="mt-3 rounded-xl border border-border p-4"><div className="flex items-center justify-between"><div><p className="text-xs text-muted-foreground">{language === 'en' ? 'Risk' : 'Risk'}</p><p className="font-bold">{language === 'en' ? ({'DÜŞÜK RİSK':'LOW RISK','ORTA RİSK':'MEDIUM RISK','YÜKSEK RİSK':'HIGH RISK','ÇOK YÜKSEK RİSK':'VERY HIGH RISK'} as Record<string,string>)[analysis.level] : analysis.level}</p></div><span className="text-3xl font-bold">%{analysis.score}</span></div><ul className="mt-3 space-y-2 text-sm">{analysis.signals.map((signal) => <li key={signal} className="flex gap-2"><AlertTriangle className="h-4 w-4 shrink-0" />{language === 'en' ? ({'Acil davranmaya zorlayan dil kullanıyor.':'Uses language that pressures you to act urgently.','Beklenmedik ödül veya para vaadi içeriyor.':'Contains an unexpected prize or money promise.','Hassas kimlik veya finans bilgisi talep ediyor.':'Requests sensitive identity or financial information.','Bağlantıya tıklama veya hesap doğrulama çağrısı yapıyor.':'Asks you to click a link or verify an account.','Korku veya hesap kapatma tehdidi kullanıyor.':'Uses fear or account-closure threats.','Gerçek dışı veya aşırı kazanç vaadi içeriyor.':'Promises unrealistic or excessive returns.','Mesajda dış bağlantı bulunuyor; alan adı ayrıca doğrulanmalı.':'Contains an external link; verify the domain separately.'} as Record<string,string>)[signal] ?? signal : signal}</li>)}</ul><p className="mt-3 text-sm text-muted-foreground">{language === 'en' ? ({'Bağlantıyı açma, ödeme yapma ve doğrulama kodu paylaşma. Kurumu kendi resmi kanalından doğrula.':'Do not open the link, pay, or share verification codes. Verify the organization through its official channel.','İşlemi aceleye getirme; göndereni ve bağlantıyı bağımsız bir kanaldan doğrula.':'Do not rush; verify the sender and link through an independent channel.','Belirgin dolandırıcılık sinyali az, ancak bu sonuç güvenlik garantisi değildir.':'There are few obvious scam signals, but this is not a security guarantee.'} as Record<string,string>)[analysis.recommendation] ?? analysis.recommendation : analysis.recommendation}</p></div>}
+            {scamText && <div className="mt-3 rounded-xl border border-border p-4"><div className="flex items-center justify-between"><div><p className="text-xs text-muted-foreground">{t.risk}</p><p className="font-bold">{language === 'en' ? ({'DÜŞÜK RİSK':'LOW RISK','ORTA RİSK':'MEDIUM RISK','YÜKSEK RİSK':'HIGH RISK','ÇOK YÜKSEK RİSK':'VERY HIGH RISK'} as Record<string,string>)[analysis.level] : analysis.level}</p></div><span className="text-3xl font-bold">%{analysis.score}</span></div><ul className="mt-3 space-y-2 text-sm">{analysis.signals.map((signal) => <li key={signal} className="flex gap-2"><AlertTriangle className="h-4 w-4 shrink-0" />{language === 'en' ? ({'Acil davranmaya zorlayan dil kullanıyor.':'Uses language that pressures you to act urgently.','Beklenmedik ödül veya para vaadi içeriyor.':'Contains an unexpected prize or money promise.','Hassas kimlik veya finans bilgisi talep ediyor.':'Requests sensitive identity or financial information.','Bağlantıya tıklama veya hesap doğrulama çağrısı yapıyor.':'Asks you to click a link or verify an account.','Korku veya hesap kapatma tehdidi kullanıyor.':'Uses fear or account-closure threats.','Gerçek dışı veya aşırı kazanç vaadi içeriyor.':'Promises unrealistic or excessive returns.','Mesajda dış bağlantı bulunuyor; alan adı ayrıca doğrulanmalı.':'Contains an external link; verify the domain separately.'} as Record<string,string>)[signal] ?? signal : signal}</li>)}</ul><p className="mt-3 text-sm text-muted-foreground">{language === 'en' ? ({'Bağlantıyı açma, ödeme yapma ve doğrulama kodu paylaşma. Kurumu kendi resmi kanalından doğrula.':'Do not open the link, pay, or share verification codes. Verify the organization through its official channel.','İşlemi aceleye getirme; göndereni ve bağlantıyı bağımsız bir kanaldan doğrula.':'Do not rush; verify the sender and link through an independent channel.','Belirgin dolandırıcılık sinyali az, ancak bu sonuç güvenlik garantisi değildir.':'There are few obvious scam signals, but this is not a security guarantee.'} as Record<string,string>)[analysis.recommendation] ?? analysis.recommendation : analysis.recommendation}</p></div>}
           </ToolCard>
 
           <ToolCard icon={Link2} title={t.url} description={t.urlDesc}>
