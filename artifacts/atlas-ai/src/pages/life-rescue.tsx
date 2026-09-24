@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowUp, CheckCircle2, Menu, MoreVertical, PencilLine, Settings2, Sparkles, WifiOff } from "lucide-react";
 import { analyzeOffline, type OfflineResult } from "@/lib/life-rescue-offline";
 import { saveLifeRescueHistory } from "@/lib/life-rescue-history";
+import { addGoal, addTask } from "@/lib/assistant-store";
+import { extractIzciCandidates, type IzciCandidate } from "@/lib/izci-intelligence";
 import { useSidebar } from "@/components/ui/sidebar";
 
 type Result = OfflineResult;
