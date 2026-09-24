@@ -1,110 +1,103 @@
-import { AlertTriangle, BellRing, Check, CheckSquare2, Clock3, Crosshair, Target, WalletCards, Plus, X } from 'lucide-react';
-import { SidebarTrigger } from '@/components/ui/sidebar';
-import { useAssistantState } from '@/hooks/useAssistantState';
-import { addReminder, addTask, markEventRead, setTaskCompleted } from '@/lib/assistant-store';
-import { notificationPermission, requestNotificationPermission } from '@/lib/notifications';
-import { subscribeToPush } from '@/lib/push-notifications';
-import { useEffect, useState } from 'react';
+import { AlertTriangle, BellRing, Check, CheckSquare2, ChevronRight, Clock3, Crosshair, Plus, Target, WalletCards } from "lucide-react";
+import { SidebarTrigger } from "@/components/ui/sidebar";
+import { useAssistantState } from "@/hooks/useAssistantState";
+import { addGoal, addTask, markEventRead, setTaskCompleted } from "@/lib/assistant-store";
+import { notificationPermission, requestNotificationPermission } from "@/lib/notifications";
+import { subscribeToPush } from "@/lib/push-notifications";
+import { useEffect, useMemo, useState } from "react";
 
-function formatDate(value?: string): string {
-  if (!value) return 'Tarih yok';
-  return new Intl.DateTimeFormat('tr-TR', { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(value));
+function formatDate(value?: string) {
+  if (!value) return "Tarih yok";
+  return new Intl.DateTimeFormat("tr-TR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }).format(new Date(value));
 }
 
-function Empty({ children }: { children: string }) {
-  return <p className="py-6 text-sm text-muted-foreground">{children}</p>;
+function daysUntil(value?: string) {
+  if (!value) return null;
+  return Math.ceil((new Date(value).getTime() - Date.now()) / 86400000);
 }
+
+function Empty({ children }: { children: string }) { return <p className="py-7 text-sm text-muted-foreground">{children}</p>; }
 
 export default function Izci() {
   const state = useAssistantState();
-  const [showCreate, setShowCreate] = useState(false);
-  const [taskTitle, setTaskTitle] = useState('');
-  const [dueAt, setDueAt] = useState('');
-  const [reminderMessage, setReminderMessage] = useState('');
-  const [reminderAt, setReminderAt] = useState('');
-  const [taskRecurrence, setTaskRecurrence] = useState<'none' | 'daily' | 'weekly' | 'monthly'>('none');
-  const [reminderRecurrence, setReminderRecurrence] = useState<'none' | 'daily' | 'weekly' | 'monthly'>('none');
   const [notificationState, setNotificationState] = useState(notificationPermission());
+  const [showCreate, setShowCreate] = useState(false);
+  const [taskTitle, setTaskTitle] = useState("");
+  const [dueAt, setDueAt] = useState("");
+  const [goalTitle, setGoalTitle] = useState("");
+  const [goalAmount, setGoalAmount] = useState("");
 
-  function createTask() {
-    const title = taskTitle.trim();
-    if (!title) return;
-    addTask({ title, ...(dueAt ? { dueAt: new Date(dueAt).toISOString() } : {}), ...(taskRecurrence !== 'none' ? { recurrence: taskRecurrence } : {}) });
-    if (reminderMessage.trim() && reminderAt) addReminder({ message: reminderMessage.trim(), scheduledAt: new Date(reminderAt).toISOString(), ...(reminderRecurrence !== 'none' ? { recurrence: reminderRecurrence } : {}) });
-    setTaskTitle(''); setDueAt(''); setReminderMessage(''); setReminderAt(''); setTaskRecurrence('none'); setReminderRecurrence('none'); setShowCreate(false);
-  }
+  useEffect(() => { if (notificationState === "granted") void subscribeToPush(); }, [notificationState]);
 
-  useEffect(() => {
-    if (notificationState === 'granted') void subscribeToPush();
-  }, [notificationState]);
+  const activeTasks = useMemo(() => state.tasks.filter((task) => task.status === "active"), [state.tasks]);
+  const activeGoals = useMemo(() => state.goals.filter((goal) => goal.status === "active"), [state.goals]);
+  const upcoming = useMemo(() => state.reminders.filter((item) => item.status === "pending"), [state.reminders]);
+  const unread = useMemo(() => state.events.filter((event) => !event.read), [state.events]);
+  const urgentTasks = useMemo(() => activeTasks.filter((task) => { const days = daysUntil(task.dueAt); return days !== null && days <= 2; }).sort((a,b) => new Date(a.dueAt ?? "9999").getTime() - new Date(b.dueAt ?? "9999").getTime()), [activeTasks]);
+  const soonTasks = useMemo(() => activeTasks.filter((task) => !urgentTasks.some((item) => item.id === task.id) && daysUntil(task.dueAt) !== null && (daysUntil(task.dueAt) as number) <= 7).slice(0, 5), [activeTasks, urgentTasks]);
 
   async function enableNotifications() {
     const permission = await requestNotificationPermission();
     setNotificationState(permission);
-    if (permission === 'granted') await subscribeToPush();
+    if (permission === "granted") await subscribeToPush();
   }
-  const unread = state.events.filter((event) => !event.read);
-  const activeTasks = state.tasks.filter((task) => task.status === 'active');
-  const activeGoals = state.goals.filter((goal) => goal.status === 'active');
-  const activeTracking = state.trackedProducts.filter((product) => product.status !== 'paused');
-  const upcoming = state.reminders.filter((reminder) => reminder.status === 'pending');
+
+  function createTask() {
+    const title = taskTitle.trim();
+    if (!title) return;
+    addTask({ title, ...(dueAt ? { dueAt: new Date(dueAt).toISOString() } : {}) });
+    setTaskTitle(""); setDueAt(""); setShowCreate(false);
+  }
+
+  function createGoal() {
+    const title = goalTitle.trim();
+    if (!title) return;
+    const value = Number(goalAmount);
+    addGoal({ title, ...(Number.isFinite(value) && value > 0 ? { targetAmount: value } : {}) });
+    setGoalTitle(""); setGoalAmount(""); setShowCreate(false);
+  }
 
   return (
-    <main className="h-[100dvh] min-w-0 flex-1 overflow-y-auto bg-background text-foreground">
-      <header className="sticky top-0 z-20 flex h-16 items-center gap-3 border-b border-border bg-background/90 px-4 backdrop-blur md:px-8">
-        <SidebarTrigger aria-label="Menüyü aç" />
-        <div className="min-w-0"><h1 className="font-serif text-xl font-bold">İZCİ</h1><p className="truncate text-xs text-muted-foreground">Atlas takip ve gözlem katmanı</p></div>
-        <div className="ml-auto flex items-center gap-2"><button type="button" onClick={enableNotifications} className="rounded-lg border border-border px-3 py-2 text-xs font-medium hover:border-primary/40">{notificationState === 'granted' ? 'Bildirimler açık' : 'Bildirimleri aç'}</button><span className="flex items-center gap-2 text-xs text-muted-foreground"><span className="h-2 w-2 rounded-full bg-emerald-500" />Yerel izleme aktif</span></div>
+    <main className="min-h-[100dvh] flex-1 overflow-y-auto bg-background text-foreground">
+      <header className="sticky top-0 z-20 border-b border-border/70 bg-background/90 px-4 py-3 backdrop-blur md:px-8">
+        <div className="mx-auto flex max-w-5xl items-center gap-3">
+          <SidebarTrigger aria-label="Menüyü aç" />
+          <div><p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">AGT LIFE</p><h1 className="text-xl font-bold tracking-tight">İZCİ</h1></div>
+          <div className="ml-auto flex items-center gap-2">
+            <button type="button" onClick={enableNotifications} className="rounded-xl border px-3 py-2 text-xs font-semibold hover:border-primary/40">{notificationState === "granted" ? "Bildirimler açık" : "Bildirimleri aç"}</button>
+          </div>
+        </div>
       </header>
 
-      <div className="mx-auto w-full max-w-6xl space-y-8 px-4 py-6 md:px-8 md:py-8">
-        <section aria-labelledby="today-heading">
-          <div className="mb-4 flex items-end justify-between"><div><p className="text-xs font-semibold uppercase text-primary">Bugün</p><h2 id="today-heading" className="mt-1 text-2xl font-semibold">Durum özeti</h2></div><p className="text-xs text-muted-foreground">Son kontrol: {formatDate(new Date().toISOString())}</p></div>
-          <div className="grid grid-cols-1 gap-px overflow-hidden rounded-lg border border-border bg-border sm:grid-cols-3">
-            <div className="bg-card p-5"><AlertTriangle className="mb-4 h-5 w-5 text-red-400" /><strong className="block text-2xl">{unread.filter((event) => event.severity === 'critical').length}</strong><span className="text-sm text-muted-foreground">önemli uyarı</span></div>
-            <div className="bg-card p-5"><Clock3 className="mb-4 h-5 w-5 text-amber-400" /><strong className="block text-2xl">{activeTasks.length + upcoming.length}</strong><span className="text-sm text-muted-foreground">yaklaşan görev</span></div>
-            <div className="bg-card p-5"><Crosshair className="mb-4 h-5 w-5 text-emerald-400" /><strong className="block text-2xl">{activeTracking.length}</strong><span className="text-sm text-muted-foreground">takip aktif</span></div>
+      <div className="mx-auto w-full max-w-5xl space-y-8 px-4 py-6 pb-12 md:px-8 md:py-8">
+        <section className="rounded-3xl border bg-card p-5 md:p-7">
+          <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+            <div><p className="text-sm font-medium text-primary">Gözüm sende değil; önemli şeylerdeyim.</p><h2 className="mt-1 text-3xl font-bold tracking-tight">Şu an dikkat etmen gerekenler</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-muted-foreground">İZCİ her şeyi önüne yığmaz. Yaklaşan, geciken veya gerçekten önemli olanları öne çıkarır.</p></div>
+            <button type="button" onClick={() => setShowCreate((v) => !v)} className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground"><Plus className="h-4 w-4" />Takip ekle</button>
           </div>
+
+          {(urgentTasks.length > 0 || unread.some((event) => event.severity === "critical")) ? (
+            <div className="mt-6 space-y-2">
+              {urgentTasks.slice(0, 3).map((task) => <div key={task.id} className="flex items-center gap-3 rounded-2xl border border-red-500/20 bg-red-500/5 p-4"><span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-500/10 text-red-500"><AlertTriangle className="h-4 w-4" /></span><div className="min-w-0 flex-1"><p className="font-semibold">{task.title}</p><p className="text-xs text-muted-foreground">{task.dueAt ? (daysUntil(task.dueAt)! < 0 ? "Gecikti · " : daysUntil(task.dueAt) === 0 ? "Bugün · " : "Yakında · ") + formatDate(task.dueAt) : "Tarih belirlenmedi"}</p></div><button type="button" onClick={() => setTaskCompleted(task.id, true)} className="rounded-xl border px-3 py-2 text-xs font-semibold hover:border-primary/40">Tamamla</button></div>)}
+              {unread.filter((event) => event.severity === "critical").slice(0, 2).map((event) => <button key={event.id} type="button" onClick={() => markEventRead(event.id)} className="flex w-full items-center gap-3 rounded-2xl border border-amber-500/20 bg-amber-500/5 p-4 text-left"><BellRing className="h-5 w-5 shrink-0 text-amber-500" /><span className="min-w-0 flex-1"><strong className="block text-sm">{event.title}</strong><span className="text-xs text-muted-foreground">{event.message}</span></span><ChevronRight className="h-4 w-4 text-muted-foreground" /></button>)}
+            </div>
+          ) : <div className="mt-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/5 p-4 text-sm"><span className="font-semibold">Şu an kritik bir şey yok.</span><span className="ml-1 text-muted-foreground">Takip ettiklerini sessizce izliyorum.</span></div>}
         </section>
 
-        <section className="grid gap-8 lg:grid-cols-2">
-          <div aria-labelledby="tracking-heading">
-            <h2 id="tracking-heading" className="mb-3 flex items-center gap-2 text-base font-semibold"><Crosshair className="h-4 w-4 text-primary" />Fiyat Takipleri</h2>
-            <div className="divide-y divide-border border-y border-border">
-              {state.trackedProducts.length === 0 ? <Empty>Atlas'a “Bu ürünü takip et” diyerek takip başlatabilirsin.</Empty> : state.trackedProducts.map((product) => <div key={product.id} className="flex items-center justify-between gap-4 py-4"><div className="min-w-0"><p className="truncate font-medium">{product.name}</p><p className="text-xs text-muted-foreground">{product.source ?? 'Kaynak bağlanmadı'} · {product.lastCheckedAt ? formatDate(product.lastCheckedAt) : 'Henüz kontrol edilmedi'}</p></div><div className="shrink-0 text-right"><p className="font-medium">{product.currentPrice ? `${product.currentPrice.toLocaleString('tr-TR')} TL` : 'Fiyat yok'}</p><p className={product.status === 'unavailable' ? 'text-xs text-amber-400' : 'text-xs text-emerald-400'}>{product.status}</p></div></div>)}
-            </div>
-          </div>
+        {showCreate && <section className="grid gap-3 rounded-3xl border bg-card p-5 md:grid-cols-2"><div className="rounded-2xl border p-4"><div className="mb-3 flex items-center gap-2"><CheckSquare2 className="h-4 w-4 text-primary" /><h3 className="font-semibold">Görev</h3></div><input value={taskTitle} onChange={(e) => setTaskTitle(e.target.value)} placeholder="Ne takip edilsin?" className="w-full rounded-xl border bg-background px-3 py-3 text-sm outline-none focus:border-primary" /><input value={dueAt} onChange={(e) => setDueAt(e.target.value)} type="datetime-local" className="mt-2 w-full rounded-xl border bg-background px-3 py-3 text-sm" /><button type="button" onClick={createTask} disabled={!taskTitle.trim()} className="mt-2 w-full rounded-xl bg-primary px-3 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-40">Görevi ekle</button></div><div className="rounded-2xl border p-4"><div className="mb-3 flex items-center gap-2"><Target className="h-4 w-4 text-primary" /><h3 className="font-semibold">Hedef</h3></div><input value={goalTitle} onChange={(e) => setGoalTitle(e.target.value)} placeholder="Hedefin ne?" className="w-full rounded-xl border bg-background px-3 py-3 text-sm outline-none focus:border-primary" /><input value={goalAmount} onChange={(e) => setGoalAmount(e.target.value)} type="number" min="0" placeholder="Hedef tutarı (isteğe bağlı)" className="mt-2 w-full rounded-xl border bg-background px-3 py-3 text-sm" /><button type="button" onClick={createGoal} disabled={!goalTitle.trim()} className="mt-2 w-full rounded-xl bg-primary px-3 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-40">Hedefi ekle</button></div></section>}
 
-          <div aria-labelledby="goals-heading">
-            <h2 id="goals-heading" className="mb-3 flex items-center gap-2 text-base font-semibold"><Target className="h-4 w-4 text-primary" />Hedefler</h2>
-            <div className="divide-y divide-border border-y border-border">
-              {state.goals.length === 0 ? <Empty>Henüz izlenen hedef yok.</Empty> : state.goals.map((goal) => {
-                const progress = goal.targetAmount ? Math.min(100, Math.round(((goal.currentAmount ?? 0) / goal.targetAmount) * 100)) : 0;
-                return <div key={goal.id} className="py-4"><div className="mb-2 flex justify-between gap-3"><p className="font-medium">{goal.title}</p><span className="text-sm tabular-nums text-primary">%{progress}</span></div><div className="h-1.5 overflow-hidden rounded-full bg-muted"><div className="h-full bg-primary" style={{ width: `${progress}%` }} /></div><p className="mt-2 text-xs text-muted-foreground">{goal.targetDate ? formatDate(goal.targetDate) : 'Hedef tarihi yok'}</p></div>;
-              })}
-            </div>
-          </div>
-
-          <div aria-labelledby="tasks-heading">
-            <div className="mb-3 flex items-center justify-between gap-3"><h2 id="tasks-heading" className="flex items-center gap-2 text-base font-semibold"><CheckSquare2 className="h-4 w-4 text-primary" />Görevler ve Hatırlatıcılar</h2><button type="button" onClick={() => setShowCreate((value) => !value)} className="inline-flex items-center gap-2 rounded-lg border border-border px-3 py-2 text-xs font-medium hover:border-primary/40"><Plus className="h-3.5 w-3.5" />Görev oluştur</button></div>
-            {showCreate && <div className="mb-4 rounded-xl border border-primary/20 bg-primary/5 p-4"><div className="mb-3 flex items-center justify-between"><p className="font-semibold">Yeni görev</p><button type="button" onClick={() => setShowCreate(false)} aria-label="Kapat"><X className="h-4 w-4" /></button></div><div className="grid gap-3 md:grid-cols-2"><input value={taskTitle} onChange={(e) => setTaskTitle(e.target.value)} placeholder="Görev adı" className="rounded-xl border bg-background px-3 py-3 outline-none focus:ring-2 focus:ring-primary/30" /><div className="grid grid-cols-2 gap-2"><input value={dueAt} onChange={(e) => setDueAt(e.target.value)} type="datetime-local" className="rounded-xl border bg-background px-3 py-3" /><select value={taskRecurrence} onChange={(e) => setTaskRecurrence(e.target.value as typeof taskRecurrence)} className="rounded-xl border bg-background px-3 py-3"><option value="none">Tek sefer</option><option value="daily">Her gün</option><option value="weekly">Her hafta</option><option value="monthly">Her ay</option></select></div><input value={reminderMessage} onChange={(e) => setReminderMessage(e.target.value)} placeholder="Hatırlatıcı mesajı (isteğe bağlı)" className="rounded-xl border bg-background px-3 py-3 outline-none focus:ring-2 focus:ring-primary/30" /><div className="grid grid-cols-2 gap-2"><input value={reminderAt} onChange={(e) => setReminderAt(e.target.value)} type="datetime-local" className="rounded-xl border bg-background px-3 py-3" /><select value={reminderRecurrence} onChange={(e) => setReminderRecurrence(e.target.value as typeof reminderRecurrence)} className="rounded-xl border bg-background px-3 py-3"><option value="none">Tek sefer</option><option value="daily">Her gün</option><option value="weekly">Her hafta</option><option value="monthly">Her ay</option></select></div></div><div className="mt-3 flex items-center justify-between gap-3"><p className="text-xs text-muted-foreground">Bildirimleri açtığında İZCİ, uygulama kapalıyken de zamanlanmış görev ve hatırlatıcılarını sana ulaştırabilir. Tek seferlik veya günlük, haftalık ve aylık tekrar seçebilirsin.</p><button type="button" onClick={createTask} disabled={!taskTitle.trim()} className="rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50">Kaydet</button></div></div>}
-            <div className="divide-y divide-border border-y border-border">{state.tasks.length === 0 ? <Empty>Henüz görev yok.</Empty> : state.tasks.map((task) => <div key={task.id} className="flex items-center gap-3 py-3"><button type="button" onClick={() => setTaskCompleted(task.id, task.status !== 'completed')} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border hover:border-primary" aria-label={task.status === 'completed' ? 'Görevi yeniden aç' : 'Görevi tamamla'}>{task.status === 'completed' && <Check className="h-4 w-4 text-emerald-400" />}</button><div className="min-w-0"><p className={task.status === 'completed' ? 'truncate text-muted-foreground line-through' : 'truncate font-medium'}>{task.title}</p><p className="text-xs text-muted-foreground">{formatDate(task.dueAt)}</p></div></div>)}{upcoming.map((reminder) => <div key={reminder.id} className="flex items-center gap-3 py-3"><div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-border"><BellRing className="h-4 w-4 text-amber-400" /></div><div className="min-w-0"><p className="truncate font-medium">{reminder.message}</p><p className="text-xs text-muted-foreground">Hatırlatıcı · {formatDate(reminder.scheduledAt)}</p></div></div>)}</div>
-          </div>
-
-          <div aria-labelledby="subscriptions-heading">
-            <h2 id="subscriptions-heading" className="mb-3 flex items-center gap-2 text-base font-semibold"><WalletCards className="h-4 w-4 text-primary" />Abonelikler</h2>
-            <div className="divide-y divide-border border-y border-border">
-              {state.subscriptions.length === 0 ? <Empty>Henüz abonelik kaydı yok.</Empty> : state.subscriptions.map((subscription) => <div key={subscription.id} className="flex items-center justify-between gap-4 py-4"><div><p className="font-medium">{subscription.name}</p><p className="text-xs text-muted-foreground">{formatDate(subscription.renewalAt)}</p></div><p className="text-sm tabular-nums">{subscription.monthlyCost ? `${subscription.monthlyCost.toLocaleString('tr-TR')} TL/ay` : 'Tutar yok'}</p></div>)}
-            </div>
-          </div>
+        <section className="grid gap-5 lg:grid-cols-3">
+          <div className="rounded-3xl border bg-card p-5"><div className="mb-4 flex items-center justify-between"><div className="flex items-center gap-2"><Clock3 className="h-4 w-4 text-primary" /><h3 className="font-semibold">Yakında</h3></div><span className="text-xs text-muted-foreground">{soonTasks.length}</span></div>{soonTasks.length === 0 ? <Empty>Yaklaşan tarihli görev yok.</Empty> : <div className="space-y-2">{soonTasks.map((task) => <div key={task.id} className="rounded-2xl border p-3"><p className="text-sm font-medium">{task.title}</p><p className="mt-1 text-xs text-muted-foreground">{formatDate(task.dueAt)}</p></div>)}</div>}</div>
+          <div className="rounded-3xl border bg-card p-5"><div className="mb-4 flex items-center gap-2"><Target className="h-4 w-4 text-primary" /><h3 className="font-semibold">Hedefler</h3></div>{activeGoals.length === 0 ? <Empty>Henüz izlenen hedef yok.</Empty> : <div className="space-y-4">{activeGoals.slice(0, 4).map((goal) => { const progress = goal.targetAmount ? Math.min(100, Math.round(((goal.currentAmount ?? 0) / goal.targetAmount) * 100)) : 0; return <div key={goal.id}><div className="flex justify-between gap-3 text-sm"><span className="font-medium">{goal.title}</span><span className="tabular-nums text-primary">%{progress}</span></div><div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted"><div className="h-full rounded-full bg-primary" style={{ width: progress + "%" }} /></div>{goal.targetAmount && <p className="mt-1 text-xs text-muted-foreground">{(goal.currentAmount ?? 0).toLocaleString("tr-TR")} / {goal.targetAmount.toLocaleString("tr-TR")} TL</p>}</div>; })}</div>}</div>
+          <div className="rounded-3xl border bg-card p-5"><div className="mb-4 flex items-center gap-2"><CheckSquare2 className="h-4 w-4 text-primary" /><h3 className="font-semibold">Görevler</h3></div>{activeTasks.length === 0 ? <Empty>Aktif görev yok. İZCİ sessiz.</Empty> : <div className="space-y-2">{activeTasks.slice(0, 5).map((task) => <div key={task.id} className="flex items-center gap-3 rounded-2xl border p-3"><button type="button" onClick={() => setTaskCompleted(task.id, true)} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border hover:border-primary" aria-label="Tamamla"><Check className="h-4 w-4" /></button><div className="min-w-0"><p className="truncate text-sm font-medium">{task.title}</p><p className="text-xs text-muted-foreground">{formatDate(task.dueAt)}</p></div></div>)}</div>}</div>
         </section>
 
-        <section aria-labelledby="alerts-heading">
-          <h2 id="alerts-heading" className="mb-3 flex items-center gap-2 text-base font-semibold"><BellRing className="h-4 w-4 text-primary" />Uyarılar ve Son Değişiklikler</h2>
-          <div className="divide-y divide-border border-y border-border">
-            {state.events.length === 0 ? <Empty>İzci henüz bir değişiklik yakalamadı.</Empty> : state.events.slice(0, 12).map((event) => <button key={event.id} type="button" onClick={() => markEventRead(event.id)} className="flex w-full items-start gap-3 py-4 text-left"><span className={`mt-1 h-2 w-2 shrink-0 rounded-full ${event.read ? 'bg-muted-foreground/30' : event.severity === 'critical' ? 'bg-red-400' : event.severity === 'warning' ? 'bg-amber-400' : 'bg-emerald-400'}`} /><span className="min-w-0 flex-1"><span className="block font-medium">{event.title}</span><span className="block text-sm text-muted-foreground">{event.message}</span></span><span className="shrink-0 text-xs text-muted-foreground">{formatDate(event.createdAt)}</span></button>)}
-          </div>
+        <section className="grid gap-5 md:grid-cols-2">
+          <div className="rounded-3xl border bg-card p-5"><div className="mb-4 flex items-center gap-2"><Crosshair className="h-4 w-4 text-primary" /><h3 className="font-semibold">Diğer takipler</h3></div><div className="space-y-3">{state.trackedProducts.length === 0 && state.subscriptions.length === 0 ? <Empty>Henüz fiyat veya abonelik takibi yok.</Empty> : <>{state.trackedProducts.slice(0, 4).map((item) => <div key={item.id} className="flex justify-between gap-3 border-b pb-3 last:border-0"><div><p className="text-sm font-medium">{item.name}</p><p className="text-xs text-muted-foreground">Fiyat takibi</p></div><span className="text-sm">{item.currentPrice ? item.currentPrice.toLocaleString("tr-TR") + " TL" : "—"}</span></div>)}{state.subscriptions.slice(0, 4).map((item) => <div key={item.id} className="flex justify-between gap-3 border-b pb-3 last:border-0"><div><p className="text-sm font-medium">{item.name}</p><p className="text-xs text-muted-foreground">Yenileme · {formatDate(item.renewalAt)}</p></div><span className="text-sm">{item.monthlyCost ? item.monthlyCost.toLocaleString("tr-TR") + " TL/ay" : "—"}</span></div>)}</>}</div></div>
+          <div className="rounded-3xl border bg-card p-5"><div className="mb-4 flex items-center gap-2"><BellRing className="h-4 w-4 text-primary" /><h3 className="font-semibold">Son değişiklikler</h3></div>{unread.length === 0 ? <Empty>Yeni uyarı yok.</Empty> : <div className="space-y-2">{unread.slice(0, 5).map((event) => <button key={event.id} type="button" onClick={() => markEventRead(event.id)} className="flex w-full items-start gap-3 rounded-2xl border p-3 text-left"><span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-primary" /><span className="min-w-0"><strong className="block text-sm">{event.title}</strong><span className="text-xs text-muted-foreground">{event.message}</span></span></button>)}</div>}</div>
         </section>
+
+        <div className="flex items-center gap-2 text-xs text-muted-foreground"><WalletCards className="h-3.5 w-3.5" />İZCİ önemli olanı öne çıkarır; geri kalanını sessizce takip eder.</div>
       </div>
     </main>
   );
