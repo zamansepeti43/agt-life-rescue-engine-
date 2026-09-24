@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
 import { BookOpen, Map, PenLine, Scale, type LucideIcon } from 'lucide-react';
 
 interface Props {
@@ -23,6 +24,15 @@ const item = {
 } satisfies Record<string, unknown>;
 
 export function EmptyState({ onSuggestion }: Props) {
+  const [language, setLanguage] = useState<'tr' | 'en'>(() => localStorage.getItem('agt_life_language') === 'en' ? 'en' : 'tr');
+  useEffect(() => { const onLanguage = () => setLanguage(localStorage.getItem('agt_life_language') === 'en' ? 'en' : 'tr'); window.addEventListener('agt-life-language-change', onLanguage); return () => window.removeEventListener('agt-life-language-change', onLanguage); }, []);
+  const suggestions = language === 'en' ? [
+    { label: 'Decision Analysis', text: 'Should I buy an iPhone or Samsung? Photography is very important.', icon: Scale },
+    { label: 'Learning', text: 'What is artificial intelligence and how does it work? I know nothing about it.', icon: BookOpen },
+    { label: 'Planning', text: 'I want to learn Python in 6 months. Make me a plan.', icon: Map },
+    { label: 'Writing', text: 'Write an email to my manager asking for a promotion.', icon: PenLine },
+  ] : SUGGESTIONS;
+  const chips = language === 'en' ? ['Decision Analysis', 'Learning', 'Planning', 'Research', 'Writing', 'Problem Solving'] : ['Karar Analizi', 'Öğrenme', 'Planlama', 'Araştırma', 'Yazı', 'Problem Çözümü'];
   return (
     <div className="flex min-h-full w-full flex-col items-center justify-start py-5 md:justify-center md:px-4 md:py-10">
       <motion.div
@@ -43,13 +53,13 @@ export function EmptyState({ onSuggestion }: Props) {
             </span>
           </h1>
           <p className="text-base font-light text-muted-foreground md:tracking-wide">
-            Her karar için akıllı bir danışman
+            {language === 'en' ? 'An intelligent advisor for every decision' : 'Her karar için akıllı bir danışman'}
           </p>
         </motion.div>
 
         {/* Capability chips */}
         <motion.div variants={item} className="hidden flex-wrap items-center justify-center gap-2 sm:flex">
-          {['Karar Analizi', 'Öğrenme', 'Planlama', 'Araştırma', 'Yazı', 'Problem Çözümü'].map((cap) => (
+          {chips.map((cap) => (
             <span
               key={cap}
               className="rounded-full border border-border px-3 py-1.5 text-xs text-muted-foreground/60"
@@ -61,7 +71,7 @@ export function EmptyState({ onSuggestion }: Props) {
 
         {/* Suggestions */}
         <motion.div variants={item} className="grid w-full gap-3 md:grid-cols-2">
-          {SUGGESTIONS.map((suggestion) => {
+          {suggestions.map((suggestion) => {
             const Icon = suggestion.icon;
             return (
             <motion.button
