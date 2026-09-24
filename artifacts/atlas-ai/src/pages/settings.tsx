@@ -22,11 +22,11 @@ export default function Settings() {
     privacyDesc: "Tasks, goals, and problem history are stored in this app's local storage. Export only creates a JSON file on your device.",
     resetConfirm: "Are you sure you want to delete local tracking, goals, tasks, and history data from AGT LIFE?"
   } : {
-    home: "{t.home}", title: "Ayarlar", desc: "Dil, bildirim ve cihazındaki verilerini buradan yönet.",
+    home: "← Ana Sayfa", title: "Ayarlar", desc: "Dil, bildirim ve cihazındaki verilerini buradan yönet.",
     lang: "Dil / Language", langDesc: "Arayüz dilini seç.", notifications: "Bildirimler",
     notificationsDesc: "İZCİ önemli görev ve uyarıları zamanında bildirebilir.",
     status: "Durum:", on: "Açık", denied: "Tarayıcı tarafından engellendi", unsupported: "Bu cihaz/tarayıcı desteklemiyor", pending: "Henüz izin verilmedi",
-    enable: "Bildirimleri aç", deniedHelp: "{t.deniedHelp}",
+    enable: "Bildirimleri aç", deniedHelp: "Engellenmişse izni tarayıcı/uygulama bildirim ayarlarından yeniden açman gerekir.",
     data: "Veriler", dataDesc: "AGT LIFE bu verileri bu cihazın yerel depolamasında tutar.",
     export: "Verilerimi dışa aktar", reset: "Yerel verileri sıfırla", privacy: "Gizlilik",
     privacyDesc: "Görev, hedef ve problem geçmişi bu uygulamanın yerel depolamasında tutulur. Dışa aktarma işlemi yalnızca senin cihazında bir JSON dosyası oluşturur.",
@@ -67,7 +67,7 @@ export default function Settings() {
 
   return <main className="min-h-[100dvh] flex-1 overflow-y-auto bg-background text-foreground">
     <div className="mx-auto w-full max-w-3xl px-4 py-8 md:px-8">
-      <button type="button" onClick={() => navigate("/")} className="mb-6 rounded-xl border px-4 py-2 text-sm">← Ana Sayfa</button>
+      <button type="button" onClick={() => navigate("/")} className="mb-6 rounded-xl border px-4 py-2 text-sm">{t.home}</button>
       <div className="mb-8"><p className="text-sm font-semibold text-primary">AGT LIFE</p><h1 className="mt-1 text-3xl font-bold">{t.title}</h1><p className="mt-2 text-sm text-muted-foreground">{t.desc}</p></div>
       <div className="space-y-4">
         <section className="rounded-3xl border bg-card p-5"><div className="flex items-center gap-3"><Languages className="h-5 w-5 text-primary"/><div><h2 className="font-semibold">{t.lang}</h2><p className="text-xs text-muted-foreground">{t.langDesc}</p></div></div><div className="mt-4 grid grid-cols-2 gap-2"><button onClick={()=>changeLanguage("tr")} className={`rounded-xl border px-4 py-3 text-sm font-semibold ${language==="tr"?"border-primary bg-primary/10":""}`}>Türkçe</button><button onClick={()=>changeLanguage("en")} className={`rounded-xl border px-4 py-3 text-sm font-semibold ${language==="en"?"border-primary bg-primary/10":""}`}>English (İngilizce)</button></div></section>
