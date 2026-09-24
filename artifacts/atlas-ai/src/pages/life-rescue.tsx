@@ -264,6 +264,11 @@ export default function LifeRescue() {
   const copy = uiText[language];
 
   const suggestions = copy.suggestions;
+  const capabilityOptions = language === "en" ? [
+    ["💰", "Money & budget"], ["📋", "Debt & payments"], ["🧾", "Bills & expenses"], ["⏰", "Time & planning"], ["🧠", "Decision making"], ["🎯", "Goals"], ["🏠", "Home & daily life"], ["💼", "Work & workflow"], ["👨‍👩‍👧", "Family & daily life"], ["✈️", "Travel & moving"],
+  ] : [
+    ["💰", "Para & bütçe"], ["📋", "Borç & ödemeler"], ["🧾", "Faturalar & giderler"], ["⏰", "Zaman & planlama"], ["🧠", "Karar verme"], ["🎯", "Hedefler"], ["🏠", "Ev & günlük yaşam"], ["💼", "İş & çalışma düzeni"], ["👨‍👩‍👧", "Aile & günlük düzen"], ["✈️", "Seyahat & taşınma"],
+  ];
 
   useEffect(() => {
     window.localStorage.setItem("agt_life_rescue_language", language);
@@ -815,18 +820,7 @@ export default function LifeRescue() {
                 {copy.capabilitiesDesc}
               </p>
               <div className="mt-4 grid grid-cols-2 gap-2">
-                {[
-                  ["💰", "Para & bütçe"],
-                  ["📋", "Borç & ödemeler"],
-                  ["🧾", "Faturalar & giderler"],
-                  ["⏰", "Zaman & planlama"],
-                  ["🧠", "Karar verme"],
-                  ["🎯", "Hedefler"],
-                  ["🏠", "Ev & günlük yaşam"],
-                  ["💼", "İş & çalışma düzeni"],
-                  ["👨‍👩‍👧", "Aile & günlük düzen"],
-                  ["✈️", "Seyahat & taşınma"],
-                ].map(([icon, label]) => (
+                {capabilityOptions.map(([icon, label]) => (
                   <button
                     key={label}
                     type="button"
