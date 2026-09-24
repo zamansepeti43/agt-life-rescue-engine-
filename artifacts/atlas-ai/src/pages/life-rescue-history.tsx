@@ -21,7 +21,7 @@ export default function LifeRescueHistory() {
   } : {
     back: "← Hayat Kurtarma", title: "Geçmiş Problemler", desc: "Son çözdüğün problemlere cihazında tekrar bakabilirsin.",
     clear: "Temizle", empty: "Henüz kayıt yok.", emptyDesc: "Bir problem çözdüğünde burada görünecek.",
-    source: "{t.source}", goal: "Hedef"
+    source: "İZCİ bu takibi bu problem konuşmasından oluşturdu.", goal: "Hedef"
   };
 
   useEffect(() => {
@@ -63,7 +63,7 @@ export default function LifeRescueHistory() {
                   <span>·</span><span>{item.category}</span>
                 </div>
                 <h2 className="mt-3 font-semibold">{item.problem}</h2>
-                {sourceId === item.id && <p className="mt-2 text-xs font-semibold text-primary">İZCİ bu takibi bu problem konuşmasından oluşturdu.</p>}
+                {sourceId === item.id && <p className="mt-2 text-xs font-semibold text-primary">{t.source}</p>}
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.diagnosis}</p>
                 <div className="mt-3 rounded-xl bg-muted p-3 text-sm">
                   <span className="font-semibold">{t.goal}:</span> {item.objective}
