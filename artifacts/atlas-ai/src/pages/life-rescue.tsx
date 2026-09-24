@@ -19,6 +19,7 @@ const uiText = {
     intro: "Anlat derdini. Önce seni anlayacağım, sonra birlikte en mantıklı çıkış yolunu bulacağız.",
     placeholder: "Şu an neyi çözmeye çalışıyorsun?", details: "Ayrıntılar", send: "Gönder",
     topic: "Konu", goal: "Hedef", auto: "Otomatik belirle", urgency: "Aciliyet",
+    capabilitiesTitle: "Çözebildiğim konular", capabilitiesAll: "Tüm konuları gör →",
     budget: "Bütçe (TL)", timeToday: "Bugün ayırabileceğin zaman", optional: "İsteğe bağlı",
     hours: "Saat", offline: "Temel karar motoru cihazında çalışır.",
     answer: "Cevabını yaz...", you: "Sen", engine: "Life Rescue",
@@ -513,6 +514,7 @@ export default function LifeRescue() {
 
     const localResult = runAnalysis(text);
     const firstQuestion = getNextQuestion(localResult.category, text, language);
+    const normalizedLower = text.toLocaleLowerCase("tr-TR");
 
     setProblem("");
     setAnswer("");
@@ -680,14 +682,7 @@ export default function LifeRescue() {
                 autoFocus
               />
               <div className="flex items-center justify-between gap-3 border-t pt-3">
-                <button
-                  type="button"
-                  onClick={() => setShowSettings((v) => !v)}
-                  className="inline-flex items-center gap-2 rounded-full px-3 py-2 text-sm text-muted-foreground hover:bg-muted"
-                >
-                  <Settings2 className="h-4 w-4" />
-                  Ayrıntılar
-                </button>
+                <span className="px-3 py-2 text-xs text-muted-foreground">Sorununu kendi cümlelerinle anlatman yeterli.</span>
                 <button
                   type="button"
                   onClick={() => start()}
@@ -707,6 +702,43 @@ export default function LifeRescue() {
                   {item}
                 </button>
               ))}
+            </div>
+
+            <div className="mt-7 rounded-3xl border bg-card p-5 shadow-sm">
+              <div className="flex items-center gap-2">
+                <div className="flex h-9 w-9 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                  <Sparkles className="h-4 w-4" />
+                </div>
+                <h2 className="text-base font-semibold">{copy.capabilitiesTitle}</h2>
+              </div>
+              <p className="mt-2 text-sm leading-6 text-muted-foreground">
+                Günlük hayattaki problemleri birlikte anlamlandırıp uygulanabilir bir plan çıkarmana yardımcı olurum.
+              </p>
+              <div className="mt-4 grid grid-cols-2 gap-2">
+                {[
+                  ["💰", "Para & bütçe"],
+                  ["📋", "Borç & ödemeler"],
+                  ["🧾", "Faturalar & giderler"],
+                  ["⏰", "Zaman & planlama"],
+                  ["🧠", "Karar verme"],
+                  ["🎯", "Hedefler"],
+                  ["🏠", "Ev & günlük yaşam"],
+                  ["💼", "İş & çalışma düzeni"],
+                ].map(([icon, label]) => (
+                  <button
+                    key={label}
+                    type="button"
+                    onClick={() => start(label + " konusunda yardıma ihtiyacım var.")}
+                    className="flex items-center gap-2 rounded-2xl border px-3 py-3 text-left text-sm transition hover:border-primary/40 hover:bg-muted/40"
+                  >
+                    <span>{icon}</span>
+                    <span>{label}</span>
+                  </button>
+                ))}
+              </div>
+              <p className="mt-3 text-xs leading-5 text-muted-foreground">
+                Başka bir konuda yardım istediğinde, bunu açıkça söyleyip çözebildiğim konuları göstereceğim.
+              </p>
             </div>
 
             {showSettings && (
