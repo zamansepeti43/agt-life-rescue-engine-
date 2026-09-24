@@ -1,5 +1,3 @@
-import type { Goal, Task } from "./assistant-types";
-
 export type IzciCandidate =
   | { kind: "task"; title: string; dueAt?: string; reason: string }
   | { kind: "goal"; title: string; targetAmount?: number; targetDate?: string; reason: string };
@@ -58,8 +56,3 @@ export function extractIzciCandidates(context: string): IzciCandidate[] {
   return candidates.slice(0, 3);
 }
 
-export function candidateAlreadyTracked(candidate: IzciCandidate, tasks: Task[], goals: Goal[]) {
-  const title = candidate.title.toLocaleLowerCase("tr-TR");
-  if (candidate.kind === "task") return tasks.some((task) => task.status !== "cancelled" && task.title.toLocaleLowerCase("tr-TR") === title);
-  return goals.some((goal) => goal.status !== "cancelled" && goal.title.toLocaleLowerCase("tr-TR") === title);
-}
