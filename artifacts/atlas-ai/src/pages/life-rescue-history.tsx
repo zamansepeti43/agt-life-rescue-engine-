@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Clock3, Trash2 } from "lucide-react";
-import { useSearch } from "wouter";\nimport { LifeAppHeader } from "@/components/LifeAppHeader";
+import { useSearch } from "wouter";
+import { LifeAppHeader } from "@/components/LifeAppHeader";
 import { clearLifeRescueHistory, listLifeRescueHistory, type LifeRescueHistoryItem } from "@/lib/life-rescue-history";
 
 export default function LifeRescueHistory() {
@@ -30,7 +31,10 @@ export default function LifeRescueHistory() {
   }, []);
 
   return (
-    <main className="flex h-[100dvh] min-h-0 flex-1 flex-col overflow-hidden bg-background text-foreground">\n      <LifeAppHeader language={language} onLanguageChange={(next) => { setLanguage(next); localStorage.setItem("agt_life_language", next); localStorage.setItem("agt_life_rescue_language", next); window.dispatchEvent(new Event("agt-life-language-change")); }} />\n      <div className="min-h-0 flex-1 overflow-y-auto">\n      <div className="mx-auto max-w-3xl px-4 py-6 md:px-8 md:py-10">
+    <main className="flex h-[100dvh] min-h-0 flex-1 flex-col overflow-hidden bg-background text-foreground">
+      <LifeAppHeader language={language} onLanguageChange={(next) => { setLanguage(next); localStorage.setItem("agt_life_language", next); localStorage.setItem("agt_life_rescue_language", next); window.dispatchEvent(new Event("agt-life-language-change")); }} />
+      <div className="min-h-0 flex-1 overflow-y-auto">
+      <div className="mx-auto max-w-3xl px-4 py-6 md:px-8 md:py-10">
         <div className="mb-6 flex items-start justify-between gap-4">
           <div>
             <p className="text-sm font-semibold tracking-wide text-primary">AGT LIFE RESCUE</p>
@@ -67,6 +71,8 @@ export default function LifeRescueHistory() {
             ))}
           </div>
         )}
-      </div>\n      </div>\n    </main>
+      </div>
+      </div>
+    </main>
   );
 }
