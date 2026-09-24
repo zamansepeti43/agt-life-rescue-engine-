@@ -18,7 +18,7 @@ export function AtlasSidebar() {
     tagline: "Get your life together.", life: "Life", home: "Home", newProblem: "New Problem", history: "History",
     chat: "Chat", tracker: "TRACKER", system: "System", settings: "Settings"
   } : {
-    tagline: "{t.tagline}", life: "Hayat", home: "Ana Sayfa", newProblem: "Yeni Problem", history: "Geçmiş",
+    tagline: "Hayatını toparla.", life: "Hayat", home: "Ana Sayfa", newProblem: "Yeni Problem", history: "Geçmiş",
     chat: "Sohbet", tracker: "İZCİ", system: "Sistem", settings: "Ayarlar"
   };
   const unread = state.events.filter((event) => !event.read).length;
@@ -30,7 +30,7 @@ export function AtlasSidebar() {
       <SidebarHeader className="border-b border-sidebar-border p-4">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/15 text-primary"><LifeBuoy className="h-5 w-5" /></div>
-          <div><p className="text-base font-bold tracking-tight">AGT LIFE</p><p className="text-xs text-muted-foreground">Hayatını toparla.</p></div>
+          <div><p className="text-base font-bold tracking-tight">AGT LIFE</p><p className="text-xs text-muted-foreground">{t.tagline}</p></div>
         </div>
       </SidebarHeader>
 
