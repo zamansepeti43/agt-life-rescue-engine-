@@ -27,8 +27,8 @@ export function AtlasSidebar() {
 
   return (
     <Sidebar collapsible="offcanvas">
-      <SidebarHeader className="border-b border-sidebar-border p-4">
-        <div className="flex items-center gap-3">
+      <SidebarHeader className="border-b border-sidebar-border px-4 pb-4 pt-[calc(1rem+env(safe-area-inset-top))]">
+        <div className="flex min-h-10 items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary/15 text-primary"><LifeBuoy className="h-5 w-5" /></div>
           <div><p className="text-base font-bold tracking-tight">AGT LIFE</p><p className="text-xs text-muted-foreground">{t.tagline}</p></div>
         </div>
