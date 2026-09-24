@@ -15,6 +15,18 @@ android {
         main {
             assets.srcDirs = ["src/main/assets"]
             res.exclude("raw/agt_life_icon.webp.b64")
+            res.srcDirs += ["${buildDir}/generated/res/agtLifeIcon"]
+        }
+    }
+
+    tasks.register("generateAgtLifeIcon") {
+        def source = file("${projectDir}/src/main/res/raw/agt_life_icon.webp.b64")
+        def output = file("${buildDir}/generated/res/agtLifeIcon/drawable/agt_life_icon.webp")
+        inputs.file(source)
+        outputs.file(output)
+        doLast {
+            output.parentFile.mkdirs()
+            output.bytes = java.util.Base64.decoder.decode(source.text.trim())
         }
     }
 
@@ -23,7 +35,7 @@ android {
         from("${rootDir}/../artifacts/atlas-ai/dist")
         into("${projectDir}/src/main/assets")
     }
-    preBuild.dependsOn("copyWebApp")
+    preBuild.dependsOn("copyWebApp", "generateAgtLifeIcon")
 }
 dependencies {
     implementation "androidx.webkit:webkit:1.17.0"
