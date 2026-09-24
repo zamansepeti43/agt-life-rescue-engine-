@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { useEffect, useState } from 'react';
 import type { ClarificationContent } from '@/lib/conversation-engine';
 
 interface Props {
@@ -7,6 +8,8 @@ interface Props {
 }
 
 export function ClarificationCard({ data, onQuickAnswer }: Props) {
+  const [language, setLanguage] = useState<'tr' | 'en'>(() => localStorage.getItem('agt_life_language') === 'en' ? 'en' : 'tr');
+  useEffect(() => { const onLanguage = () => setLanguage(localStorage.getItem('agt_life_language') === 'en' ? 'en' : 'tr'); window.addEventListener('agt-life-language-change', onLanguage); return () => window.removeEventListener('agt-life-language-change', onLanguage); }, []);
   return (
     <motion.div
       initial={{ opacity: 0, y: 8 }}
@@ -49,7 +52,7 @@ export function ClarificationCard({ data, onQuickAnswer }: Props) {
       </div>
 
       <p className="text-xs text-muted-foreground/50">
-        Bir seçeneğe tıklayın veya aşağıya yazın
+        {language === 'en' ? 'Click an option or type below' : 'Bir seçeneğe tıklayın veya aşağıya yazın'}
       </p>
     </motion.div>
   );
