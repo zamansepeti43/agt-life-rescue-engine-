@@ -278,6 +278,28 @@ function englishizeResult(result: OfflineResult): OfflineResult {
 
 export function analyzeOffline(problem: string, options?: OfflineAnalysisOptions): OfflineResult {
   const selected = pick(problem, options);
+  if (selected.score === 0) {
+    const isEnglish = options?.language === "en";
+    const scopeMessage = isEnglish
+      ? "I didn't understand what you need yet. I don't want to guess. I can help with money & bills, time & planning, decisions, goals, home & daily life, work, family organization, travel, moving, and vehicle problems. Tell me which area this is about, in your own words."
+      : "Ne demek istediğini henüz anlayamadım. Tahmin edip yanlış yönlendirmek istemiyorum. Para ve faturalar, zaman ve planlama, karar verme, hedefler, ev ve günlük yaşam, iş, aile düzeni, seyahat, taşınma ve araç konularında yardımcı olabilirim. Hangi konuyla ilgili olduğunu kendi cümlelerinle anlat.";
+    return {
+      problem,
+      category: "unknown",
+      goal: "solve",
+      priority: "normal",
+      phase: "understand",
+      decisionBasis: [],
+      constraints: [],
+      plan: {
+        objective: isEnglish ? "Understand the problem before proposing a solution." : "Çözüm önermeden önce problemi doğru anlamak.",
+        steps: [],
+      },
+      diagnosis: scopeMessage,
+      actions: [],
+      nextQuestion: "",
+    };
+  }
   const constraints: string[] = [];
   const normalizedProblem = problem.toLocaleLowerCase("tr-TR");
   const explicitMatches = normalizedProblem.matchAll(/(\d{1,3}(?:[. ]\d{3})*(?:,\d{1,2})?|\d+(?:,\d{1,2})?)\s*(?:tl|₺|lira|try)/gi);
