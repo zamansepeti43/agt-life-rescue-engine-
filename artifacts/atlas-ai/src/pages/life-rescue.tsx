@@ -313,10 +313,14 @@ export default function LifeRescue() {
       /\bkira\b|\bfatura\b|\bkredi\b|\bborç\b|\btaksit\b|\bmarket\b|\bçocuk\b|\bokul\b|\bilaç\b|\byakıt\b|\babonelik\b/,
       /rent|bill|loan|debt|installment|grocer|child|school|medicine|fuel|subscription/
     );
+    const latestUserText = context.split(/\nKullanıcı:\s*/).pop()?.trim() ?? context.trim();
+    const hasRecentMoneyAmount =
+      /\b\d{1,3}(?:[. ]\d{3})*(?:,\d{1,2})?\s*(?:tl|₺|lira|try|bin|k)\b/i.test(latestUserText) ||
+      /^\s*\d{2,7}(?:[.,]\d{1,2})?\s*$/.test(latestUserText.replace(/\s+/g, " "));
     const hasAvailableMoney = has(
       /elimde|elinde|hesabımda|hesabında|cebimde|nakit|kullanabileceğim|kullanılabilir|param yok|hiç para|para yok|banka hesab/,
       /available|in my account|cash|money i can use|i have no money|no money/
-    );
+    ) || hasRecentMoneyAmount;
     const hasPaymentList = hasAmount && hasMoneyPurpose;
     const hasDeadline = has(/son tarih|vade|bugün|yarın|ayın \d+|\d{1,2}[./]\d{1,2}|gecik|kesilir|faiz|ceza|icra/, /deadline|due|today|tomorrow|late|cut off|interest|penalty|collection/);
     const hasOptions = has(/ertele|taksit|azalt|kıs|iptal|sat|ek gelir|ek para|avans|yardım|borç al|alternatif|seçenek/, /delay|installment|reduce|cancel|sell|extra income|advance|borrow|alternative|option/);
@@ -440,8 +444,8 @@ export default function LifeRescue() {
 
     if (category === "money" || category === "bills") {
       return language === "en"
-        ? "Got it. I'll use that in the picture."
-        : "Tamam, bunu tabloya ekledim.";
+        ? "Got it. I'll keep that in mind."
+        : "Tamam, bunu dikkate alıyorum.";
     }
 
     if (category === "decision") {
@@ -620,7 +624,7 @@ export default function LifeRescue() {
     return value
       .toLocaleLowerCase("tr-TR")
       .replace(/[“”"'’.,!?():;]/g, "")
-      .replace(/\\s+/g, " ")
+      .replace(/\s+/g, " ")
       .trim();
   }
 
@@ -713,8 +717,14 @@ export default function LifeRescue() {
 
   return (
     <main className="h-[100dvh] w-full overflow-y-auto overscroll-contain bg-background text-foreground">
-      <div className="mx-auto flex min-h-[100dvh] w-full max-w-3xl flex-col px-4 pb-32 pt-20 md:px-6">
-        <header className="fixed inset-x-0 top-0 z-50 border-b bg-background/95 px-4 pb-3 pt-2 shadow-sm backdrop-blur md:px-6">
+      <div
+        className="mx-auto flex min-h-[100dvh] w-full max-w-3xl flex-col px-4 pb-[calc(8rem+env(safe-area-inset-bottom))] md:px-6"
+        style={{ paddingTop: "calc(5rem + env(safe-area-inset-top, 0px))" }}
+      >
+        <header
+          className="fixed inset-x-0 top-0 z-50 border-b bg-background/95 px-4 pb-3 shadow-sm backdrop-blur md:px-6"
+          style={{ paddingTop: "max(0.75rem, env(safe-area-inset-top, 0px))" }}
+        >
           <div className="flex items-center gap-3">
             <button
               type="button"
@@ -879,7 +889,7 @@ export default function LifeRescue() {
             </div>
           </section>
         ) : (
-          <section className="min-h-0 flex-1 py-5 md:py-8">
+          <section className="min-h-0 flex-1 py-6 md:py-8">
             <div className="space-y-4">
               {messages.map((message, index) => (
                 <div key={index} className={message.role === "user" ? "flex justify-end" : "flex justify-start"}>
@@ -977,8 +987,10 @@ export default function LifeRescue() {
         )}
 
         {conversationStarted && (
-          <div className="fixed inset-x-0 z-50 border-t bg-background/95 px-4 pb-3 pt-3 backdrop-blur md:px-6"
-            style={{ bottom: keyboardOffset }}>
+          <div
+            className="fixed inset-x-0 z-50 border-t bg-background/95 px-4 pb-3 pt-3 backdrop-blur md:px-6"
+            style={{ bottom: keyboardOffset, paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom, 0px))" }}
+          >
             <div className="mx-auto flex max-w-3xl items-end gap-2 rounded-3xl border bg-card p-2 shadow-lg">
               <textarea
                 value={answer}
@@ -992,7 +1004,7 @@ export default function LifeRescue() {
                 placeholder={copy.answer}
                 rows={1}
                 onFocus={(event) => {
-                  window.setTimeout(() => event.currentTarget.scrollIntoView({ block: "center", behavior: "smooth" }), 120);
+                  window.setTimeout(() => event.currentTarget.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" }), 120);
                 }}
                 className="max-h-28 min-h-11 flex-1 resize-none bg-transparent px-3 py-2.5 text-sm leading-6 outline-none placeholder:text-muted-foreground"
               />
