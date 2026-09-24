@@ -232,6 +232,8 @@ export default function LifeRescue() {
   const [questionIndex, setQuestionIndex] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
   const [showPlan, setShowPlan] = useState(false);
+  const [izciCandidates, setIzciCandidates] = useState<IzciCandidate[]>([]);
+  const [trackedCandidateIds, setTrackedCandidateIds] = useState<string[]>([]);
   const [keyboardOffset, setKeyboardOffset] = useState(0);
 
   useEffect(() => {
@@ -596,6 +598,8 @@ export default function LifeRescue() {
 
   function finishConversation(context: string, localResult: Result) {
     setShowPlan(true);
+    setIzciCandidates(extractIzciCandidates(context));
+    setTrackedCandidateIds([]);
     saveLifeRescueHistory({
       problem: context.split("\nKullanıcı:")[0],
       category: localResult.category,
@@ -678,6 +682,8 @@ export default function LifeRescue() {
     setAvailableHours("");
     setShowSettings(false);
     setShowPlan(false);
+    setIzciCandidates([]);
+    setTrackedCandidateIds([]);
   }
 
   function sendFromComposer() {
@@ -926,6 +932,42 @@ export default function LifeRescue() {
                           </div>
                         </div>
                       ))}
+                    </div>
+                  )}
+
+                  {showPlan && izciCandidates.length > 0 && (
+                    <div className="mt-4 rounded-2xl border border-primary/20 bg-primary/5 p-4">
+                      <div className="flex items-start gap-3">
+                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">🔎</div>
+                        <div>
+                          <p className="text-sm font-semibold">İZCİ için bir şey yakaladım</p>
+                          <p className="mt-1 text-xs leading-5 text-muted-foreground">Konuşmada takip edilebilecek bir bilgi gördüm. Sen onaylamadan hiçbir şeyi takibe almıyorum.</p>
+                        </div>
+                      </div>
+                      <div className="mt-3 space-y-2">
+                        {izciCandidates.map((candidate) => {
+                          const candidateId = candidate.kind + ":" + candidate.title;
+                          const tracked = trackedCandidateIds.includes(candidateId);
+                          return (
+                            <div key={candidateId} className="flex items-center gap-3 rounded-xl border bg-background/80 p-3">
+                              <div className="min-w-0 flex-1">
+                                <p className="text-sm font-medium">{candidate.title}</p>
+                                <p className="mt-0.5 text-xs text-muted-foreground">{candidate.kind === "goal" ? "Hedef" : candidate.dueAt ? "Tarihli görev" : "Takip edilecek görev"} · {candidate.reason}</p>
+                              </div>
+                              <button type="button" disabled={tracked} onClick={() => {
+                                if (candidate.kind === "goal") {
+                                  addGoal({ title: candidate.title, ...(candidate.targetAmount !== undefined ? { targetAmount: candidate.targetAmount } : {}), ...(candidate.targetDate ? { targetDate: candidate.targetDate } : {}) });
+                                } else {
+                                  addTask({ title: candidate.title, ...(candidate.dueAt ? { dueAt: candidate.dueAt } : {}) });
+                                }
+                                setTrackedCandidateIds((ids) => [...ids, candidateId]);
+                              }} className="shrink-0 rounded-xl bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground disabled:opacity-60">
+                                {tracked ? "İZCİ'de" : "Takibe al"}
+                              </button>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
                   )}
                 </div>
