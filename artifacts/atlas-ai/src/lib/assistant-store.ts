@@ -103,9 +103,9 @@ function appendEvent(state: AssistantState, event: Omit<ScoutEvent, 'id' | 'crea
   return { ...state, events: [nextEvent, ...state.events].slice(0, 100) };
 }
 
-export function addTask(input: Pick<Task, 'title'> & Partial<Pick<Task, 'dueAt' | 'recurrence' | 'goalId'>>): Task {
+export function addTask(input: Pick<Task, 'title'> & Partial<Pick<Task, 'dueAt' | 'recurrence' | 'goalId' | 'sourceHistoryId'>>): Task {
   const createdAt = now();
-  const task: Task = { id: uid(), title: input.title, status: 'active', createdAt, updatedAt: createdAt, ...(input.dueAt && { dueAt: input.dueAt }), ...(input.recurrence && { recurrence: input.recurrence }), ...(input.goalId && { goalId: input.goalId }) };
+  const task: Task = { id: uid(), title: input.title, status: 'active', createdAt, updatedAt: createdAt, ...(input.dueAt && { dueAt: input.dueAt }), ...(input.recurrence && { recurrence: input.recurrence }), ...(input.goalId && { goalId: input.goalId }), ...(input.sourceHistoryId && { sourceHistoryId: input.sourceHistoryId }) };
   update((state) => ({ ...state, tasks: [task, ...state.tasks] }));
   if (task.dueAt) void schedulePushNotification({ id: task.id, kind: 'task', scheduledAt: task.dueAt, recurrence: task.recurrence, title: 'İZCİ · Görev zamanı', body: `${task.title} için ayırdığın zaman geldi.`, url: `/izci?task=${task.id}` });
   return task;
@@ -123,9 +123,9 @@ export function addReminder(input: Pick<Reminder, 'message' | 'scheduledAt'> & P
   return reminder;
 }
 
-export function addGoal(input: Pick<Goal, 'title'> & Partial<Pick<Goal, 'targetAmount' | 'currentAmount' | 'targetDate'>>): Goal {
+export function addGoal(input: Pick<Goal, 'title'> & Partial<Pick<Goal, 'targetAmount' | 'currentAmount' | 'targetDate' | 'sourceHistoryId'>>): Goal {
   const createdAt = now();
-  const goal: Goal = { id: uid(), title: input.title, status: 'active', currentAmount: input.currentAmount ?? 0, createdAt, updatedAt: createdAt, ...(input.targetAmount !== undefined && { targetAmount: input.targetAmount }), ...(input.targetDate && { targetDate: input.targetDate }) };
+  const goal: Goal = { id: uid(), title: input.title, status: 'active', currentAmount: input.currentAmount ?? 0, createdAt, updatedAt: createdAt, ...(input.targetAmount !== undefined && { targetAmount: input.targetAmount }), ...(input.targetDate && { targetDate: input.targetDate }), ...(input.sourceHistoryId && { sourceHistoryId: input.sourceHistoryId }) };
   update((state) => ({ ...state, goals: [goal, ...state.goals] }));
   return goal;
 }
