@@ -17,7 +17,7 @@ export default function LifeRescueHistory() {
   const t = language === "en" ? {
     back: "← Life Rescue", title: "Past Problems", desc: "Review recently solved problems stored on this device.",
     clear: "Clear", empty: "No records yet.", emptyDesc: "Solved problems will appear here.",
-    source: "İZCİ created this tracking item from this problem conversation.", goal: "Goal"
+    source: "IZCI created this tracking item from this problem conversation.", goal: "Goal"
   } : {
     back: "← Hayat Kurtarma", title: "Geçmiş Problemler", desc: "Son çözdüğün problemlere cihazında tekrar bakabilirsin.",
     clear: "Temizle", empty: "Henüz kayıt yok.", emptyDesc: "Bir problem çözdüğünde burada görünecek.",
@@ -44,7 +44,7 @@ export default function LifeRescueHistory() {
           </div>
           {items.length > 0 && (
             <button type="button" onClick={() => { clearLifeRescueHistory(); setItems([]); }} className="inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm">
-              <Trash2 className="h-4 w-4" /> Temizle
+              <Trash2 className="h-4 w-4" /> {t.clear}
             </button>
           )}
         </div>
