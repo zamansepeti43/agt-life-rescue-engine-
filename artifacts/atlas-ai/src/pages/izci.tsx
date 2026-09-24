@@ -1,5 +1,5 @@
 import { AlertTriangle, BellRing, Check, CheckSquare2, ChevronRight, Clock3, Crosshair, Plus, Target, WalletCards } from "lucide-react";
-import { SidebarTrigger } from "@/components/ui/sidebar";
+import { LifeAppHeader } from "@/components/LifeAppHeader";
 import { useAssistantState } from "@/hooks/useAssistantState";
 import { addGoal, addTask, markEventRead, setTaskCompleted } from "@/lib/assistant-store";
 import { notificationPermission, requestNotificationPermission } from "@/lib/notifications";
@@ -22,7 +22,7 @@ function Empty({ children }: { children: string }) { return <p className="py-7 t
 export default function Izci() {
   const state = useAssistantState();
   const [, navigate] = useLocation();
-  const [language, setLanguage] = useState<"tr" | "en">(() => (localStorage.getItem("agt_life_language") === "en" ? "en" : "tr"));
+  const [language, setLanguage] = useState<"tr" | "en">(() => ((localStorage.getItem("agt_life_rescue_language") || localStorage.getItem("agt_life_language")) === "en" ? "en" : "tr"));
   const [notificationState, setNotificationState] = useState(notificationPermission());
   const [showCreate, setShowCreate] = useState(false);
   const [taskTitle, setTaskTitle] = useState("");
@@ -32,7 +32,7 @@ export default function Izci() {
 
   useEffect(() => { if (notificationState === "granted") void subscribeToPush(); }, [notificationState]);
   useEffect(() => {
-    const onLanguage = () => setLanguage(localStorage.getItem("agt_life_language") === "en" ? "en" : "tr");
+    const onLanguage = () => setLanguage((localStorage.getItem("agt_life_rescue_language") || localStorage.getItem("agt_life_language")) === "en" ? "en" : "tr");
     window.addEventListener("agt-life-language-change", onLanguage);
     return () => window.removeEventListener("agt-life-language-change", onLanguage);
   }, []);
@@ -76,16 +76,7 @@ export default function Izci() {
   }
 
   return (
-    <main className="min-h-[100dvh] flex-1 overflow-y-auto bg-background text-foreground">
-      <header className="sticky top-0 z-20 border-b border-border/70 bg-background/90 px-4 py-3 backdrop-blur md:px-8">
-        <div className="mx-auto flex max-w-5xl items-center gap-3">
-          <SidebarTrigger aria-label={t.openMenu} />
-          <div><p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">AGT LIFE</p><h1 className="text-xl font-bold tracking-tight">İZCİ</h1></div>
-          <div className="ml-auto flex items-center gap-2">
-            <button type="button" onClick={enableNotifications} className="rounded-xl border px-3 py-2 text-xs font-semibold hover:border-primary/40">{notificationState === "granted" ? t.notificationsOn : t.enableNotifications}</button>
-          </div>
-        </div>
-      </header>
+    <main className="flex h-[100dvh] min-h-0 flex-1 flex-col overflow-hidden bg-background text-foreground">\n      <LifeAppHeader language={language} onLanguageChange={(next) => { setLanguage(next); localStorage.setItem("agt_life_language", next); localStorage.setItem("agt_life_rescue_language", next); window.dispatchEvent(new Event("agt-life-language-change")); }} />\n      <div className="min-h-0 flex-1 overflow-y-auto">
 
       <div className="mx-auto w-full max-w-5xl space-y-8 px-4 py-6 pb-12 md:px-8 md:py-8">
         <section className="rounded-3xl border bg-card p-5 md:p-7">
@@ -115,8 +106,6 @@ export default function Izci() {
           <div className="rounded-3xl border bg-card p-5"><div className="mb-4 flex items-center gap-2"><BellRing className="h-4 w-4 text-primary" /><h3 className="font-semibold">{t.changes}</h3></div>{unread.length === 0 ? <Empty>{t.noChanges}</Empty> : <div className="space-y-2">{unread.slice(0, 5).map((event) => <button key={event.id} type="button" onClick={() => markEventRead(event.id)} className="flex w-full items-start gap-3 rounded-2xl border p-3 text-left"><span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-primary" /><span className="min-w-0"><strong className="block text-sm">{event.title}</strong><span className="text-xs text-muted-foreground">{event.message}</span></span></button>)}</div>}</div>
         </section>
 
-        <div className="flex items-center gap-2 text-xs text-muted-foreground"><WalletCards className="h-3.5 w-3.5" />{t.footer}</div>
-      </div>
-    </main>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground"><WalletCards className="h-3.5 w-3.5" />{t.footer}</div>\n      </div>\n      </div>\n    </main>
   );
 }
