@@ -57,11 +57,55 @@ function pick(text: string, options?: OfflineAnalysisOptions) {
     const forced = rules.find((rule) => rule.category === options.category);
     if (forced) return { score: 100, rule: forced };
   }
+
   const t = text.toLocaleLowerCase("tr-TR");
-  return rules.reduce((best, rule) => {
-    const score = rule.words.reduce((n, word) => n + (t.includes(word) ? 1 : 0), 0);
-    return score > best.score ? { score, rule } : best;
-  }, { score: 0, rule: rules[0] });
+  const semanticSignals: Array<{ category: string; patterns: RegExp[]; weight: number }> = [
+    {
+      category: "time",
+      weight: 8,
+      patterns: [
+        /vaktim yetmiyor|zamanım yetmiyor|zaman yetmiyor|vaktim yok|zamanım yok/,
+        /yetişemiyorum|yetiştiremiyorum|işlere yetişemiyorum|hiçbir şeye yetişemiyorum/,
+        /çok yoğunum|çok işim var|işler birikti|iş yetişmiyor/,
+        /time is not enough|not enough time|running out of time|too busy|can't keep up/,
+      ],
+    },
+    {
+      category: "money",
+      weight: 8,
+      patterns: [
+        /param yetmiyor|para yetmiyor|param yok|nakitim yok|borçlarım var|borç yetişmiyor/,
+        /ödemeleri yetiştiremiyorum|faturaları yetiştiremiyorum|geçinemiyorum/,
+        /not enough money|i don't have enough money|can't afford|cash is tight|in debt/,
+      ],
+    },
+    {
+      category: "bills",
+      weight: 7,
+      patterns: [
+        /faturaları yetiştiremiyorum|fatura ödeyemiyorum|elektrik.*öde|su.*öde|internet.*öde/,
+        /can't pay.*bill|bills are piling up/,
+      ],
+    },
+    {
+      category: "decision",
+      weight: 7,
+      patterns: [
+        /karar veremiyorum|hangisini seçmeliyim|hangisini almalıyım|ne yapacağımı bilmiyorum/,
+        /can't decide|which one should i choose|what should i do/,
+      ],
+    },
+  ];
+
+  let best = { score: 0, rule: rules[0] };
+  for (const rule of rules) {
+    const lexicalScore = rule.words.reduce((n, word) => n + (t.includes(word) ? 1 : 0), 0);
+    const semantic = semanticSignals.find((signal) => signal.category === rule.category);
+    const semanticScore = semantic?.patterns.some((pattern) => pattern.test(t)) ? semantic.weight : 0;
+    const score = lexicalScore + semanticScore;
+    if (score > best.score) best = { score, rule };
+  }
+  return best;
 }
 
 function phaseFrom(text: string): OfflineResult["phase"] {
@@ -243,9 +287,16 @@ export function analyzeOffline(problem: string, options?: OfflineAnalysisOptions
   const noCash = /(^|\n)\s*(?:kullanıcı:\s*)?(?:hiç|yok|param yok|nakit yok)\s*($|\n)/i.test(problem)
     || /(?:elimde|elinde|hesabımda|kullanabileceğim).*?(?:hiç|yok)/i.test(normalizedProblem);
   const availableMatch = normalizedProblem.match(/(?:elimde|elinde|hesabımda|kullanabileceğim|available).*?(\d+(?:[.,]\d+)?)\s*(?:bin|k|tl|₺|lira)/i);
+  const lastUserText = problem.split(/\nKullanıcı:\s*/).pop()?.trim() ?? problem.trim();
+  const bareNumber = /^\s*(\d{2,7}(?:[.,]\d{1,2})?)\s*$/.test(lastUserText)
+    ? Number(lastUserText.replace(",", "."))
+    : undefined;
+  const amountQuestionAlreadyAsked = /kullanabileceğin|elinde.*para|hesabında.*para|available.*money/i.test(normalizedProblem);
   const availableAmount = availableMatch
     ? Number(availableMatch[1].replace(",", ".")) * (/(?:bin|k)/i.test(availableMatch[0]) ? 1000 : 1)
-    : noCash ? 0 : undefined;
+    : noCash ? 0
+    : amountQuestionAlreadyAsked && bareNumber !== undefined ? bareNumber
+    : undefined;
   const paymentAmounts = availableAmount !== undefined
     ? amounts.filter((value, index) => value !== availableAmount || amounts.indexOf(value) !== index)
     : amounts;
