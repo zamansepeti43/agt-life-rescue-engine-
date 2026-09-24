@@ -2,6 +2,7 @@ package com.agtstudio.liferescue;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
@@ -36,6 +37,34 @@ public class MainActivity extends Activity {
             .build();
 
         webView.setWebViewClient(new WebViewClientCompat() {
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, WebResourceRequest request) {
+                return openExternalUrl(request.getUrl());
+            }
+
+            @Override
+            public boolean shouldOverrideUrlLoading(WebView view, String url) {
+                return openExternalUrl(Uri.parse(url));
+            }
+
+            private boolean openExternalUrl(Uri uri) {
+                String scheme = uri.getScheme();
+                if (!"http".equalsIgnoreCase(scheme) && !"https".equalsIgnoreCase(scheme)) {
+                    return false;
+                }
+
+                // Web links such as "Diğer Ürünler" must open outside the APK WebView.
+                // This keeps the app on its current screen so Android's back button
+                // returns to AGT LIFE instead of closing the app.
+                try {
+                    Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+                    startActivity(Intent.createChooser(intent, "Tarayıcı ile aç"));
+                    return true;
+                } catch (Exception ignored) {
+                    return false;
+                }
+            }
+
             @Override
             public WebResourceResponse shouldInterceptRequest(
                 WebView view,
