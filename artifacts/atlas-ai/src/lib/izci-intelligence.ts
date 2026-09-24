@@ -3,9 +3,9 @@ export type IzciCandidate =
   | { kind: "goal"; title: string; targetAmount?: number; targetDate?: string; reason: string };
 
 function parseAmount(text: string): number | undefined {
-  const match = text.match(/(\\d{1,3}(?:[. ]\\d{3})*(?:,\\d{1,2})?|\\d+(?:,\\d{1,2})?)\\s*(?:tl|₺|lira|try)\\b/i);
+  const match = text.match(/(\d{1,3}(?:[. ]\d{3})*(?:,\d{1,2})?|\d+(?:,\d{1,2})?)\s*(?:tl|₺|lira|try)\b/i);
   if (!match) return undefined;
-  const value = Number(match[1].replace(/\\s/g, "").replace(/\\./g, "").replace(",", "."));
+  const value = Number(match[1].replace(/\s/g, "").replace(/\./g, "").replace(",", "."));
   return Number.isFinite(value) ? value : undefined;
 }
 
