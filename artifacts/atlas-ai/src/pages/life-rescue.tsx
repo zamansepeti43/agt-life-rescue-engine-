@@ -769,16 +769,17 @@ export default function LifeRescue() {
               </p>
             </div>
             <div className="overflow-hidden rounded-[1.75rem] border border-primary/10 bg-card shadow-[0_18px_60px_-35px_hsl(var(--primary)/0.35)]">
-              <textarea
-                value={problem}
-                onChange={(e) => setProblem(e.target.value)}
-                onKeyDown={(e) => {
-                  if ((e.ctrlKey || e.metaKey) && e.key === "Enter") start();
-                }}
-                placeholder={copy.placeholder}
-                className="min-h-36 w-full resize-none bg-transparent px-3 py-3 text-lg leading-7 outline-none placeholder:text-muted-foreground"
-                autoFocus
-              />
+              <div className="px-1 pt-1">
+                <textarea
+                  value={problem}
+                  onChange={(e) => setProblem(e.target.value)}
+                  onKeyDown={(e) => {
+                    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") start();
+                  }}
+                  placeholder={copy.placeholder}
+                  className="min-h-36 w-full resize-none bg-transparent px-3 py-3 text-lg leading-7 outline-none placeholder:text-muted-foreground"
+                  autoFocus
+                />
               </div>
               <div className="flex items-center justify-between gap-3 border-t bg-background/30 px-2 py-2">
                 <span className="hidden px-3 py-2 text-xs text-muted-foreground sm:block">Sorununu kendi cümlelerinle anlatman yeterli.</span>
