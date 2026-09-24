@@ -7,6 +7,7 @@ import Izci from '@/pages/izci';
 import AtlasOS from '@/pages/atlas-os';
 import LifeRescue from '@/pages/life-rescue';
 import LifeRescueHistory from '@/pages/life-rescue-history';
+import Settings from '@/pages/settings';
 import { AtlasSidebar } from '@/components/AtlasSidebar';
 import { SidebarProvider } from '@/components/ui/sidebar';
 import { Route, Switch, Router as WouterRouter } from 'wouter';
@@ -31,6 +32,7 @@ function Router() {
       <Route path="/izci" component={Izci} />
       <Route path="/life-rescue" component={LifeRescue} />
         <Route path="/life-rescue-history" component={LifeRescueHistory} />
+      <Route path="/settings" component={Settings} />
       <Route component={NotFound} />
     </Switch>
   );
