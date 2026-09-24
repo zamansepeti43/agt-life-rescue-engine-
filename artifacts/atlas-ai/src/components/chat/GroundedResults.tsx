@@ -71,15 +71,15 @@ export function GroundedResults({ metadata }: Props) {
                       <p className="mt-1 text-xs text-muted-foreground">{language === 'en' ? (product.seller ? `Seller: ${product.seller}` : `Source: ${product.source.domain}`) : (product.seller ? `Satıcı: ${product.seller}` : `Kaynak: ${product.source.domain}`)}</p>
                     </div>
                     {url && (
-                      <a href={url} target="_blank" rel="noopener noreferrer" aria-label={`${product.title} kaynağını yeni sekmede aç`} className="text-primary hover:text-primary/80">
+                      <a href={url} target="_blank" rel="noopener noreferrer" aria-label={language === 'en' ? `Open ${product.title} source in a new tab` : `${product.title} kaynağını yeni sekmede aç`} className="text-primary hover:text-primary/80">
                         <ExternalLink className="h-4 w-4" aria-hidden="true" />
                       </a>
                     )}
                   </div>
                   <div className="mt-3 flex flex-wrap items-center gap-2"><p className="text-sm font-medium text-primary">{formatPrice(product.priceTRY)}</p>{product.priceVerification === 'merchant_page' && <span className="rounded-md border border-emerald-500/30 px-2 py-0.5 text-xs text-emerald-400">{language === 'en' ? 'Verified on merchant page' : 'Mağaza sayfasından doğrulandı'}</span>}{product.priceVerification === 'search_snapshot' && <span className="rounded-md border border-amber-500/30 px-2 py-0.5 text-xs text-amber-400">{language === 'en' ? 'Search-result price; check the store' : 'Arama sonucu fiyatı, mağazada kontrol et'}</span>}{product.score !== undefined && <span className="rounded-md border border-border px-2 py-0.5 text-xs text-muted-foreground">Puan {product.score}/100</span>}</div>
                   {product.availability && <p className="mt-2 text-xs text-muted-foreground">{product.availability === 'in_stock' ? (language === 'en' ? 'In stock at source' : 'Kaynakta stokta') : (language === 'en' ? 'Out of stock at source' : 'Kaynakta stokta değil')}</p>}
-                  {product.features.length > 0 && <p className="mt-2 text-xs text-muted-foreground">Özellikler: {product.features.join(', ')}</p>}
-                  {retrievedAt && <p className="mt-2 text-[11px] text-muted-foreground/70">{product.priceVerification === 'merchant_page' ? 'Fiyat doğrulama zamanı' : 'Alınma zamanı'}: {retrievedAt}</p>}
+                  {product.features.length > 0 && <p className="mt-2 text-xs text-muted-foreground">{language === 'en' ? 'Features' : 'Özellikler'}: {product.features.join(', ')}</p>}
+                  {retrievedAt && <p className="mt-2 text-[11px] text-muted-foreground/70">{product.priceVerification === 'merchant_page' ? (language === 'en' ? 'Price verification time' : 'Fiyat doğrulama zamanı') : (language === 'en' ? 'Retrieved at' : 'Alınma zamanı')}: {retrievedAt}</p>}
                 </article>
               );
             })}
@@ -90,7 +90,7 @@ export function GroundedResults({ metadata }: Props) {
       {metadata.sources.length > 0 && (
         <section aria-labelledby="research-sources">
           <h3 id="research-sources" className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-            <Search className="h-3.5 w-3.5" aria-hidden="true" /> Kaynaklar
+            <Search className="h-3.5 w-3.5" aria-hidden="true" /> {language === 'en' ? 'Sources' : 'Kaynaklar'}
           </h3>
           <ul className="space-y-2">
             {metadata.sources.map((source, index) => {
@@ -111,7 +111,7 @@ export function GroundedResults({ metadata }: Props) {
 
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
         <ShieldCheck className="h-3.5 w-3.5 text-primary" aria-hidden="true" />
-        Güven: %{Math.round(Math.max(0, Math.min(1, metadata.confidence)) * 100)}
+        {language === 'en' ? 'Confidence' : 'Güven'}: %{Math.round(Math.max(0, Math.min(1, metadata.confidence)) * 100)}
       </div>
     </div>
   );
