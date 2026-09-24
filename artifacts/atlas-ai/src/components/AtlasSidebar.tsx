@@ -8,9 +8,9 @@ export function AtlasSidebar() {
   const [location, navigate] = useLocation();
   const { setOpenMobile } = useSidebar();
   const state = useAssistantState();
-  const [language, setLanguage] = useState<"tr" | "en">(() => localStorage.getItem("agt_life_language") === "en" ? "en" : "tr");
+  const [language, setLanguage] = useState<"tr" | "en">(() => (localStorage.getItem("agt_life_rescue_language") || localStorage.getItem("agt_life_language")) === "en" ? "en" : "tr");
   useEffect(() => {
-    const onLanguage = () => setLanguage(localStorage.getItem("agt_life_language") === "en" ? "en" : "tr");
+    const onLanguage = () => setLanguage((localStorage.getItem("agt_life_rescue_language") || localStorage.getItem("agt_life_language")) === "en" ? "en" : "tr");
     window.addEventListener("agt-life-language-change", onLanguage);
     return () => window.removeEventListener("agt-life-language-change", onLanguage);
   }, []);
@@ -53,7 +53,7 @@ export function AtlasSidebar() {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton isActive={location === "/izci"} onClick={() => goTo("/izci")} tooltip={t.tracker}>
-                  <BellRing /><span>İZCİ</span>
+                  <BellRing /><span>{language === "en" ? "Tracker" : "İZCİ"}</span>
                 </SidebarMenuButton>
                 {unread > 0 && <span className="ml-auto rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">{unread}</span>}
               </SidebarMenuItem>
