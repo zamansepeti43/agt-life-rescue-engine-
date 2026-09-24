@@ -31,7 +31,6 @@ export default function Izci() {
 
   const activeTasks = useMemo(() => state.tasks.filter((task) => task.status === "active"), [state.tasks]);
   const activeGoals = useMemo(() => state.goals.filter((goal) => goal.status === "active"), [state.goals]);
-  const upcoming = useMemo(() => state.reminders.filter((item) => item.status === "pending"), [state.reminders]);
   const unread = useMemo(() => state.events.filter((event) => !event.read), [state.events]);
   const urgentTasks = useMemo(() => activeTasks.filter((task) => { const days = daysUntil(task.dueAt); return days !== null && days <= 2; }).sort((a,b) => new Date(a.dueAt ?? "9999").getTime() - new Date(b.dueAt ?? "9999").getTime()), [activeTasks]);
   const soonTasks = useMemo(() => activeTasks.filter((task) => !urgentTasks.some((item) => item.id === task.id) && daysUntil(task.dueAt) !== null && (daysUntil(task.dueAt) as number) <= 7).slice(0, 5), [activeTasks, urgentTasks]);
