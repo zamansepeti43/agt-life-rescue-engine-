@@ -446,6 +446,29 @@ export default function LifeRescue() {
       : "Anladım, bunu sonraki adımda dikkate alacağım.";
   }
 
+  function answerNeedsClarification(question: string, answer: string) {
+    const q = normalizeQuestion(question);
+    const a = answer.trim().toLocaleLowerCase("tr-TR");
+    if (!a) return true;
+
+    const unknown = /^(bilmiyorum|emin değilim|yok|hiç bilmiyorum|bilmiyorum maalesef|none|nothing|don't know|not sure)$/i.test(a);
+    if (unknown) return false;
+
+    if (/ne kadar|tutar|miktar|kaç tl|kaç para|bütçe/.test(q)) {
+      return !/\d/.test(a);
+    }
+    if (/ne zaman|hangi tarih|son tarih|hangi saat|kaç gün|kaç saat/.test(q)) {
+      return !/(bugün|yarın|hafta|gün|saat|pazartesi|salı|çarşamba|perşembe|cuma|cumartesi|pazar|ocak|şubat|mart|nisan|mayıs|haziran|temmuz|ağustos|eylül|ekim|kasım|aralık|\d)/i.test(a);
+    }
+    if (/seçenek|alternatif|hangileri/.test(q)) {
+      return /^(evet|hayır|evet\.?|hayır\.?)$/i.test(a) || a.length < 4;
+    }
+    if (/hangi iş|hangi görev|ne yapman|ne yapman gerekiyor/.test(q)) {
+      return /^(evet|hayır)$/i.test(a) || a.length < 4;
+    }
+    return false;
+  }
+
   function rephraseRepeatedQuestion(question: string, category: string) {
     const q = question.toLocaleLowerCase("tr-TR");
     if (category === "money" || category === "bills") {
@@ -614,10 +637,12 @@ export default function LifeRescue() {
         ? previousEngineMessages[previousEngineMessages.length - 1].split("\n\n").pop() ?? ""
         : "";
       const repeatedQuestion = normalizeQuestion(previousQuestion) === normalizeQuestion(nextQuestion);
+      const unclearAnswer = answerNeedsClarification(previousQuestion, text);
+      const needsRephrase = repeatedQuestion || unclearAnswer;
 
-      const bridge = conversationBridge(result.category, nextContext, text, repeatedQuestion);
-      const questionToAsk = repeatedQuestion
-        ? rephraseRepeatedQuestion(nextQuestion, localResult.category)
+      const bridge = conversationBridge(result.category, nextContext, text, needsRephrase);
+      const questionToAsk = needsRephrase
+        ? rephraseRepeatedQuestion(previousQuestion || nextQuestion, localResult.category)
         : nextQuestion;
 
       setMessages((prev) => [
