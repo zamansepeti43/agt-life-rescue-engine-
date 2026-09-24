@@ -11,6 +11,25 @@ const ICONS = { shopping: ShoppingCart, finance: Wallet, 'scam-shield': ShieldCh
 export default function AtlasOS() {
   const [, navigate] = useLocation();
   const state = useAssistantState();
+  const [language, setLanguage] = useState<'tr' | 'en'>(() => localStorage.getItem('agt_life_language') === 'en' ? 'en' : 'tr');
+  useEffect(() => { const onLanguage = () => setLanguage(localStorage.getItem('agt_life_language') === 'en' ? 'en' : 'tr'); window.addEventListener('agt-life-language-change', onLanguage); return () => window.removeEventListener('agt-life-language-change', onLanguage); }, []);
+  const t = language === 'en' ? {
+    title: 'Ask. Atlas researches, thinks, and tracks.', desc: 'Local decision tools, visual OCR, security checks, budget, and İZCİ in one place.', ask: 'Ask Atlas',
+    activeTasks: 'Active tasks', tracked: 'Tracked', unread: 'Unread İZCİ', scam: 'Scam Shield', scamDesc: 'Extract text or a screenshot with local OCR, then analyze risk signals.',
+    ocr: 'Run OCR on image', reading: 'Reading image…', confidence: 'OCR confidence', url: 'Link Security Check', urlDesc: 'Check HTTPS, shorteners, domain, and suspicious extension signals before opening a URL.',
+    budget: 'Local Budget Summary', budgetDesc: 'Calculate saved income, expenses, debt, and savings without an API.', income: 'Income', expenses: 'Expenses', debt: 'Debt', saving: 'Savings',
+    balance: 'Net balance', savingRate: 'Savings rate', financeNote: 'This is not financial advice; it summarizes your saved data.',
+    tracker: 'İZCİ & Automation', trackerDesc: 'Connect decisions to tasks, reminders, goals, and price tracking.', tasks: 'Tasks', prices: 'Price tracking', alerts: 'Alerts', active: 'active', openIzci: 'Open İZCİ',
+    capabilities: 'Atlas capabilities', capabilitiesDesc: 'All in one personal decision center.'
+  } : {
+    title: '{t.title}', desc: 'Yerel karar araçları, görsel OCR, güvenlik kontrolleri, bütçe ve İZCİ tek merkezde.', ask: "Atlas'a sor",
+    activeTasks: 'Aktif görev', tracked: 'İzlenen', unread: 'Okunmamış İZCİ', scam: 'Dolandırıcılık Kalkanı', scamDesc: 'Metin veya ekran görüntüsünü yerel OCR ile çıkar, ardından risk sinyallerini analiz et.',
+    ocr: 'Görselden OCR yap', reading: 'Görsel okunuyor…', confidence: 'OCR güveni', url: 'Bağlantı Güvenlik Kontrolü', urlDesc: "URL'yi açmadan önce HTTPS, kısaltıcı, alan adı ve şüpheli uzantı sinyallerini kontrol et.",
+    budget: 'Yerel Bütçe Özeti', budgetDesc: 'Kayıtlı gelir/gider/borç/tasarruf verilerini API olmadan hesaplar.', income: 'Gelir', expenses: 'Gider', debt: 'Borç', saving: 'Tasarruf',
+    balance: 'Net bakiye', savingRate: 'Tasarruf oranı', financeNote: '{t.financeNote}',
+    tracker: 'İZCİ & Otomasyon', trackerDesc: 'Kararları görev, hatırlatıcı, hedef ve fiyat takibine bağlar.', tasks: 'Görevler', prices: 'Fiyat takipleri', alerts: 'Uyarılar', active: 'aktif', openIzci: "İZCİ'yi aç",
+    capabilities: '{t.capabilities}', capabilitiesDesc: '{t.capabilitiesDesc}'
+  };
   const [scamText, setScamText] = useState('');
   const [urlText, setUrlText] = useState('');
   const [ocrBusy, setOcrBusy] = useState(false);
@@ -50,37 +69,37 @@ export default function AtlasOS() {
       <div className="mx-auto max-w-7xl space-y-6">
         <section className="rounded-3xl border border-border bg-card p-6 shadow-sm md:p-8">
           <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
-            <div><div className="mb-3 flex items-center gap-2 text-primary"><Bot className="h-5 w-5" /><span className="text-xs font-semibold uppercase tracking-[0.22em]">Atlas Life OS</span></div><h1 className="text-3xl font-bold tracking-tight md:text-5xl">Sen sor. Atlas araştırır, düşünür, takip eder.</h1><p className="mt-3 max-w-2xl text-muted-foreground">Yerel karar araçları, görsel OCR, güvenlik kontrolleri, bütçe ve İzci tek merkezde.</p></div>
-            <button onClick={() => ask('Bugün benim için önemli olan görevleri, takipleri ve uyarıları özetle.')} className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 font-medium text-primary-foreground">Atlas'a sor <ArrowRight className="h-4 w-4" /></button>
+            <div><div className="mb-3 flex items-center gap-2 text-primary"><Bot className="h-5 w-5" /><span className="text-xs font-semibold uppercase tracking-[0.22em]">Atlas Life OS</span></div><h1 className="text-3xl font-bold tracking-tight md:text-5xl">Sen sor. Atlas araştırır, düşünür, takip eder.</h1><p className="mt-3 max-w-2xl text-muted-foreground">{t.desc}</p></div>
+            <button onClick={() => ask('Bugün benim için önemli olan görevleri, takipleri ve uyarıları özetle.')} className="inline-flex items-center justify-center gap-2 rounded-xl bg-primary px-5 py-3 font-medium text-primary-foreground">{t.ask} <ArrowRight className="h-4 w-4" /></button>
           </div>
         </section>
 
-        <section className="grid gap-3 sm:grid-cols-3"><Stat icon={ListTodo} label="Aktif görev" value={activeTasks} /><Stat icon={Eye} label="İzlenen" value={activeTracks} /><Stat icon={AlertTriangle} label="Okunmamış İzci" value={unread} /></section>
+        <section className="grid gap-3 sm:grid-cols-3"><Stat icon={ListTodo} label={t.activeTasks} value={activeTasks} /><Stat icon={Eye} label={t.tracked} value={activeTracks} /><Stat icon={AlertTriangle} label={t.unread} value={unread} /></section>
 
         <section className="grid gap-4 lg:grid-cols-2">
-          <ToolCard icon={ShieldCheck} title="Dolandırıcılık Kalkanı" description="Metin veya ekran görüntüsünü yerel OCR ile çıkar, ardından risk sinyallerini analiz et.">
+          <ToolCard icon={ShieldCheck} title={t.scam} description={t.scamDesc}>
             <textarea value={scamText} onChange={(e) => setScamText(e.target.value)} placeholder="Örn. Tebrikler, 50.000 TL kazandınız..." className="min-h-28 w-full rounded-xl border border-border bg-background p-3 text-sm outline-none focus:ring-2 focus:ring-primary/30" />
             <div className="mt-3 flex flex-wrap gap-2">
-              <button onClick={() => fileInput.current?.click()} disabled={ocrBusy} className="inline-flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm font-medium hover:bg-muted disabled:opacity-50"><ImageIcon className="h-4 w-4" />{ocrBusy ? 'Görsel okunuyor…' : 'Görselden OCR yap'}</button>
+              <button onClick={() => fileInput.current?.click()} disabled={ocrBusy} className="inline-flex items-center gap-2 rounded-xl border border-border px-3 py-2 text-sm font-medium hover:bg-muted disabled:opacity-50"><ImageIcon className="h-4 w-4" />{ocrBusy ? t.reading : t.ocr}</button>
               <input ref={fileInput} type="file" accept="image/*" className="hidden" onChange={(e) => void runOcr(e.target.files?.[0])} />
               {ocrBusy && <Loader2 className="h-5 w-5 animate-spin text-primary" />}
-              {ocrConfidence !== null && <span className="rounded-xl bg-muted/40 px-3 py-2 text-xs">OCR güveni: %{Math.round(ocrConfidence)}</span>}
+              {ocrConfidence !== null && <span className="rounded-xl bg-muted/40 px-3 py-2 text-xs">{t.confidence}: %{Math.round(ocrConfidence)}</span>}
             </div>
             {ocrError && <p className="mt-2 text-sm text-destructive">{ocrError}</p>}
             {scamText && <div className="mt-3 rounded-xl border border-border p-4"><div className="flex items-center justify-between"><div><p className="text-xs text-muted-foreground">Risk</p><p className="font-bold">{analysis.level}</p></div><span className="text-3xl font-bold">%{analysis.score}</span></div><ul className="mt-3 space-y-2 text-sm">{analysis.signals.map((s) => <li key={s} className="flex gap-2"><AlertTriangle className="h-4 w-4 shrink-0" />{s}</li>)}</ul><p className="mt-3 text-sm text-muted-foreground">{analysis.recommendation}</p></div>}
           </ToolCard>
 
-          <ToolCard icon={Link2} title="Bağlantı Güvenlik Kontrolü" description="URL'yi açmadan önce HTTPS, kısaltıcı, alan adı ve şüpheli uzantı sinyallerini kontrol et.">
+          <ToolCard icon={Link2} title={t.url} description={t.urlDesc}>
             <div className="flex gap-2"><input value={urlText} onChange={(e) => setUrlText(e.target.value)} placeholder="https://ornek.com/..." className="min-w-0 flex-1 rounded-xl border border-border bg-background px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-primary/30" /></div>
             {urlText && <div className="mt-3 rounded-xl border border-border p-4"><div className="flex items-center justify-between"><p className="font-bold">{urlAnalysis.level}</p><span className="text-2xl font-bold">%{urlAnalysis.score}</span></div><ul className="mt-3 space-y-2 text-sm">{urlAnalysis.signals.map((s) => <li key={s}>• {s}</li>)}</ul><p className="mt-3 text-sm text-muted-foreground">{urlAnalysis.recommendation}</p></div>}
           </ToolCard>
 
-          <ToolCard icon={Wallet} title="Yerel Bütçe Özeti" description="Kayıtlı gelir/gider/borç/tasarruf verilerini API olmadan hesaplar.">
-            <div className="grid grid-cols-2 gap-2 text-sm"><Metric label="Gelir" value={budget.income} /><Metric label="Gider" value={budget.expenses} /><Metric label="Borç" value={budget.debt} /><Metric label="Tasarruf" value={budget.saving} /></div><div className="mt-3 flex items-center justify-between rounded-xl bg-muted/40 p-3"><span>Net bakiye</span><strong>{budget.balance.toLocaleString('tr-TR')} TL</strong></div><p className="mt-2 text-xs text-muted-foreground">Tasarruf oranı: %{budget.savingRate}. Bu hesap finansal tavsiye değil, kayıtlı verilerin özetidir.</p>
+          <ToolCard icon={Wallet} title={t.budget} description={t.budgetDesc}>
+            <div className="grid grid-cols-2 gap-2 text-sm"><Metric label={t.income} value={budget.income} /><Metric label={t.expenses} value={budget.expenses} /><Metric label={t.debt} value={budget.debt} /><Metric label={t.saving} value={budget.saving} /></div><div className="mt-3 flex items-center justify-between rounded-xl bg-muted/40 p-3"><span>{t.balance}</span><strong>{budget.balance.toLocaleString('tr-TR')} TL</strong></div><p className="mt-2 text-xs text-muted-foreground">{t.savingRate}: %{budget.savingRate}. Bu hesap finansal tavsiye değil, kayıtlı verilerin özetidir.</p>
           </ToolCard>
 
-          <ToolCard icon={ListTodo} title="İzci & Otomasyon" description="Kararları görev, hatırlatıcı, hedef ve fiyat takibine bağlar.">
-            <div className="space-y-2 text-sm"><StatusRow label="Görevler" value={`${activeTasks} aktif`} /><StatusRow label="Fiyat takipleri" value={`${activeTracks} aktif`} /><StatusRow label="Uyarılar" value={`${unread} yeni`} /></div><button onClick={() => navigate('/izci')} className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-primary">İzci'yi aç <ArrowRight className="h-4 w-4" /></button>
+          <ToolCard icon={ListTodo} title={t.tracker} description={t.trackerDesc}>
+            <div className="space-y-2 text-sm"><StatusRow label={t.tasks} value={`${activeTasks} aktif`} /><StatusRow label={t.prices} value={`${activeTracks} aktif`} /><StatusRow label={t.alerts} value={`${unread} yeni`} /></div><button onClick={() => navigate('/izci')} className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-primary">{t.openIzci} <ArrowRight className="h-4 w-4" /></button>
           </ToolCard>
         </section>
 
