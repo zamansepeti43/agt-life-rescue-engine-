@@ -64,9 +64,10 @@ export default function Settings() {
     window.location.reload();
   };
 
-  return <main className="min-h-[100dvh] flex-1 overflow-y-auto bg-background text-foreground">
+  return <main className="flex h-[100dvh] min-h-0 flex-1 flex-col overflow-hidden bg-background text-foreground">
+    <LifeAppHeader language={language} onLanguageChange={changeLanguage} />
+    <div className="min-h-0 flex-1 overflow-y-auto">
     <div className="mx-auto w-full max-w-3xl px-4 py-8 md:px-8">
-      <button type="button" onClick={() => navigate("/")} className="mb-6 rounded-xl border px-4 py-2 text-sm">{t.home}</button>
       <div className="mb-8"><p className="text-sm font-semibold text-primary">AGT LIFE</p><h1 className="mt-1 text-3xl font-bold">{t.title}</h1><p className="mt-2 text-sm text-muted-foreground">{t.desc}</p></div>
       <div className="space-y-4 pb-12">
         <section className="rounded-3xl border bg-card p-5"><div className="flex items-center gap-3"><Languages className="h-5 w-5 text-primary"/><div><h2 className="font-semibold">{t.lang}</h2><p className="text-xs text-muted-foreground">{t.langDesc}</p></div></div><div className="mt-4 grid grid-cols-2 gap-2"><button onClick={()=>changeLanguage("tr")} className={`rounded-xl border px-4 py-3 text-sm font-semibold ${language==="tr"?"border-primary bg-primary/10":""}`}>Türkçe</button><button onClick={()=>changeLanguage("en")} className={`rounded-xl border px-4 py-3 text-sm font-semibold ${language==="en"?"border-primary bg-primary/10":""}`}>English (İngilizce)</button></div></section>
@@ -74,6 +75,7 @@ export default function Settings() {
         <section className="rounded-3xl border bg-card p-5"><div className="flex items-center gap-3"><Download className="h-5 w-5 text-primary"/><div><h2 className="font-semibold">{t.data}</h2><p className="text-xs text-muted-foreground">{t.dataDesc}</p></div></div><div className="mt-4 flex flex-wrap gap-2"><button onClick={exportData} className="rounded-xl border px-4 py-2.5 text-sm font-semibold">{t.export}</button><button onClick={resetData} className="inline-flex items-center gap-2 rounded-xl border border-red-500/30 px-4 py-2.5 text-sm font-semibold text-red-600"><RotateCcw className="h-4 w-4"/>{t.reset}</button></div></section>
         <section className="rounded-3xl border bg-card p-5"><div className="flex items-center gap-3"><ShieldCheck className="h-5 w-5 text-primary"/><div><h2 className="font-semibold">{t.privacy}</h2><p className="text-xs leading-5 text-muted-foreground">{t.privacyDesc}</p></div></div></section>
       </div>
+    </div>
     </div>
     </div>
   </main>;
