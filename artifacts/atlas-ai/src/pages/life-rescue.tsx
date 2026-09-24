@@ -446,6 +446,50 @@ export default function LifeRescue() {
       : "Anladım, bunu sonraki adımda dikkate alacağım.";
   }
 
+  function rephraseRepeatedQuestion(question: string, category: string) {
+    const q = question.toLocaleLowerCase("tr-TR");
+    if (category === "money" || category === "bills") {
+      if (/para|miktar|tutar|bütçe/.test(q)) return language === "en"
+        ? "I didn't understand this part. Let me ask differently: about how much money are we talking about?"
+        : "Bu kısmı anlayamadım. Farklı sorayım: Yaklaşık olarak ne kadar paradan bahsediyoruz?";
+      if (/ödem|fatura|borç/.test(q)) return language === "en"
+        ? "I didn't understand this part. Which payment is the most urgent right now?"
+        : "Bu kısmı anlayamadım. Farklı sorayım: Şu anda en acil ödemen hangisi?";
+    }
+    if (category === "decision") {
+      if (/seçenek|alternatif/.test(q)) return language === "en"
+        ? "I didn't understand this part. What are the two or three choices you are actually deciding between?"
+        : "Bu kısmı anlayamadım. Farklı sorayım: Gerçekte hangi iki veya üç seçenek arasında karar veriyorsun?";
+      if (/öncel|önemli|kriter/.test(q)) return language === "en"
+        ? "I didn't understand this part. What matters most to you in the end?"
+        : "Bu kısmı anlayamadım. Farklı sorayım: Sonuçta senin için en önemli olan şey ne?";
+    }
+    if (category === "time" || category === "work") {
+      if (/zaman|süre|saat/.test(q)) return language === "en"
+        ? "I didn't understand this part. Which task is taking the most of your time?"
+        : "Bu kısmı anlayamadım. Farklı sorayım: Zamanının en çoğunu hangi iş alıyor?";
+      if (/iş|görev|sorumluluk/.test(q)) return language === "en"
+        ? "I didn't understand this part. What are the main things you need to get done?"
+        : "Bu kısmı anlayamadım. Farklı sorayım: Şu anda mutlaka yapman gereken başlıca işler neler?";
+    }
+    if (category === "travel" || category === "moving") {
+      if (/tarih|saat|zaman/.test(q)) return language === "en"
+        ? "I didn't understand this part. What date or time cannot change?"
+        : "Bu kısmı anlayamadım. Farklı sorayım: Değiştiremeyeceğin tarih veya saat hangisi?";
+      if (/maliyet|fiyat|para|bütçe/.test(q)) return language === "en"
+        ? "I didn't understand this part. What is the maximum amount you can spend?"
+        : "Bu kısmı anlayamadım. Farklı sorayım: En fazla ne kadar harcayabilirsin?";
+    }
+    if (category === "family" || category === "home") {
+      if (/sorun|problem|konu|durum/.test(q)) return language === "en"
+        ? "I didn't understand this part. What is the one thing at home or with your family that needs solving first?"
+        : "Bu kısmı anlayamadım. Farklı sorayım: Evde veya aile içinde önce çözülmesi gereken tek şey ne?";
+    }
+    return language === "en"
+      ? "I didn't understand your last answer. Let me ask it differently: what is the single piece of information you know for sure about this?"
+      : "Son cevabını anlayamadım. Farklı sorayım: Bu konuyla ilgili kesin olarak bildiğin tek bilgi ne?";
+  }
+
   function getOptions() {
     return {
       category: category || undefined,
@@ -572,11 +616,14 @@ export default function LifeRescue() {
       const repeatedQuestion = normalizeQuestion(previousQuestion) === normalizeQuestion(nextQuestion);
 
       const bridge = conversationBridge(result.category, nextContext, text, repeatedQuestion);
+      const questionToAsk = repeatedQuestion
+        ? rephraseRepeatedQuestion(nextQuestion, localResult.category)
+        : nextQuestion;
 
       setMessages((prev) => [
         ...prev,
         { role: "user", text },
-        { role: "engine", text: bridge + "\n\n" + nextQuestion },
+        { role: "engine", text: bridge + "\n\n" + questionToAsk },
       ]);
       return;
     }
