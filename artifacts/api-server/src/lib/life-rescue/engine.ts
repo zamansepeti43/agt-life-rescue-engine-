@@ -291,10 +291,19 @@ export function analyzeRescue(input: RescueInput): RescueResult {
         ? "Zaman baskısı var. Önce sonucu en çok etkileyen işi seçip geri kalanları sıraya koyacağız."
         : "Sorun; aciliyet, hedef, bütçe ve uygulanabilir sonraki adım olarak parçalanmalı.";
 
+  const normalizedProblem = input.problem.toLocaleLowerCase("tr-TR");
+  const hasZeroBudget = /(?:bütçe|param|para|nakit|kullanabileceğim).{0,24}\b0\s*(?:tl|₺|lira|try)?\b|\b0\s*(?:tl|₺|lira|try)\b.{0,24}(?:bütçe|para|nakit)/i.test(normalizedProblem);
+  const hasIncomeStatus = /düzenli gelir|maaş|gelir|kazanç|çalışıyorum|çalışmıyorum|işsiz|maaşım|maaş al/i.test(normalizedProblem);
+  const hasNextIncome = /ilk maaş|sonraki maaş|maaş günü|maaşım.*ne zaman|gelirim.*ne zaman|gelir.*tarih/i.test(normalizedProblem);
+
   const nextQuestion =
-    category === "money"
-      ? "Eksik olan tutar ve en yakın ödeme tarihi nedir?"
-      : input.availableHours === undefined
+    category === "money" && hasZeroBudget && !hasIncomeStatus
+      ? "0 TL yazdığını gördüm 😄 O zaman hemen klasik bir harcama planına atlamayalım. Önce gelir tarafını netleştirelim: şu an düzenli bir gelirin var mı?"
+      : category === "money" && hasZeroBudget && hasIncomeStatus && !hasNextIncome
+        ? "Tamam, mevcut bütçenin 0 TL olduğunu anladım. Şimdi en önemli bilgiyi bulalım: ilk veya sonraki gelirin ne zaman eline geçecek?"
+        : category === "money"
+          ? "Eksik olan tutar ve en yakın ödeme tarihi nedir?"
+          : input.availableHours === undefined
         ? "Bu sorunu çözmek için bugün kaç saatin var?"
         : "Bu sorunda sonucu en çok değiştirecek kısıt veya son tarih nedir?";
 
