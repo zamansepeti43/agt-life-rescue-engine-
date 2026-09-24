@@ -98,3 +98,4 @@ jobs:
           name: agt-life-rescue-debug-apk
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
+# APK build is intentionally triggered on main updates for phone validation.
