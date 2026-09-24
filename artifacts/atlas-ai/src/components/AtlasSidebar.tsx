@@ -1,4 +1,4 @@
-import { BellRing, History, LifeBuoy, MessageSquareText, Plus, Settings2 } from "lucide-react";
+import { BellRing, ExternalLink, History, LifeBuoy, Plus, Settings2 } from "lucide-react";
 import { useLocation } from "wouter";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarRail, useSidebar } from "@/components/ui/sidebar";
 import { useAssistantState } from "@/hooks/useAssistantState";
@@ -16,10 +16,10 @@ export function AtlasSidebar() {
   }, []);
   const t = language === "en" ? {
     tagline: "Get your life together.", life: "Life", home: "Home", newProblem: "New Problem", history: "History",
-    chat: "Chat", tracker: "TRACKER", system: "System", settings: "Settings"
+    tracker: "TRACKER", system: "System", settings: "Settings", products: "Our products"
   } : {
     tagline: "Hayatını toparla.", life: "Hayat", home: "Ana Sayfa", newProblem: "Yeni Problem", history: "Geçmiş",
-    chat: "Sohbet", tracker: "İZCİ", system: "Sistem", settings: "Ayarlar"
+    tracker: "İZCİ", system: "Sistem", settings: "Ayarlar", products: "Diğer Ürünler"
   };
   const unread = state.events.filter((event) => !event.read).length;
   const goTo = (path: string) => { navigate(path); setOpenMobile(false); };
@@ -42,9 +42,13 @@ export function AtlasSidebar() {
               <SidebarMenuItem><SidebarMenuButton isActive={location === "/"} onClick={() => goTo("/")} tooltip={t.home}><LifeBuoy /><span>{t.home}</span></SidebarMenuButton></SidebarMenuItem>
               <SidebarMenuItem><SidebarMenuButton onClick={newProblem} tooltip={t.newProblem}><Plus /><span>{t.newProblem}</span></SidebarMenuButton></SidebarMenuItem>
               <SidebarMenuItem><SidebarMenuButton isActive={location === "/life-rescue-history"} onClick={() => goTo("/life-rescue-history")} tooltip={t.history}><History /><span>{t.history}</span></SidebarMenuButton></SidebarMenuItem>
-              <SidebarMenuItem><SidebarMenuButton isActive={location === "/atlas"} onClick={() => goTo("/atlas")} tooltip={t.chat}><MessageSquareText /><span>{t.chat}</span></SidebarMenuButton></SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
+        </SidebarGroup>
+
+        <SidebarGroup>
+          <SidebarGroupLabel>{language === "en" ? "More" : "Diğer"}</SidebarGroupLabel>
+          <SidebarGroupContent><SidebarMenu><SidebarMenuItem><SidebarMenuButton asChild tooltip={t.products}><a href="https://www.etsy.com/shop/AGTStudioCo" target="_blank" rel="noreferrer"><ExternalLink /><span>{t.products}</span></a></SidebarMenuButton></SidebarMenuItem></SidebarMenu></SidebarGroupContent>
         </SidebarGroup>
 
         <SidebarGroup>
