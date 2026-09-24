@@ -30,10 +30,13 @@ function isBackendResponse(response: AtlasResponseData | undefined): response is
 
 export default function Home() {
   const [question, setQuestion] = useState('');
+  const [language, setLanguage] = useState<'tr' | 'en'>(() => localStorage.getItem('agt_life_language') === 'en' ? 'en' : 'tr');
   const [placeholderIndex, setPlaceholderIndex] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const endRef = useRef<HTMLDivElement>(null);
   const conversation = useConversation();
+  useEffect(() => { const onLanguage = () => setLanguage(localStorage.getItem('agt_life_language') === 'en' ? 'en' : 'tr'); window.addEventListener('agt-life-language-change', onLanguage); return () => window.removeEventListener('agt-life-language-change', onLanguage); }, []);
+  const t = language === 'en' ? { menu: 'Open menu', tagline: 'A decision assistant that thinks with you', memoryOn: 'Disable memory', memoryOff: 'Enable memory', clearMemory: 'Clear long-term memory', reset: 'Reset chat', memory: 'Atlas memory', chat: 'Chat', you: 'You', atlas: 'Atlas', thinking: 'Atlas is preparing a response', input: 'Write a message to Atlas', send: 'Send message', memoryTitle: 'Atlas memory' } : { menu: 'Menüyü aç', tagline: '{t.tagline}', memoryOn: 'Hafızayı devre dışı bırak', memoryOff: 'Hafızayı etkinleştir', clearMemory: 'Uzun süreli hafızayı temizle', reset: 'Sohbeti sıfırla', memory: 'Atlas hafızası', chat: 'Sohbet', you: 'Sen', atlas: 'Atlas', thinking: '{t.thinking}', input: "{t.input}", send: 'Mesajı gönder', memoryTitle: 'Atlas hafızası' };
 
   useEffect(() => {
     const timer = window.setInterval(() => setPlaceholderIndex((index) => (index + 1) % PLACEHOLDERS.length), 3500);
@@ -93,34 +96,34 @@ export default function Home() {
       <div className="relative z-10 flex h-full min-h-0 w-full flex-col md:mx-auto md:max-w-5xl md:px-8 md:pt-6">
         <header className="flex h-16 w-full shrink-0 items-center justify-between gap-2 border-b border-border/70 px-4 md:mb-4 md:h-auto md:px-0 md:pb-4">
           <div className="flex min-w-0 items-center gap-2 md:gap-3">
-            <SidebarTrigger aria-label="Menüyü aç" />
+            <SidebarTrigger aria-label={t.menu} />
             <img src="/favicon.svg" alt="Atlas" className="h-9 w-9 shrink-0 rounded-lg object-contain md:h-10 md:w-10" />
             <div className="min-w-0"><h1 className="whitespace-nowrap font-serif text-xl font-bold md:text-2xl">Atlas <span className="text-primary">AI</span></h1><p className="hidden text-xs text-muted-foreground sm:block">Birlikte düşünen karar asistanı</p></div>
           </div>
           <div className="flex shrink-0 items-center justify-end gap-1.5 md:gap-2">
-            <button type="button" onClick={conversation.memory.permissionGranted ? conversation.revokeMemory : conversation.grantMemory} aria-pressed={conversation.memory.permissionGranted} aria-label={conversation.memory.permissionGranted ? 'Hafızayı devre dışı bırak' : 'Hafızayı etkinleştir'} title={conversation.memory.permissionGranted ? 'Hafızayı devre dışı bırak' : 'Hafızayı etkinleştir'} className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card text-xs text-muted-foreground hover:border-primary/40 hover:text-foreground md:h-auto md:w-auto md:gap-2 md:px-3 md:py-2">
+            <button type="button" onClick={conversation.memory.permissionGranted ? conversation.revokeMemory : conversation.grantMemory} aria-pressed={conversation.memory.permissionGranted} aria-label={conversation.memory.permissionGranted ? t.memoryOn : t.memoryOff} title={conversation.memory.permissionGranted ? t.memoryOn : t.memoryOff} className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card text-xs text-muted-foreground hover:border-primary/40 hover:text-foreground md:h-auto md:w-auto md:gap-2 md:px-3 md:py-2">
               <MemoryStick className="h-3.5 w-3.5" aria-hidden="true" />
               <span className="hidden md:inline">{conversation.memory.permissionGranted ? 'Hafızayı devre dışı bırak' : 'Hafızayı etkinleştir'}</span>
             </button>
-            <button type="button" onClick={conversation.clearMemory} aria-label="Uzun süreli hafızayı temizle" title="Uzun süreli hafızayı temizle" className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" aria-hidden="true" /></button>
-            <button type="button" onClick={conversation.reset} aria-label="Sohbeti sıfırla" title="Sohbeti sıfırla" className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground hover:text-primary"><RotateCcw className="h-4 w-4" aria-hidden="true" /></button>
+            <button type="button" onClick={conversation.clearMemory} aria-label={t.clearMemory} title={t.clearMemory} className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground hover:text-destructive"><Trash2 className="h-4 w-4" aria-hidden="true" /></button>
+            <button type="button" onClick={conversation.reset} aria-label={t.reset} title={t.reset} className="flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground hover:text-primary"><RotateCcw className="h-4 w-4" aria-hidden="true" /></button>
           </div>
         </header>
 
         {conversation.memory.permissionGranted && memoryLines.length > 0 && (
-          <aside className="mb-5 rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs text-muted-foreground" aria-label="Atlas hafızası">
-            <span className="font-semibold text-foreground">Atlas hafızası: </span>{memoryLines.join(' · ')}
+          <aside className="mb-5 rounded-xl border border-primary/20 bg-primary/5 p-3 text-xs text-muted-foreground" aria-label={t.memoryTitle}>
+            <span className="font-semibold text-foreground">{t.memory}: </span>{memoryLines.join(' · ')}
           </aside>
         )}
 
-        <section className="min-h-0 w-full flex-1 overflow-y-auto overscroll-contain px-4 py-2 md:px-1 md:py-0" aria-label="Sohbet">
+        <section className="min-h-0 w-full flex-1 overflow-y-auto overscroll-contain px-4 py-2 md:px-1 md:py-0" aria-label={t.chat}>
           {conversation.messages.length === 0 ? <EmptyState onSuggestion={submit} /> : (
             <div className="w-full space-y-4 py-2 pb-5 md:mx-auto md:max-w-3xl md:space-y-5" aria-live="polite">
               {conversation.messages.map((message) => {
                 const response = isBackendResponse(message.richContent) ? message.richContent : null;
                 return (
                   <motion.article key={message.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className={message.role === 'user' ? 'ml-auto max-w-[90%] md:max-w-[85%]' : 'mr-auto w-full max-w-[96%] md:max-w-[92%]'}>
-                    <p className="mb-1 px-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{message.role === 'user' ? 'Sen' : 'Atlas'}</p>
+                    <p className="mb-1 px-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{message.role === 'user' ? t.you : t.atlas}</p>
                     <div className={message.role === 'user' ? 'rounded-2xl rounded-br-sm bg-primary px-4 py-3 text-base leading-relaxed text-primary-foreground md:text-sm' : 'rounded-2xl rounded-bl-sm border border-border bg-card px-4 py-3 text-base leading-relaxed text-card-foreground md:px-5 md:py-4 md:text-sm'}>
                       {message.type === 'clarification' && message.clarificationData ? (
                         <ClarificationCard data={message.clarificationData} onQuickAnswer={submit} />
@@ -146,8 +149,8 @@ export default function Home() {
         <div className="z-20 w-full shrink-0 border-t border-border/70 bg-background/95 px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur md:mx-auto md:max-w-3xl md:px-0 md:pb-5 md:pt-4">
           <div className="relative w-full md:mx-auto md:max-w-3xl">
             <label htmlFor="atlas-question" className="sr-only">Atlas'a mesaj yaz</label>
-            <textarea id="atlas-question" ref={textareaRef} value={question} onChange={(event) => setQuestion(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); submit(); } }} placeholder={PLACEHOLDERS[placeholderIndex]} disabled={conversation.isThinking} rows={2} className="max-h-32 min-h-16 w-full resize-none rounded-2xl border-2 border-border bg-card/90 px-4 py-3 pr-14 text-base leading-relaxed text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none disabled:opacity-60 md:min-h-14 md:px-5 md:text-sm" data-testid="input-question" />
-            <button type="button" onClick={() => submit()} disabled={!question.trim() || conversation.isThinking} aria-label="Mesajı gönder" className="absolute bottom-3 right-3 flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground disabled:cursor-not-allowed disabled:opacity-40" data-testid="button-submit"><Send className="h-4 w-4" aria-hidden="true" /></button>
+            <textarea id="atlas-question" ref={textareaRef} value={question} onChange={(event) => setQuestion(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); submit(); } }} placeholder={language === 'en' ? ['I have 40,000 TL. Which phone should I buy?', 'What is artificial intelligence? How does it work?', 'Make me a 6-month English learning plan', 'Should I buy an electric or hybrid car?'][placeholderIndex] : PLACEHOLDERS[placeholderIndex]} disabled={conversation.isThinking} rows={2} className="max-h-32 min-h-16 w-full resize-none rounded-2xl border-2 border-border bg-card/90 px-4 py-3 pr-14 text-base leading-relaxed text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none disabled:opacity-60 md:min-h-14 md:px-5 md:text-sm" data-testid="input-question" />
+            <button type="button" onClick={() => submit()} disabled={!question.trim() || conversation.isThinking} aria-label={t.send} className="absolute bottom-3 right-3 flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground disabled:cursor-not-allowed disabled:opacity-40" data-testid="button-submit"><Send className="h-4 w-4" aria-hidden="true" /></button>
           </div>
           {intentPreview && <div className="mt-2 px-1 text-right text-xs text-muted-foreground/60">{INTENT_LABELS[intentPreview.intent]}</div>}
         </div>
