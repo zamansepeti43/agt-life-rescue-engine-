@@ -52,19 +52,17 @@ test("budget and time constraints are reflected in the rescue plan", () => {
 });
 
 
-describe("AGT LIFE conversational edge cases", () => {
-  it("handles zero budget by asking about income before building a spending plan", () => {
-    const result = analyzeRescue({ problem: "Bütçem 0 TL" });
-    expect(result.nextQuestion).toContain("düzenli bir gelirin var mı");
-  });
+test("zero budget asks about income before building a spending plan", () => {
+  const result = analyzeRescue({ problem: "Bütçem 0 TL" });
+  assert.match(result.nextQuestion, /düzenli bir gelirin var mı/);
+});
 
-  it("does not assume the user works when budget is zero", () => {
-    const result = analyzeRescue({ problem: "Param 0 TL" });
-    expect(result.nextQuestion).not.toContain("Çalışıyor musun");
-  });
+test("zero budget does not assume the user works", () => {
+  const result = analyzeRescue({ problem: "Param 0 TL" });
+  assert.doesNotMatch(result.nextQuestion, /Çalışıyor musun/);
+});
 
-  it("moves from income status to next income timing", () => {
-    const result = analyzeRescue({ problem: "Bütçem 0 TL, düzenli gelirim var" });
-    expect(result.nextQuestion).toContain("ilk veya sonraki gelirin ne zaman");
-  });
+test("zero budget then asks when the next income arrives", () => {
+  const result = analyzeRescue({ problem: "Bütçem 0 TL, düzenli gelirim var" });
+  assert.match(result.nextQuestion, /ilk veya sonraki gelirin ne zaman/);
 });
