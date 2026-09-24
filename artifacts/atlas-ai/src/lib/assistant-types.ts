@@ -20,7 +20,6 @@ export interface Task {
   dueAt?: string;
   recurrence?: 'daily' | 'weekly' | 'monthly';
   goalId?: string;
-  sourceHistoryId?: string;
   createdAt: string;
   updatedAt: string;
   sourceHistoryId?: string;
@@ -41,6 +40,7 @@ export interface Goal {
   targetAmount?: number;
   currentAmount?: number;
   targetDate?: string;
+  sourceHistoryId?: string;
   status: EntityStatus;
   createdAt: string;
   updatedAt: string;
