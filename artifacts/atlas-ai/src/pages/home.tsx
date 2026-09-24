@@ -36,7 +36,7 @@ export default function Home() {
   const endRef = useRef<HTMLDivElement>(null);
   const conversation = useConversation();
   useEffect(() => { const onLanguage = () => setLanguage(localStorage.getItem('agt_life_language') === 'en' ? 'en' : 'tr'); window.addEventListener('agt-life-language-change', onLanguage); return () => window.removeEventListener('agt-life-language-change', onLanguage); }, []);
-  const t = language === 'en' ? { menu: 'Open menu', tagline: 'A decision assistant that thinks with you', memoryOn: 'Disable memory', memoryOff: 'Enable memory', clearMemory: 'Clear long-term memory', reset: 'Reset chat', memory: 'Atlas memory', chat: 'Chat', you: 'You', atlas: 'Atlas', thinking: 'Atlas is preparing a response', input: 'Write a message to Atlas', send: 'Send message', memoryTitle: 'Atlas memory' } : { menu: 'Menüyü aç', tagline: 'Birlikte düşünen karar asistanı', memoryOn: 'Hafızayı devre dışı bırak', memoryOff: 'Hafızayı etkinleştir', clearMemory: 'Uzun süreli hafızayı temizle', reset: 'Sohbeti sıfırla', memory: 'Atlas hafızası', chat: 'Sohbet', you: 'Sen', atlas: 'Atlas', thinking: '{t.thinking}', input: "Atlas'a mesaj yaz", send: 'Mesajı gönder', memoryTitle: 'Atlas hafızası' };
+  const t = language === 'en' ? { menu: 'Open menu', tagline: 'A decision assistant that thinks with you', memoryOn: 'Disable memory', memoryOff: 'Enable memory', clearMemory: 'Clear long-term memory', reset: 'Reset chat', memory: 'Atlas memory', chat: 'Chat', you: 'You', atlas: 'Atlas', thinking: 'Atlas is preparing a response', input: 'Write a message to Atlas', send: 'Send message', memoryTitle: 'Atlas memory' } : { menu: 'Menüyü aç', tagline: 'Birlikte düşünen karar asistanı', memoryOn: 'Hafızayı devre dışı bırak', memoryOff: 'Hafızayı etkinleştir', clearMemory: 'Uzun süreli hafızayı temizle', reset: 'Sohbeti sıfırla', memory: 'Atlas hafızası', chat: 'Sohbet', you: 'Sen', atlas: 'Atlas', thinking: 'Atlas yanıt hazırlıyor', input: "Atlas'a mesaj yaz", send: 'Mesajı gönder', memoryTitle: 'Atlas hafızası' };
 
   useEffect(() => {
     const timer = window.setInterval(() => setPlaceholderIndex((index) => (index + 1) % PLACEHOLDERS.length), 3500);
@@ -138,7 +138,7 @@ export default function Home() {
                   </motion.article>
                 );
               })}
-              <AnimatePresence>{conversation.isThinking && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex items-center gap-3 text-sm text-muted-foreground" role="status"><LoaderCircle className="h-4 w-4 animate-spin text-primary" aria-hidden="true" />Atlas yanıt hazırlıyor</motion.div>}</AnimatePresence>
+              <AnimatePresence>{conversation.isThinking && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex items-center gap-3 text-sm text-muted-foreground" role="status"><LoaderCircle className="h-4 w-4 animate-spin text-primary" aria-hidden="true" / >{t.thinking}</motion.div>}</AnimatePresence>
               <div ref={endRef} />
             </div>
           )}
@@ -148,11 +148,11 @@ export default function Home() {
 
         <div className="z-20 w-full shrink-0 border-t border-border/70 bg-background/95 px-3 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2 backdrop-blur md:mx-auto md:max-w-3xl md:px-0 md:pb-5 md:pt-4">
           <div className="relative w-full md:mx-auto md:max-w-3xl">
-            <label htmlFor="atlas-question" className="sr-only">Atlas'a mesaj yaz</label>
+            <label htmlFor="atlas-question" className="sr-only">{t.input}</label>
             <textarea id="atlas-question" ref={textareaRef} value={question} onChange={(event) => setQuestion(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey) { event.preventDefault(); submit(); } }} placeholder={language === 'en' ? ['I have 40,000 TL. Which phone should I buy?', 'What is artificial intelligence? How does it work?', 'Make me a 6-month English learning plan', 'Should I buy an electric or hybrid car?'][placeholderIndex] : PLACEHOLDERS[placeholderIndex]} disabled={conversation.isThinking} rows={2} className="max-h-32 min-h-16 w-full resize-none rounded-2xl border-2 border-border bg-card/90 px-4 py-3 pr-14 text-base leading-relaxed text-foreground placeholder:text-muted-foreground/60 focus:border-primary focus:outline-none disabled:opacity-60 md:min-h-14 md:px-5 md:text-sm" data-testid="input-question" />
             <button type="button" onClick={() => submit()} disabled={!question.trim() || conversation.isThinking} aria-label={t.send} className="absolute bottom-3 right-3 flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground disabled:cursor-not-allowed disabled:opacity-40" data-testid="button-submit"><Send className="h-4 w-4" aria-hidden="true" /></button>
           </div>
-          {intentPreview && <div className="mt-2 px-1 text-right text-xs text-muted-foreground/60">{INTENT_LABELS[intentPreview.intent]}</div>}
+          {intentPreview && <div className="mt-2 px-1 text-right text-xs text-muted-foreground/60">{language === 'en' ? ({conversation:'Chat',decision:'Decision Analysis',learning:'Learning',writing:'Writing Assistant',research:'Research',planning:'Planning','problem-solving':'Problem Solving'} as Record<string,string>)[intentPreview.intent] : INTENT_LABELS[intentPreview.intent]}</div>}
         </div>
       </div>
     </main>
