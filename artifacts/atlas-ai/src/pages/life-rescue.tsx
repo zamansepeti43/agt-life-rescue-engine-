@@ -319,16 +319,16 @@ export default function LifeRescue() {
 
     if (currentCategory === "money") {
       if (!hasMoneyPurpose) return q(
-        "Önce paranın nereye gideceğini çıkaralım. Şu an para hangi ihtiyaçlar için gerekiyor? Kira, kredi, faturalar, market, çocuk, sağlık veya başka neler var? Mümkünse kalem kalem yaz.",
+        "Anladım. Para en çok hangi zorunlu ihtiyaç için gerekiyor? Örneğin kira, fatura, borç, market veya çocuk masrafı.",
         "First, let's map where the money needs to go. What does the money have to cover—rent, loans, bills, groceries, children, health, or something else? List the items if you can."
       );
       if (!hasAvailableMoney) return q(
-        "Şimdi kaynak tarafını netleştirelim. Şu an gerçekten kullanabileceğin para ne kadar? Banka hesabı, nakit ve hemen erişebileceğin başka bir para varsa birlikte düşün.",
+        "Peki şu an elinde kullanabileceğin yaklaşık ne kadar para var?",
         "Now let's establish the resources. How much money can you actually use right now? Include cash, bank balance, and anything else you can access immediately."
       );
       if (!hasPaymentList) return q(
-        "Şimdi giderleri rakama çevirelim. Önümüzdeki günlerde ödenecek kalemleri mümkün olduğunca tutarlarıyla yaz: örneğin kira 15.000 TL, kredi 10.000 TL gibi.",
-        "Now let's turn the expenses into numbers. List the upcoming payments with amounts where possible—for example, rent $500, loan $300."
+        "Önümüzdeki birkaç gün içinde ödenmesi gereken en önemli kalemler neler ve yaklaşık tutarları ne?",
+        "What are the most important payments due in the next few days, and roughly how much are they?"
       );
       if (!hasDeadline) return q(
         "Rakamları gördüm. Şimdi zaman baskısını anlamam gerekiyor: Bu ödemelerin son tarihleri ne ve hangisi gecikirse en ciddi sonucu doğurur?",
@@ -708,7 +708,7 @@ export default function LifeRescue() {
 
   return (
     <main className="h-[100dvh] w-full overflow-y-auto overscroll-contain bg-background text-foreground">
-      <div className="mx-auto flex min-h-[100dvh] w-full max-w-3xl flex-col px-4 pb-28 pt-24 md:px-6">
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-3xl flex-col px-4 pb-32 pt-20 md:px-6">
         <header className="fixed inset-x-0 top-0 z-50 border-b bg-background/95 px-4 pb-3 pt-2 shadow-sm backdrop-blur md:px-6">
           <div className="flex items-center gap-3">
             <button
@@ -754,19 +754,21 @@ export default function LifeRescue() {
               </button>
             </div>
           </div>
-          {!conversationStarted && (
-            <>
-              <h1 className="mt-8 text-4xl font-bold tracking-tight md:text-5xl">{copy.whatHappened}</h1>
-              <p className="mt-3 max-w-xl text-base leading-7 text-muted-foreground">
-                {copy.intro}
-              </p>
-            </>
-          )}
         </header>
 
         {!conversationStarted ? (
-          <section className="flex flex-1 flex-col justify-center pb-10 pt-10">
-            <div className="rounded-3xl border bg-card p-3 shadow-sm">
+          <section className="flex flex-1 flex-col pb-10 pt-8 md:pt-12">
+            <div className="mb-8 max-w-2xl">
+              <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-3 py-1.5 text-xs font-semibold text-primary">
+                <Sparkles className="h-3.5 w-3.5" />
+                AGT LIFE · LIFE RESCUE
+              </div>
+              <h1 className="text-[2.7rem] font-bold leading-[1.05] tracking-[-0.04em] md:text-6xl">{copy.whatHappened}</h1>
+              <p className="mt-4 max-w-xl text-base leading-7 text-muted-foreground md:text-lg">
+                {copy.intro}
+              </p>
+            </div>
+            <div className="overflow-hidden rounded-[1.75rem] border border-primary/10 bg-card shadow-[0_18px_60px_-35px_hsl(var(--primary)/0.35)]">
               <textarea
                 value={problem}
                 onChange={(e) => setProblem(e.target.value)}
@@ -777,8 +779,9 @@ export default function LifeRescue() {
                 className="min-h-36 w-full resize-none bg-transparent px-3 py-3 text-lg leading-7 outline-none placeholder:text-muted-foreground"
                 autoFocus
               />
-              <div className="flex items-center justify-between gap-3 border-t pt-3">
-                <span className="px-3 py-2 text-xs text-muted-foreground">Sorununu kendi cümlelerinle anlatman yeterli.</span>
+              </div>
+              <div className="flex items-center justify-between gap-3 border-t bg-background/30 px-2 py-2">
+                <span className="hidden px-3 py-2 text-xs text-muted-foreground sm:block">Sorununu kendi cümlelerinle anlatman yeterli.</span>
                 <button
                   type="button"
                   onClick={() => start()}
@@ -1014,4 +1017,3 @@ export default function LifeRescue() {
     </main>
   );
 }
-
