@@ -11,13 +11,28 @@ android {
         versionName "1.0.0"
     }
     buildTypes { release { minifyEnabled false; proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro" } }
-    sourceSets { main { assets.srcDirs = ["src/main/assets"] } }
+    sourceSets {
+        main {
+            assets.srcDirs = ["src/main/assets"]
+            res.srcDirs += ["\${buildDir}/generated/res/agtLifeIcon"]
+        }
+    }
+
+    tasks.register("generateAgtLifeIcon") {
+        def output = file("\${buildDir}/generated/res/agtLifeIcon/drawable/agt_life_icon.webp")
+        inputs.file("\${projectDir}/src/main/res/raw/agt_life_icon.webp.b64")
+        outputs.file(output)
+        doLast {
+            output.parentFile.mkdirs()
+            output.bytes = java.util.Base64.decoder.decode(file("\${projectDir}/src/main/res/raw/agt_life_icon.webp.b64").text.trim())
+        }
+    }
     tasks.register("copyWebApp", Copy) {
         doFirst { delete("${projectDir}/src/main/assets") }
         from("${rootDir}/../artifacts/atlas-ai/dist")
         into("${projectDir}/src/main/assets")
     }
-    preBuild.dependsOn("copyWebApp")
+    preBuild.dependsOn("copyWebApp", "generateAgtLifeIcon")
 }
 dependencies {
     implementation "androidx.webkit:webkit:1.17.0"
