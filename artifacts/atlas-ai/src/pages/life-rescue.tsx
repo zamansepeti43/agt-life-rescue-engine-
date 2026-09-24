@@ -592,8 +592,9 @@ export default function LifeRescue() {
     }
 
     const localResult = runAnalysis(text);
-    const firstQuestion = getNextQuestion(localResult.category, text, language);
-    const normalizedLower = text.toLocaleLowerCase("tr-TR");
+    const firstQuestion = localResult.category === "unknown"
+      ? null
+      : getNextQuestion(localResult.category, text, language);
 
     setProblem("");
     setAnswer("");
@@ -603,7 +604,7 @@ export default function LifeRescue() {
     setMessages([
       { role: "user", text },
       { role: "engine", text: localResult.diagnosis },
-      { role: "engine", text: firstQuestion ?? (language === "en" ? "Tell me anything else that could change the decision." : "Kararı değiştirebilecek başka bir ayrıntı varsa onu da anlat.") },
+      ...(firstQuestion ? [{ role: "engine" as const, text: firstQuestion }] : []),
     ]);
   }
 
@@ -637,10 +638,24 @@ export default function LifeRescue() {
       : text;
     const nextIndex = questionIndex + 1;
     const localResult = runAnalysis(nextContext);
-    const nextQuestion = getNextQuestion(localResult.category, nextContext, language);
+    const nextQuestion = localResult.category === "unknown"
+      ? null
+      : getNextQuestion(localResult.category, nextContext, language);
 
     setConversationContext(nextContext);
     setAnswer("");
+
+    if (localResult.category === "unknown") {
+      setQuestionIndex(nextIndex);
+      setResult(localResult);
+      setShowPlan(false);
+      setMessages((prev) => [
+        ...prev,
+        { role: "user", text },
+        { role: "engine", text: localResult.diagnosis },
+      ]);
+      return;
+    }
 
     if (nextQuestion) {
       setQuestionIndex(nextIndex);
