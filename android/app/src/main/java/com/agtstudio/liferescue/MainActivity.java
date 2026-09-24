@@ -2,10 +2,12 @@ package com.agtstudio.liferescue;
 
 import android.Manifest;
 import android.app.Activity;
+import android.app.AlarmManager;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.webkit.JavascriptInterface;
 import android.webkit.WebResourceRequest;
 import android.webkit.WebResourceResponse;
@@ -86,7 +88,22 @@ public class MainActivity extends Activity {
         webView.loadUrl("https://appassets.androidplatform.net/assets/index.html");
         setContentView(webView);
         requestNotificationPermission();
+        requestExactAlarmPermission();
+        NotificationScheduler.restoreAll(this);
     }
+    private void requestExactAlarmPermission() {
+        if (android.os.Build.VERSION.SDK_INT >= 31) {
+            AlarmManager alarms = (AlarmManager) getSystemService(ALARM_SERVICE);
+            if (alarms != null && !alarms.canScheduleExactAlarms()) {
+                try {
+                    Intent intent = new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM);
+                    intent.setData(Uri.parse("package:" + getPackageName()));
+                    startActivity(intent);
+                } catch (Exception ignored) {}
+            }
+        }
+    }
+
     private void requestNotificationPermission() {
         if (android.os.Build.VERSION.SDK_INT >= 33 &&
             checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
