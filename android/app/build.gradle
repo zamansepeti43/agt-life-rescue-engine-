@@ -19,12 +19,12 @@ android {
     }
 
     tasks.register("generateAgtLifeIcon") {
-        def output = file("\${buildDir}/generated/res/agtLifeIcon/drawable/agt_life_icon.webp")
+        def output = file("${buildDir}/generated/res/agtLifeIcon/drawable/agt_life_icon.webp")
         inputs.file("${projectDir}/src/main/res/raw/agt_life_icon.webp.b64")
         outputs.file(output)
         doLast {
             output.parentFile.mkdirs()
-            output.bytes = java.util.Base64.decoder.decode(file("\${projectDir}/src/main/res/raw/agt_life_icon.webp.b64").text.trim())
+            output.bytes = java.util.Base64.decoder.decode(file("${projectDir}/src/main/res/raw/agt_life_icon.webp.b64").text.trim())
         }
     }
     tasks.register("copyWebApp", Copy) {
