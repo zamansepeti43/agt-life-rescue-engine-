@@ -49,7 +49,7 @@ export function AtlasSidebar() {
 
         <SidebarGroup>
           <SidebarGroupLabel>Yakında</SidebarGroupLabel>
-          <SidebarGroupContent><SidebarMenu><SidebarMenuItem><SidebarMenuButton disabled tooltip="Ayarlar"><Settings2 /><span>Ayarlar</span></SidebarMenuButton></SidebarMenuItem></SidebarContent></SidebarGroup>
+          <SidebarGroupContent><SidebarMenu><SidebarMenuItem><SidebarMenuButton disabled tooltip="Ayarlar"><Settings2 /><span>Ayarlar</span></SidebarMenuButton></SidebarMenuItem></SidebarMenu></SidebarGroupContent></SidebarGroup>
       </SidebarContent>
       <SidebarRail />
     </Sidebar>
