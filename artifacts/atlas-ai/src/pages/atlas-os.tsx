@@ -64,6 +64,24 @@ export default function AtlasOS() {
     }
   };
 
+  const capabilityText = (id: string, title: string, description: string): [string, string] => {
+    if (language !== "en") return [title, description];
+    const map: Record<string, [string, string]> = {
+      shopping: ["Smart Shopping", "Evaluate products, prices, features, and value together."],
+      finance: ["Money Assistant", "Plan budgets, expenses, debt, and goals together."],
+      "scam-shield": ["Scam Shield", "Explain scam signals in messages, links, or screenshots."],
+      automotive: ["Automotive", "Compare vehicle listings, price, running cost, and risk."],
+      "real-estate": ["Home & Real Estate", "Evaluate rent and purchase options by total cost and needs."],
+      career: ["Career", "Handle jobs, CVs, skills, and career goals in one flow."],
+      family: ["Family", "Organize family tasks, important dates, and shared plans."],
+      learning: ["Learning", "Teach at your level and build review and progress plans."],
+      memory: ["Memory", "Use preferences and decision context you explicitly share."],
+      tasks: ["Tasks & İZCİ", "Atlas creates tasks; İZCİ tracks changes and surfaces them."],
+      research: ["Research", "Prepare sourced research and decision summaries."]
+    };
+    return map[id] ?? [title, description];
+  };
+
   return (
     <main className="min-h-screen flex-1 overflow-auto bg-background p-4 md:p-8">
       <div className="mx-auto max-w-7xl space-y-6">
@@ -103,7 +121,7 @@ export default function AtlasOS() {
           </ToolCard>
         </section>
 
-        <section><div className="mb-4"><h2 className="text-xl font-bold">{t.capabilities}</h2><p className="text-sm text-muted-foreground">{t.capabilitiesDesc}</p></div><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{ATLAS_CAPABILITIES.map((capability) => { const Icon = ICONS[capability.id]; return <button key={capability.id} onClick={() => ask(capability.examples[0])} className="group rounded-2xl border border-border bg-card p-4 text-left transition hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-sm"><div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary"><Icon className="h-5 w-5" /></div><h3 className="font-semibold">{language === 'en' ? ({shopping:['Smart Shopping','Evaluate products, prices, features, and value together.'],finance:['Money Assistant','Plan budgets, expenses, debt, and goals together.'],'scam-shield':['Scam Shield','Explain scam signals in messages, links, or screenshots.'],automotive:['Automotive','Compare vehicle listings, price, running cost, and risk.'],'real-estate':['Home & Real Estate','Evaluate rent and purchase options by total cost and needs.'],career:['Career','Handle jobs, CVs, skills, and career goals in one flow.'],family:['Family','Organize family tasks, important dates, and shared plans.'],learning:['Learning','Teach at your level and build review and progress plans.'],memory:['Memory','Use preferences and decision context you explicitly share.'],tasks:['Tasks & İZCİ','Atlas creates tasks; İZCİ tracks changes and surfaces them.'],research:['Research','Prepare sourced research and decision summaries.']} as Record<string,[string,string]>)[capability.id] ?? [capability.title,capability.description])[0] : capability.title}</h3><p className="mt-1 text-sm text-muted-foreground">{language === 'en' ? ({shopping:['Smart Shopping','Evaluate products, prices, features, and value together.'],finance:['Money Assistant','Plan budgets, expenses, debt, and goals together.'],'scam-shield':['Scam Shield','Explain scam signals in messages, links, or screenshots.'],automotive:['Automotive','Compare vehicle listings, price, running cost, and risk.'],'real-estate':['Home & Real Estate','Evaluate rent and purchase options by total cost and needs.'],career:['Career','Handle jobs, CVs, skills, and career goals in one flow.'],family:['Family','Organize family tasks, important dates, and shared plans.'],learning:['Learning','Teach at your level and build review and progress plans.'],memory:['Memory','Use preferences and decision context you explicitly share.'],tasks:['Tasks & İZCİ','Atlas creates tasks; İZCİ tracks changes and surfaces them.'],research:['Research','Prepare sourced research and decision summaries.']} as Record<string,[string,string]>)[capability.id] ?? [capability.title,capability.description])[1] : capability.description}</p></button>; })}</div></section>
+        <section><div className="mb-4"><h2 className="text-xl font-bold">{t.capabilities}</h2><p className="text-sm text-muted-foreground">{t.capabilitiesDesc}</p></div><div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{ATLAS_CAPABILITIES.map((capability) => { const Icon = ICONS[capability.id]; return <button key={capability.id} onClick={() => ask(capability.examples[0])} className="group rounded-2xl border border-border bg-card p-4 text-left transition hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-sm"><div className="mb-3 flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary"><Icon className="h-5 w-5" /></div><h3 className="font-semibold">{capabilityText(capability.id, capability.title, capability.description)[0]}</h3><p className="mt-1 text-sm text-muted-foreground">{capabilityText(capability.id, capability.title, capability.description)[1]}</p></button>; })}</div></section>
       </div>
     </main>
   );
