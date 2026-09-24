@@ -600,15 +600,15 @@ export default function LifeRescue() {
 
   function finishConversation(context: string, localResult: Result) {
     setShowPlan(true);
-    setIzciCandidates(extractIzciCandidates(context));
-    setTrackedCandidateIds([]);
-    saveLifeRescueHistory({
+    const history = saveLifeRescueHistory({
       problem: context.split("\nKullanıcı:")[0],
       category: localResult.category,
       goal: localResult.goal,
       diagnosis: localResult.diagnosis,
       objective: localResult.plan.objective,
     });
+    setIzciCandidates(extractIzciCandidates(context).map((candidate) => ({ ...candidate, sourceHistoryId: history.id } as IzciCandidate & { sourceHistoryId: string })));
+    setTrackedCandidateIds([]);
   }
 
   function normalizeQuestion(value: string) {
@@ -958,9 +958,9 @@ export default function LifeRescue() {
                               </div>
                               <button type="button" disabled={tracked} onClick={() => {
                                 if (candidate.kind === "goal") {
-                                  addGoal({ title: candidate.title, ...(candidate.targetAmount !== undefined ? { targetAmount: candidate.targetAmount } : {}), ...(candidate.targetDate ? { targetDate: candidate.targetDate } : {}) });
+                                  addGoal({ title: candidate.title, ...(candidate.targetAmount !== undefined ? { targetAmount: candidate.targetAmount } : {}), ...(candidate.targetDate ? { targetDate: candidate.targetDate } : {}), ...(('sourceHistoryId' in candidate && candidate.sourceHistoryId) ? { sourceHistoryId: candidate.sourceHistoryId } : {}) });
                                 } else {
-                                  addTask({ title: candidate.title, ...(candidate.dueAt ? { dueAt: candidate.dueAt } : {}) });
+                                  addTask({ title: candidate.title, ...(candidate.dueAt ? { dueAt: candidate.dueAt } : {}), ...(('sourceHistoryId' in candidate && candidate.sourceHistoryId) ? { sourceHistoryId: candidate.sourceHistoryId } : {}) });
                                 }
                                 setTrackedCandidateIds((ids) => [...ids, candidateId]);
                               }} className="shrink-0 rounded-xl bg-primary px-3 py-2 text-xs font-semibold text-primary-foreground disabled:opacity-60">
