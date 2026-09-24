@@ -48,8 +48,8 @@ export function AtlasSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Yakında</SidebarGroupLabel>
-          <SidebarGroupContent><SidebarMenu><SidebarMenuItem><SidebarMenuButton disabled tooltip="Ayarlar"><Settings2 /><span>Ayarlar</span></SidebarMenuButton></SidebarMenuItem></SidebarMenu></SidebarGroupContent></SidebarGroup>
+          <SidebarGroupLabel>Sistem</SidebarGroupLabel>
+          <SidebarGroupContent><SidebarMenu><SidebarMenuItem><SidebarMenuButton isActive={location === "/settings"} onClick={() => goTo("/settings")} tooltip="Ayarlar"><Settings2 /><span>Ayarlar</span></SidebarMenuButton></SidebarMenuItem></SidebarMenu></SidebarGroupContent></SidebarGroup>
       </SidebarContent>
       <SidebarRail />
     </Sidebar>
