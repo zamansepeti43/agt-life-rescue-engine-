@@ -76,7 +76,9 @@ export default function Izci() {
   }
 
   return (
-    <main className="flex h-[100dvh] min-h-0 flex-1 flex-col overflow-hidden bg-background text-foreground">\n      <LifeAppHeader language={language} onLanguageChange={(next) => { setLanguage(next); localStorage.setItem("agt_life_language", next); localStorage.setItem("agt_life_rescue_language", next); window.dispatchEvent(new Event("agt-life-language-change")); }} />\n      <div className="min-h-0 flex-1 overflow-y-auto">
+    <main className="flex h-[100dvh] min-h-0 flex-1 flex-col overflow-hidden bg-background text-foreground">
+      <LifeAppHeader language={language} onLanguageChange={(next) => { setLanguage(next); localStorage.setItem("agt_life_language", next); localStorage.setItem("agt_life_rescue_language", next); window.dispatchEvent(new Event("agt-life-language-change")); }} />
+      <div className="min-h-0 flex-1 overflow-y-auto">
 
       <div className="mx-auto w-full max-w-5xl space-y-8 px-4 py-6 pb-12 md:px-8 md:py-8">
         <section className="rounded-3xl border bg-card p-5 md:p-7">
@@ -106,6 +108,9 @@ export default function Izci() {
           <div className="rounded-3xl border bg-card p-5"><div className="mb-4 flex items-center gap-2"><BellRing className="h-4 w-4 text-primary" /><h3 className="font-semibold">{t.changes}</h3></div>{unread.length === 0 ? <Empty>{t.noChanges}</Empty> : <div className="space-y-2">{unread.slice(0, 5).map((event) => <button key={event.id} type="button" onClick={() => markEventRead(event.id)} className="flex w-full items-start gap-3 rounded-2xl border p-3 text-left"><span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-primary" /><span className="min-w-0"><strong className="block text-sm">{event.title}</strong><span className="text-xs text-muted-foreground">{event.message}</span></span></button>)}</div>}</div>
         </section>
 
-        <div className="flex items-center gap-2 text-xs text-muted-foreground"><WalletCards className="h-3.5 w-3.5" />{t.footer}</div>\n      </div>\n      </div>\n    </main>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground"><WalletCards className="h-3.5 w-3.5" />{t.footer}</div>
+      </div>
+      </div>
+    </main>
   );
 }
