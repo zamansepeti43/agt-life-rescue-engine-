@@ -2,11 +2,25 @@ import { BellRing, History, LifeBuoy, MessageSquareText, Plus, Settings2 } from 
 import { useLocation } from "wouter";
 import { Sidebar, SidebarContent, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarRail, useSidebar } from "@/components/ui/sidebar";
 import { useAssistantState } from "@/hooks/useAssistantState";
+import { useEffect, useState } from "react";
 
 export function AtlasSidebar() {
   const [location, navigate] = useLocation();
   const { setOpenMobile } = useSidebar();
   const state = useAssistantState();
+  const [language, setLanguage] = useState<"tr" | "en">(() => localStorage.getItem("agt_life_language") === "en" ? "en" : "tr");
+  useEffect(() => {
+    const onLanguage = () => setLanguage(localStorage.getItem("agt_life_language") === "en" ? "en" : "tr");
+    window.addEventListener("agt-life-language-change", onLanguage);
+    return () => window.removeEventListener("agt-life-language-change", onLanguage);
+  }, []);
+  const t = language === "en" ? {
+    tagline: "Get your life together.", life: "Life", home: "Home", newProblem: "New Problem", history: "History",
+    chat: "Chat", tracker: "TRACKER", system: "System", settings: "Settings"
+  } : {
+    tagline: "{t.tagline}", life: "Hayat", home: "Ana Sayfa", newProblem: "Yeni Problem", history: "Geçmiş",
+    chat: "Sohbet", tracker: "İZCİ", system: "Sistem", settings: "Ayarlar"
+  };
   const unread = state.events.filter((event) => !event.read).length;
   const goTo = (path: string) => { navigate(path); setOpenMobile(false); };
   const newProblem = () => { goTo("/"); window.dispatchEvent(new Event("life-rescue-new-problem")); };
@@ -22,23 +36,23 @@ export function AtlasSidebar() {
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Hayat</SidebarGroupLabel>
+          <SidebarGroupLabel>{t.life}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              <SidebarMenuItem><SidebarMenuButton isActive={location === "/"} onClick={() => goTo("/")} tooltip="Ana sayfa"><LifeBuoy /><span>Ana Sayfa</span></SidebarMenuButton></SidebarMenuItem>
-              <SidebarMenuItem><SidebarMenuButton onClick={newProblem} tooltip="Yeni problem"><Plus /><span>Yeni Problem</span></SidebarMenuButton></SidebarMenuItem>
-              <SidebarMenuItem><SidebarMenuButton isActive={location === "/life-rescue-history"} onClick={() => goTo("/life-rescue-history")} tooltip="Konuşmalar"><History /><span>Geçmiş</span></SidebarMenuButton></SidebarMenuItem>
-              <SidebarMenuItem><SidebarMenuButton isActive={location === "/atlas"} onClick={() => goTo("/atlas")} tooltip="Sohbet"><MessageSquareText /><span>Sohbet</span></SidebarMenuButton></SidebarMenuItem>
+              <SidebarMenuItem><SidebarMenuButton isActive={location === "/"} onClick={() => goTo("/")} tooltip={t.home}><LifeBuoy /><span>{t.home}</span></SidebarMenuButton></SidebarMenuItem>
+              <SidebarMenuItem><SidebarMenuButton onClick={newProblem} tooltip={t.newProblem}><Plus /><span>{t.newProblem}</span></SidebarMenuButton></SidebarMenuItem>
+              <SidebarMenuItem><SidebarMenuButton isActive={location === "/life-rescue-history"} onClick={() => goTo("/life-rescue-history")} tooltip={t.history}><History /><span>{t.history}</span></SidebarMenuButton></SidebarMenuItem>
+              <SidebarMenuItem><SidebarMenuButton isActive={location === "/atlas"} onClick={() => goTo("/atlas")} tooltip={t.chat}><MessageSquareText /><span>{t.chat}</span></SidebarMenuButton></SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>İZCİ</SidebarGroupLabel>
+          <SidebarGroupLabel>{t.tracker}</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton isActive={location === "/izci"} onClick={() => goTo("/izci")} tooltip="İZCİ">
+                <SidebarMenuButton isActive={location === "/izci"} onClick={() => goTo("/izci")} tooltip={t.tracker}>
                   <BellRing /><span>İZCİ</span>
                 </SidebarMenuButton>
                 {unread > 0 && <span className="ml-auto rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">{unread}</span>}
@@ -48,8 +62,8 @@ export function AtlasSidebar() {
         </SidebarGroup>
 
         <SidebarGroup>
-          <SidebarGroupLabel>Sistem</SidebarGroupLabel>
-          <SidebarGroupContent><SidebarMenu><SidebarMenuItem><SidebarMenuButton isActive={location === "/settings"} onClick={() => goTo("/settings")} tooltip="Ayarlar"><Settings2 /><span>Ayarlar</span></SidebarMenuButton></SidebarMenuItem></SidebarMenu></SidebarGroupContent></SidebarGroup>
+          <SidebarGroupLabel>{t.system}</SidebarGroupLabel>
+          <SidebarGroupContent><SidebarMenu><SidebarMenuItem><SidebarMenuButton isActive={location === "/settings"} onClick={() => goTo("/settings")} tooltip={t.settings}><Settings2 /><span>{t.settings}</span></SidebarMenuButton></SidebarMenuItem></SidebarMenu></SidebarGroupContent></SidebarGroup>
       </SidebarContent>
       <SidebarRail />
     </Sidebar>
